@@ -126,6 +126,39 @@
   font-weight: 700;
 }
 
+.requiredMark {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.passwordControl {
+  position: relative;
+}
+
+.passwordControl input {
+  padding-right: 3rem;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  border-radius: 0.5rem;
+  color: #64748b;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.passwordToggle:hover {
+  background: #f1f5f9;
+  color: #020617;
+}
+
 .submit,
 .submitLink {
   display: inline-flex;

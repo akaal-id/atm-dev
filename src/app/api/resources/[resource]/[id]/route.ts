@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { cleanEmptyStrings, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
 import { createResource, deleteResource, getResourceById, updateResource } from "@/lib/server/store";
+import { UploadError } from "@/lib/server/uploads";
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ resource: string; id: string }> }) {
   const { resource: resourceParam, id } = await context.params;
@@ -17,6 +18,20 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ re
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ resource: string; id: string }> }) {
+  let payload: Record<string, unknown>;
+  try {
+    payload = await readPayload(request);
+  } catch (error) {
+    if (error instanceof UploadError) {
+      return wantsJson(request) ? NextResponse.json({ error: error.message }, { status: 400 }) : redirectBack(request);
+    }
+    throw error;
+  }
+
+  return patchResource(request, context, payload);
+}
+
+async function patchResource(request: NextRequest, context: { params: Promise<{ resource: string; id: string }> }, payload: Record<string, unknown>) {
   const { resource: resourceParam, id } = await context.params;
   const resource = parseResource(resourceParam);
   if (!resource) return NextResponse.json({ error: "Unknown resource" }, { status: 404 });
@@ -24,7 +39,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ r
   const access = await requireApiAccess(resource, "write");
   if (access.error) return access.error;
 
-  const patch = normalizePayload(cleanEmptyStrings(await readPayload(request)));
+  const patch = normalizePayload(cleanEmptyStrings(payload));
   if (resource === "Tasks" && patch.status === "Done") {
     patch.completed_at = new Date().toISOString();
     patch.progress ??= 100;
@@ -48,14 +63,23 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ r
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<{ resource: string; id: string }> }) {
-  const payload = await readPayload(request.clone());
+  let payload: Record<string, unknown>;
+  try {
+    payload = await readPayload(request);
+  } catch (error) {
+    if (error instanceof UploadError) {
+      return wantsJson(request) ? NextResponse.json({ error: error.message }, { status: 400 }) : redirectBack(request);
+    }
+    throw error;
+  }
+
   const method = String(payload._method ?? payload.intent ?? "").toLowerCase();
 
   if (method === "delete") {
     return DELETE(request, context);
   }
 
-  return PATCH(request, context);
+  return patchResource(request, context, payload);
 }
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ resource: string; id: string }> }) {

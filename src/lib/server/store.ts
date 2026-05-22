@@ -5,6 +5,13 @@ import { googleSheetsDatabaseSchema, type SheetName } from "@/lib/data/schema";
 import { appendAppsScriptRow, deleteAppsScriptRow, isAppsScriptConfigured, readAppsScriptSheet, updateAppsScriptRow } from "@/lib/server/apps-script";
 import { appendSheetRow, isGoogleSheetsConfigured, readSheet, updateSheetRow } from "@/lib/server/google-sheets";
 import { sendNotificationEmail } from "@/lib/server/resend";
+import {
+  deleteSupabaseResource,
+  insertSupabaseResource,
+  isSupabaseConfigured,
+  readSupabaseResource,
+  updateSupabaseResource,
+} from "@/lib/server/supabase-store";
 import type { AppNotification, User } from "@/lib/types";
 import { makeId } from "@/lib/utils";
 
@@ -75,6 +82,10 @@ function shouldUseAppsScript() {
   return isAppsScriptConfigured() && process.env.ATM_DATA_MODE === "apps_script";
 }
 
+function shouldUseSupabase() {
+  return isSupabaseConfigured() && process.env.ATM_DATA_MODE === "supabase";
+}
+
 export const resourceNames = Object.keys(seedResources) as ResourceName[];
 
 export function getResourceIdField(resource: ResourceName) {
@@ -82,6 +93,11 @@ export function getResourceIdField(resource: ResourceName) {
 }
 
 export async function listResource<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
+  if (shouldUseSupabase()) {
+    const rows = await readSupabaseResource(resource);
+    return rows as unknown as ResourceItem<R>[];
+  }
+
   if (shouldUseAppsScript()) {
     const rows = await readAppsScriptSheet(resource as SheetName);
     return rows as unknown as ResourceItem<R>[];
@@ -110,6 +126,14 @@ export async function createResource<R extends ResourceName>(resource: R, payloa
     created_at: (payload as Record<string, unknown>).created_at ?? now,
     updated_at: now,
   } as unknown as ResourceItem<R>;
+
+  if (shouldUseSupabase()) {
+    const created = (await insertSupabaseResource(resource, record as unknown as Record<string, unknown>)) as unknown as ResourceItem<R>;
+    if (resource === "Notifications") {
+      await sendEmailForNotification(created as unknown as AppNotification);
+    }
+    return created;
+  }
 
   store[resource].unshift(record as never);
 
@@ -144,13 +168,22 @@ async function sendEmailForNotification(notification: AppNotification) {
 
 export async function updateResource<R extends ResourceName>(resource: R, id: string, patch: Partial<ResourceItem<R>>) {
   const idField = idFields[resource];
+  const updatedAt = new Date().toISOString();
+
+  if (shouldUseSupabase()) {
+    return (await updateSupabaseResource(resource, idField, id, {
+      ...(patch as Record<string, unknown>),
+      updated_at: updatedAt,
+    })) as unknown as ResourceItem<R> | undefined;
+  }
+
   const sourceRecords = shouldUseAppsScript() || shouldUseSheets()
     ? ((await listResource(resource)) as unknown as Array<Record<string, unknown>>)
     : (store[resource] as unknown as Array<Record<string, unknown>>);
   const index = sourceRecords.findIndex((item) => item[idField] === id);
   if (index === -1) return undefined;
 
-  const next = { ...sourceRecords[index], ...patch, updated_at: new Date().toISOString() };
+  const next = { ...sourceRecords[index], ...patch, updated_at: updatedAt };
 
   if (!shouldUseAppsScript() && !shouldUseSheets()) {
     sourceRecords[index] = next;
@@ -184,6 +217,10 @@ export async function deleteResource(resource: ResourceName, id: string) {
       rejection_reason: "Removed by admin",
     } as Partial<ResourceItem<"Users">>);
     return true;
+  }
+
+  if (shouldUseSupabase()) {
+    return deleteSupabaseResource(resource, idField, id);
   }
 
   if (shouldUseAppsScript()) {

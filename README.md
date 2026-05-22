@@ -8,7 +8,7 @@ ATM is a production-oriented Next.js Progressive Web App for internal team manag
 - Tailwind CSS 4
 - Server-side JWT session cookies
 - Role-based access control
-- Google Sheets server adapter with seeded local fallback
+- Supabase or Google Sheets server adapter with seeded local fallback
 - PWA manifest, service worker, install shortcuts, and offline page
 
 ## Local Setup
@@ -25,6 +25,42 @@ Demo login:
 
 - Email: `nadia@akaal.test`
 - Password: `atm-demo-2026`
+
+## Supabase Database
+
+Supabase is the recommended production database for ATM. It is much faster than Google Sheets or Apps Script for dashboard pages because the app can query normal database tables instead of waiting for spreadsheet scripts.
+
+1. Open your Supabase project.
+2. Go to **SQL Editor**.
+3. Paste and run `docs/supabase-schema.sql`.
+4. Add these variables to `.env.local`:
+
+```bash
+ATM_DATA_MODE="supabase"
+SUPABASE_PROJECT_ID="your-project-ref"
+SUPABASE_URL="https://your-project-ref.supabase.co"
+SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+SUPABASE_ANON_KEY="your-legacy-anon-key-if-needed"
+SUPABASE_SECRET_KEY="your-server-secret-key"
+SUPABASE_STORAGE_BUCKET="atm-uploads"
+```
+
+Only `SUPABASE_SECRET_KEY` can read and write the tables. Keep it in `.env.local` and Vercel environment variables only.
+File uploads also use the same server-side Supabase key. ATM will create the `atm-uploads` public storage bucket automatically the first time someone uploads a profile photo or leave attachment.
+
+### Migrating Current Sheet Or Seed Data Into Supabase
+
+If you already have data in Google Sheets or Apps Script:
+
+1. Keep your existing `ATM_DATA_MODE` as `apps_script`, `sheets`, or `seed`.
+2. Add the Supabase environment variables above, but do not switch `ATM_DATA_MODE` yet.
+3. Start the app and sign in as an admin.
+4. Open `/admin/settings`.
+5. Click **Migrate current data to Supabase**.
+6. Change `ATM_DATA_MODE` to `supabase`.
+7. Restart the dev server or redeploy Vercel.
+
+The migration uses upsert by each table's app ID, so running it again updates existing rows instead of duplicating them.
 
 ## Google Sheets Database
 
@@ -88,7 +124,7 @@ GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END P
 
 All Sheets access happens inside server-only route handlers and libraries. No service account keys are shipped to the frontend.
 
-## Sheet Tabs
+## Legacy Sheet Tabs
 
 Create these tabs or let the schema endpoint write headers into matching tabs:
 
@@ -147,7 +183,7 @@ Resend must verify `akaal.id` before emails can reliably send from `onboarding@a
 - Auth uses an HTTP-only `atm_session` cookie signed with `AUTH_SECRET`.
 - Middleware protects app routes from anonymous access.
 - Route handlers enforce role permissions server-side before reading or writing resources.
-- Google Sheets credentials are loaded only from server environment variables.
+- Database credentials are loaded only from server environment variables.
 - Writes go through API routes so validation, audit logs, and RBAC can be centralized.
 
 ## PWA
@@ -168,7 +204,7 @@ Service worker registration is enabled in production builds to avoid stale devel
 2. Import it into Vercel.
 3. Add the environment variables from `.env.example`.
 4. Deploy.
-5. Open the deployed URL, sign in, and initialize Sheets headers if using Sheets mode.
+5. Open the deployed URL and sign in. If using Supabase, run `docs/supabase-schema.sql` before the first production login.
 
 ## Useful Commands
 

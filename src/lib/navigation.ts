@@ -117,7 +117,7 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
   "/admin/settings": {
     title: "CMS settings",
     eyebrow: "Application CMS",
-    description: "Configure dashboard widgets, departments, statuses, and Sheets connection settings.",
+    description: "Configure dashboard widgets, departments, statuses, and database connection settings.",
   },
   "/admin/roles": {
     title: "Roles and permissions",

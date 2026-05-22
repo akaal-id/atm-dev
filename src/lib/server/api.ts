@@ -6,6 +6,7 @@ import { hasAnyPermission, hasPermission } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/server/auth";
 import type { ResourceName } from "@/lib/server/store";
 import { resourceNames } from "@/lib/server/store";
+import { uploadFormFile } from "@/lib/server/uploads";
 import type { Permission } from "@/lib/types";
 
 const readPermissions: Partial<Record<ResourceName, Permission[]>> = {
@@ -72,6 +73,8 @@ export async function requireApiPermission(permission: Permission) {
 }
 
 function coerceField(key: string, value: FormDataEntryValue) {
+  if (typeof File !== "undefined" && value instanceof File) return "";
+
   const text = String(value);
   if (["is_active", "is_completed", "is_pinned", "is_read"].includes(key)) return text === "on" || text === "true" || text === "TRUE";
   if (["progress", "points"].includes(key)) return Number(text);
@@ -90,6 +93,20 @@ function coerceField(key: string, value: FormDataEntryValue) {
   return text;
 }
 
+function isNonEmptyFile(value: FormDataEntryValue): value is File {
+  return typeof File !== "undefined" && value instanceof File && value.size > 0;
+}
+
+function isEmptyFile(value: FormDataEntryValue) {
+  return typeof File !== "undefined" && value instanceof File && value.size === 0;
+}
+
+function targetFieldForUpload(key: string) {
+  if (key === "profile_photo_file") return "profile_photo";
+  if (key === "attachment_file" || key === "attachment_url_file") return "attachment_url";
+  return key.endsWith("_file") ? key.slice(0, -5) : key;
+}
+
 export async function readPayload(request: Request | NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
@@ -99,16 +116,26 @@ export async function readPayload(request: Request | NextRequest) {
   const formData = await request.formData();
   const payload: Record<string, unknown> = {};
 
-  Array.from(new Set(Array.from(formData.keys()))).forEach((key) => {
+  for (const key of Array.from(new Set(Array.from(formData.keys())))) {
     const values = formData.getAll(key);
+    const files = values.filter(isNonEmptyFile);
+
+    if (files.length > 0) {
+      const uploadUrls = await Promise.all(files.map((file) => uploadFormFile(file, key)));
+      payload[targetFieldForUpload(key)] = uploadUrls.length === 1 ? uploadUrls[0] : uploadUrls;
+      continue;
+    }
+
+    if (values.every(isEmptyFile)) continue;
+
     if (values.length > 1) {
-      payload[key] = values.map((value) => String(value)).filter(Boolean);
-      return;
+      payload[key] = values.map((value) => coerceField(key, value)).filter(Boolean);
+      continue;
     }
 
     const value = values[0];
     if (value !== undefined) payload[key] = coerceField(key, value);
-  });
+  }
 
   return payload;
 }

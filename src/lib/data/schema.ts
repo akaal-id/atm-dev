@@ -1,4 +1,4 @@
-export const googleSheetsDatabaseSchema = {
+export const appDatabaseSchema = {
   Users: [
     "user_id",
     "full_name",
@@ -26,7 +26,7 @@ export const googleSheetsDatabaseSchema = {
     "updated_at",
   ],
   Departments: ["department_id", "department_name", "leader_user_id", "created_at", "updated_at"],
-  Roles: ["role_id", "role_name", "permissions_json", "created_at", "updated_at"],
+  Roles: ["role_id", "role_name", "description", "permissions_json", "created_at", "updated_at"],
   Tasks: [
     "task_id",
     "title",
@@ -54,6 +54,8 @@ export const googleSheetsDatabaseSchema = {
     "priority",
     "status",
     "progress",
+    "notes",
+    "links",
     "deadline",
     "created_at",
     "updated_at",
@@ -115,9 +117,11 @@ export const googleSheetsDatabaseSchema = {
   Notifications: ["notification_id", "user_id", "title", "description", "type", "related_link", "is_read", "created_at"],
   Gamification_Points: ["point_id", "user_id", "source_type", "source_id", "points", "reason", "created_at"],
   Badges: ["badge_id", "badge_name", "description", "icon", "criteria_json", "created_at", "updated_at"],
-  User_Badges: ["user_badge_id", "user_id", "badge_id", "earned_at"],
-  Activity_Logs: ["log_id", "user_id", "action", "entity_type", "entity_id", "description", "created_at"],
-  Settings: ["setting_id", "setting_key", "setting_value", "setting_type", "updated_by", "updated_at"],
+  User_Badges: ["user_badge_id", "user_id", "badge_id", "earned_at", "created_at", "updated_at"],
+  Activity_Logs: ["log_id", "user_id", "action", "entity_type", "entity_id", "description", "created_at", "updated_at"],
+  Settings: ["setting_id", "setting_key", "setting_value", "setting_type", "updated_by", "created_at", "updated_at"],
 } as const;
+
+export const googleSheetsDatabaseSchema = appDatabaseSchema;
 
 export type SheetName = keyof typeof googleSheetsDatabaseSchema;

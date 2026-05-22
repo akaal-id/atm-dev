@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </p>
         </div>
         <div className={styles.featureGrid}>
-          {["RBAC", "Google Sheets", "PWA Ready"].map((item) => (
+          {["RBAC", "Supabase", "PWA Ready"].map((item) => (
             <div key={item} className={styles.feature}>
               {item}
             </div>

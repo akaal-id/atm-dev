@@ -26,6 +26,7 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Progress } from "@/components/ui/progress";
 import { StatusPill, statusTone } from "@/components/ui/status-pill";
@@ -79,6 +80,13 @@ function userName(users: User[], id: string) {
 
 function departmentName(departments: Department[], id: string) {
   return departments.find((department) => department.department_id === id)?.department_name ?? "No department";
+}
+
+function dataSourceLabel() {
+  if (process.env.ATM_DATA_MODE === "supabase") return "Supabase";
+  if (process.env.ATM_DATA_MODE === "apps_script") return "Google Apps Script";
+  if (process.env.ATM_DATA_MODE === "sheets") return "Google Sheets";
+  return "Seed fallback";
 }
 
 function visibleTasksForUser(tasks: Task[], userId: string) {
@@ -164,18 +172,20 @@ export function DashboardView(data: AppData) {
           </CardHeader>
           <CardBody className="space-y-3">
             {myTasks.slice(0, 5).map((task) => (
-              <Link key={task.task_id} href={`/tasks/${task.task_id}`} className="block rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
+              <article key={task.task_id} className="rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-slate-950">{task.title}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-500">{task.description}</p>
+                    <Link href={`/tasks/${task.task_id}`} className="font-semibold text-slate-950 transition hover:text-blue-600">
+                      {task.title}
+                    </Link>
+                    <LinkifiedText text={task.description} className="mt-1 line-clamp-2 text-sm text-slate-500" />
                   </div>
                   <StatusPill status={task.status} />
                 </div>
                 <div className="mt-4">
                   <Progress value={task.progress} label={`Due ${formatShortDate(task.due_date)}`} />
                 </div>
-              </Link>
+              </article>
             ))}
           </CardBody>
         </Card>
@@ -392,11 +402,13 @@ function CreateTaskForm({ data, title }: { data: AppData; title: string }) {
 
 function TaskCard({ task, users, compact = false }: { task: Task; users: User[]; compact?: boolean }) {
   return (
-    <Link href={`/tasks/${task.task_id}`} className="block rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-semibold text-slate-950">{task.title}</p>
-          {!compact ? <p className="mt-1 line-clamp-2 text-sm text-slate-500">{task.description}</p> : null}
+          <Link href={`/tasks/${task.task_id}`} className="font-semibold text-slate-950 transition hover:text-blue-600">
+            {task.title}
+          </Link>
+          {!compact ? <LinkifiedText text={task.description} className="mt-1 line-clamp-2 text-sm text-slate-500" /> : null}
         </div>
         <StatusPill status={task.status} />
       </div>
@@ -414,7 +426,7 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
           <Avatar key={id} name={userName(users, id)} size="sm" />
         ))}
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -431,7 +443,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-semibold tracking-normal text-slate-950">{task.title}</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{task.description}</p>
+                <LinkifiedText text={task.description} className="mt-2 max-w-3xl text-sm leading-6 text-slate-500" />
               </div>
               <StatusPill status={task.status} />
             </div>
@@ -714,7 +726,7 @@ export function LeaveRequestView(data: AppData) {
           <SectionTitle title="Submit request" />
         </CardHeader>
         <CardBody>
-          <form action="/api/resources/Leave_Requests" method="post" className="space-y-4">
+          <form action="/api/resources/Leave_Requests" method="post" encType="multipart/form-data" className="space-y-4">
             <input type="hidden" name="user_id" value={data.currentUser.user_id} />
             <Field label="Type">
               <select name="request_type" className="input">
@@ -728,7 +740,10 @@ export function LeaveRequestView(data: AppData) {
               <Field label="End"><input name="end_date" type="date" required className="input" /></Field>
             </div>
             <Field label="Reason"><textarea name="reason" required className="input min-h-28 resize-y" /></Field>
-            <Field label="Attachment URL"><input name="attachment_url" type="url" className="input" placeholder="https://" /></Field>
+            <Field label="Attachment">
+              <input name="attachment_url" type="url" className="input" placeholder="https://" />
+              <input name="attachment_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="input" />
+            </Field>
             <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Submit request</button>
           </form>
         </CardBody>
@@ -885,7 +900,7 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
               <SectionTitle title="Admin controls" />
             </CardHeader>
             <CardBody className="space-y-4">
-              <form action={`/api/resources/Users/${employee.user_id}`} method="post" className="grid gap-4 md:grid-cols-2">
+              <form action={`/api/resources/Users/${employee.user_id}`} method="post" encType="multipart/form-data" className="grid gap-4 md:grid-cols-2">
                 <Field label="Full name">
                   <input name="full_name" required className="input" defaultValue={employee.full_name} />
                 </Field>
@@ -926,8 +941,9 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
                     <option value="false">Inactive</option>
                   </select>
                 </Field>
-                <Field label="Profile photo URL">
+                <Field label="Profile photo">
                   <input name="profile_photo" type="url" className="input" defaultValue={employee.profile_photo} />
+                  <input name="profile_photo_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="input" />
                 </Field>
                 <Field label="Bio">
                   <textarea name="bio" className="input" rows={4} defaultValue={employee.bio} />
@@ -1097,7 +1113,7 @@ export function AdminView(data: AppData) {
             <SectionTitle title="System settings" />
           </CardHeader>
           <CardBody className="space-y-3">
-            <InfoTile label="Data source" value={process.env.GOOGLE_SHEETS_SPREADSHEET_ID ? "Google Sheets" : "Seed fallback"} />
+            <InfoTile label="Data source" value={dataSourceLabel()} />
             <InfoTile label="PWA" value="Manifest, service worker, offline page" />
             <InfoTile label="Security" value="HTTP-only session cookie and server RBAC" />
           </CardBody>
@@ -1144,12 +1160,19 @@ export function SettingsView(data: AppData) {
       </Card>
       <Card>
         <CardHeader>
-          <SectionTitle title="Google Sheets connection" />
+          <SectionTitle title="Database connection" />
         </CardHeader>
         <CardBody className="space-y-3">
-          <InfoTile label="Spreadsheet ID" value={process.env.GOOGLE_SHEETS_SPREADSHEET_ID ? "Configured" : "Not configured"} />
-          <InfoTile label="Service account" value={process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? "Configured" : "Not configured"} />
-          <InfoTile label="Mode" value={process.env.ATM_DATA_MODE === "seed" ? "Seed fallback" : "Auto"} />
+          <InfoTile label="Source" value={dataSourceLabel()} />
+          <InfoTile label="Supabase URL" value={process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_ID ? "Configured" : "Not configured"} />
+          <InfoTile label="Supabase secret" value={process.env.SUPABASE_SECRET_KEY ? "Configured" : "Not configured"} />
+          {process.env.ATM_DATA_MODE !== "supabase" ? (
+            <form action="/api/admin/migrate-supabase" method="post">
+              <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+                Migrate current data to Supabase
+              </button>
+            </form>
+          ) : null}
         </CardBody>
       </Card>
     </div>
@@ -1354,11 +1377,14 @@ export function InviteView(data: AppData) {
       <Card>
         <CardHeader><SectionTitle title="Invite employee" /></CardHeader>
         <CardBody>
-          <form action="/api/resources/Users" method="post" className="space-y-4">
+          <form action="/api/resources/Users" method="post" encType="multipart/form-data" className="space-y-4">
             <Field label="Full name"><input name="full_name" required className="input" /></Field>
             <Field label="Email"><input name="email" required type="email" className="input" /></Field>
             <Field label="Password"><input name="password" required minLength={8} type="password" className="input" autoComplete="new-password" /></Field>
-            <Field label="Profile photo URL"><input name="profile_photo" type="url" className="input" placeholder="https://..." /></Field>
+            <Field label="Profile photo">
+              <input name="profile_photo" type="url" className="input" placeholder="https://..." />
+              <input name="profile_photo_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="input" />
+            </Field>
             <Field label="Phone"><input name="phone" className="input" /></Field>
             <Field label="Position"><input name="position" required className="input" /></Field>
             <Field label="Bio"><textarea name="bio" className="input" rows={4} /></Field>

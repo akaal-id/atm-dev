@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { demoPassword } from "@/lib/data/seed";
 import { cleanEmptyStrings, getRecordId, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
 import { createResource, listResource } from "@/lib/server/store";
+import { UploadError } from "@/lib/server/uploads";
 
 const departmentPhraseCodes: Record<string, string> = {
   "board": "bod",
@@ -82,7 +83,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   const access = await requireApiAccess(resource, "write");
   if (access.error) return access.error;
 
-  const payload = normalizePayload(cleanEmptyStrings(await readPayload(request)));
+  let payload: Record<string, unknown>;
+  try {
+    payload = normalizePayload(cleanEmptyStrings(await readPayload(request)));
+  } catch (error) {
+    if (error instanceof UploadError) {
+      return wantsJson(request) ? NextResponse.json({ error: error.message }, { status: 400 }) : redirectBack(request);
+    }
+    throw error;
+  }
+
   const now = new Date().toISOString();
 
   if (resource === "Users") {

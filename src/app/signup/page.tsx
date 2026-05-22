@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/server/auth";
 import { listResource } from "@/lib/server/store";
+import { PasswordField } from "./password-field";
 import styles from "./signup.module.css";
 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -24,6 +25,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
 
         {params.error === "exists" ? <div className={styles.error}>An active account already exists for this email.</div> : null}
         {params.error === "invalid" ? <div className={styles.error}>Please check your signup details and use a password with at least 8 characters.</div> : null}
+        {params.error === "upload" ? <div className={styles.error}>Profile photo upload failed. Please use a JPG, PNG, WebP, or GIF under 5MB.</div> : null}
         {params.error === "oauth_email" ? <div className={styles.error}>Your social account did not provide an email address.</div> : null}
 
         {googleEnabled || appleEnabled ? (
@@ -33,33 +35,34 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           </div>
         ) : null}
 
-        <form action="/api/auth/signup" method="post" className={styles.form}>
+        <form action="/api/auth/signup" method="post" encType="multipart/form-data" className={styles.form}>
           <label className={styles.field}>
-            <span>Full name</span>
+            <span>
+              Full name <b className={styles.requiredMark}>*</b>
+            </span>
             <input name="full_name" required className="input" autoComplete="name" />
           </label>
           <label className={styles.field}>
-            <span>Email</span>
+            <span>
+              Email <b className={styles.requiredMark}>*</b>
+            </span>
             <input name="email" type="email" required className="input" autoComplete="email" />
           </label>
+          <PasswordField name="password" label="Password" autoComplete="new-password" required />
+          <PasswordField name="confirm_password" label="Confirm password" autoComplete="new-password" required />
           <label className={styles.field}>
-            <span>Password</span>
-            <input name="password" type="password" required minLength={8} className="input" autoComplete="new-password" />
-          </label>
-          <label className={styles.field}>
-            <span>Confirm password</span>
-            <input name="confirm_password" type="password" required minLength={8} className="input" autoComplete="new-password" />
-          </label>
-          <label className={styles.field}>
-            <span>Profile photo URL</span>
+            <span>Profile photo</span>
             <input name="profile_photo" type="url" className="input" placeholder="https://..." />
+            <input name="profile_photo_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="input" />
           </label>
           <label className={styles.field}>
             <span>Phone</span>
             <input name="phone" className="input" autoComplete="tel" />
           </label>
           <label className={styles.field}>
-            <span>Department</span>
+            <span>
+              Department <b className={styles.requiredMark}>*</b>
+            </span>
             <select name="department_id" required className="input" defaultValue="">
               <option value="" disabled>Select department</option>
               {departments.map((department) => (
@@ -68,6 +71,18 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
                 </option>
               ))}
             </select>
+          </label>
+          <label className={styles.field}>
+            <span>
+              Birth date <b className={styles.requiredMark}>*</b>
+            </span>
+            <input name="birthday" type="date" required className="input" />
+          </label>
+          <label className={styles.field}>
+            <span>
+              Join date <b className={styles.requiredMark}>*</b>
+            </span>
+            <input name="join_date" type="date" required className="input" />
           </label>
           <label className={styles.fieldWide}>
             <span>Bio</span>

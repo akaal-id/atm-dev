@@ -13,6 +13,8 @@ interface SignupRequestInput {
   email: string;
   password?: string;
   department_id?: string;
+  birthday?: string;
+  join_date?: string;
   phone?: string;
   profile_photo?: string;
   bio?: string;
@@ -73,6 +75,8 @@ export async function createSignupRequest(input: SignupRequestInput) {
       bio: input.bio ?? existing.bio ?? "",
       phone: input.phone ?? existing.phone ?? "",
       department_id: input.department_id ?? existing.department_id ?? "",
+      birthday: input.birthday ?? existing.birthday ?? "",
+      join_date: input.join_date ?? existing.join_date ?? "",
       position: "Pending access",
       employment_status: "Inactive",
       role_id: "employee",
@@ -106,8 +110,8 @@ export async function createSignupRequest(input: SignupRequestInput) {
     position: "Pending access",
     employment_status: "Inactive",
     role_id: "employee",
-    birthday: "",
-    join_date: "",
+    birthday: input.birthday ?? "",
+    join_date: input.join_date ?? "",
     is_active: false,
     signup_status: "pending",
     signup_provider: input.signup_provider ?? "password",
