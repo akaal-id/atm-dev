@@ -1,0 +1,49 @@
+.root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100%;
+  pointer-events: none;
+}
+
+.track {
+  height: 0.25rem;
+  width: 100%;
+  overflow: hidden;
+  background: rgb(226 232 240 / 0.8);
+}
+
+.bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, #0f172a, #2563eb, #22c55e);
+  box-shadow: 0 0 18px rgb(37 99 235 / 0.35);
+  transition:
+    transform 220ms ease,
+    opacity 180ms ease;
+}
+
+.label {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: rgb(255 255 255 / 0.94);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: #0f172a;
+  box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.visible {
+  opacity: 1;
+}

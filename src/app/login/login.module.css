@@ -1,0 +1,287 @@
+.page {
+  display: grid;
+  min-height: 100dvh;
+  background: #f8fafc;
+}
+
+.brandPanel {
+  display: none;
+  min-height: 100dvh;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #020617;
+  padding: 2.5rem;
+  color: #ffffff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logoDark,
+.logoLight {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.logoDark {
+  background: #ffffff;
+  color: #020617;
+}
+
+.logoLight {
+  background: #020617;
+  color: #ffffff;
+}
+
+.brandName {
+  font-weight: 700;
+}
+
+.brandSubtext {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.heroCopy {
+  max-width: 36rem;
+}
+
+.eyebrow {
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #93c5fd;
+}
+
+.heroTitle {
+  margin-top: 1.25rem;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.heroText {
+  margin-top: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  color: #cbd5e1;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.feature {
+  border-radius: 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.05);
+  padding: 1rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.formPanel {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgb(203 213 225 / 0.7);
+}
+
+.mobileLogo {
+  display: block;
+}
+
+.formIntro {
+  margin-top: 1.5rem;
+}
+
+.formEyebrow {
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.formTitle {
+  margin-top: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #020617;
+}
+
+.formText {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: #64748b;
+}
+
+.error {
+  margin-top: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #be123c;
+}
+
+.success {
+  margin-top: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.socialGrid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.socialButton {
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.socialButton:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.form {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.submit {
+  height: 2.75rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  background: #020617;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  transition: background 150ms ease;
+}
+
+.submit:hover {
+  background: #1e293b;
+}
+
+.demoBox {
+  margin-top: 1.25rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.requestText {
+  margin-top: 1rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.requestText a {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.demoTitle {
+  font-weight: 700;
+  color: #020617;
+}
+
+.demoLine {
+  margin-top: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .formPanel {
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .card {
+    padding: 2rem;
+  }
+
+  .socialGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .page {
+    grid-template-columns: 1fr 34rem;
+  }
+
+  .brandPanel {
+    display: flex;
+  }
+
+  .mobileLogo {
+    display: none;
+  }
+
+  .formIntro {
+    margin-top: 0;
+  }
+}

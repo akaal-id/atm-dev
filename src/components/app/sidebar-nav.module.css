@@ -1,0 +1,157 @@
+.sidebar {
+  display: none;
+  min-height: 100dvh;
+  width: 18rem;
+  flex-shrink: 0;
+  flex-direction: column;
+  border-right: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.brandBlock {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 1.25rem;
+}
+
+.brandLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #020617;
+  font-size: 0.875rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.brandName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #020617;
+}
+
+.brandSubtext {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0.75rem;
+}
+
+.navGroup {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.adminGroup {
+  margin-top: 1.5rem;
+}
+
+.groupLabel {
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.adminLinks {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.link {
+  display: flex;
+  height: 2.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.link:hover {
+  background: #f8fafc;
+  color: #020617;
+}
+
+.activePrimary,
+.activePrimary:hover {
+  background: #020617;
+  color: #ffffff;
+}
+
+.activeAdmin,
+.activeAdmin:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.profileBlock {
+  border-top: 1px solid #f1f5f9;
+  padding: 1rem;
+}
+
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  padding: 0.75rem;
+}
+
+.profileText {
+  min-width: 0;
+}
+
+.profileName,
+.profileRole {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #020617;
+}
+
+.profileRole {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+  }
+}

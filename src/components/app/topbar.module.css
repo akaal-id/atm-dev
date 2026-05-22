@@ -1,0 +1,257 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid #e2e8f0;
+  background: rgb(248 250 252 / 0.95);
+  padding: 0.75rem 1rem;
+  backdrop-filter: blur(12px);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #020617;
+}
+
+.description {
+  display: none;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search {
+  display: none;
+  height: 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.searchInput {
+  width: 12rem;
+  background: transparent;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #94a3b8;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.notificationButton {
+  position: relative;
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+  transition:
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.notificationButton:hover {
+  border-color: #cbd5e1;
+  color: #020617;
+}
+
+.count {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  display: flex;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #2563eb;
+  padding: 0 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.details {
+  position: relative;
+}
+
+.summary {
+  display: flex;
+  height: 2.5rem;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 0 0.5rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.chevron {
+  display: none;
+  width: 1rem;
+  height: 1rem;
+  color: #94a3b8;
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  width: min(20rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 20px 25px -5px rgb(15 23 42 / 0.1);
+}
+
+.userInfo {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 1rem;
+}
+
+.userName {
+  font-weight: 700;
+  color: #020617;
+}
+
+.userEmail {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.notificationList {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  display: block;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 1rem;
+  transition: background 150ms ease;
+}
+
+.notificationItem:hover {
+  background: #f8fafc;
+}
+
+.notificationTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #020617;
+}
+
+.notificationText {
+  margin-top: 0.25rem;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.logoutForm {
+  border-top: 1px solid #f1f5f9;
+  padding: 0.5rem;
+}
+
+.logoutButton {
+  display: flex;
+  width: 100%;
+  height: 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.logoutButton:hover {
+  background: #f8fafc;
+  color: #020617;
+}
+
+@media (min-width: 640px) {
+  .header {
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .actions {
+    gap: 0.75rem;
+  }
+
+  .chevron {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  .description,
+  .search {
+    display: flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}

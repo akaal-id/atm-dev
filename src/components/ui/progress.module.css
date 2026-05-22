@@ -1,0 +1,27 @@
+.root {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.track {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #f1f5f9;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 9999px;
+  background: #020617;
+  transition: width 180ms ease;
+}

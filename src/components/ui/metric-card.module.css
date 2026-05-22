@@ -1,0 +1,62 @@
+.content {
+  display: flex;
+  min-height: 8rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.value {
+  margin-top: 0.75rem;
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 2.25rem;
+  letter-spacing: 0;
+  color: #020617;
+}
+
+.detail {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.iconWrap {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+}
+
+.dark {
+  background: #020617;
+  color: #ffffff;
+}
+
+.blue {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.green {
+  background: #059669;
+  color: #ffffff;
+}
+
+.yellow {
+  background: #fbbf24;
+  color: #020617;
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}

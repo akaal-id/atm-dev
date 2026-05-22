@@ -1,0 +1,174 @@
+.page {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.card,
+.cardCompact {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 20px 25px -5px rgb(203 213 225 / 0.7);
+}
+
+.card {
+  max-width: 46rem;
+  padding: 1.5rem;
+}
+
+.cardCompact {
+  max-width: 30rem;
+  padding: 1.5rem;
+}
+
+.logo {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: #020617;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.eyebrow {
+  margin-top: 1.5rem;
+  color: #2563eb;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 0.5rem;
+  color: #020617;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.text,
+.footerText {
+  margin-top: 0.75rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.footerText a {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.error {
+  margin-top: 1rem;
+  border: 1px solid #fecdd3;
+  border-radius: 0.5rem;
+  background: #fff1f2;
+  padding: 0.75rem;
+  color: #be123c;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.socialGrid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.socialButton,
+.secondaryLink {
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.socialButton:hover,
+.secondaryLink:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.form,
+.formSingle {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.field,
+.fieldWide {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.field span,
+.fieldWide span {
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.submit,
+.submitLink {
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #020617;
+  padding: 0 1rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  transition: background 150ms ease;
+}
+
+.submit:hover,
+.submitLink:hover {
+  background: #1e293b;
+}
+
+.actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .card,
+  .cardCompact {
+    padding: 2rem;
+  }
+
+  .socialGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fieldWide,
+  .submit,
+  .footerText {
+    grid-column: 1 / -1;
+  }
+}

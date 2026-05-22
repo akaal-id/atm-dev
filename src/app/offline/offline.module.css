@@ -1,0 +1,62 @@
+.page {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 20px 25px -5px rgb(203 213 225 / 0.7);
+}
+
+.logo {
+  margin: 0 auto;
+  display: flex;
+  width: 3.5rem;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #020617;
+  font-size: 0.875rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.title {
+  margin-top: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #020617;
+}
+
+.text {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: #64748b;
+}
+
+.link {
+  margin-top: 1.5rem;
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background: #020617;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+}

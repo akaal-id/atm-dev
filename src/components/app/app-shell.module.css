@@ -1,0 +1,43 @@
+.shell {
+  min-height: 100dvh;
+  background: #f8fafc;
+  color: #020617;
+}
+
+.layout {
+  display: block;
+}
+
+.content {
+  min-width: 0;
+  padding-bottom: 5rem;
+}
+
+.main {
+  width: 100%;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .main {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    display: flex;
+  }
+
+  .content {
+    flex: 1;
+    padding-bottom: 0;
+  }
+
+  .main {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}
