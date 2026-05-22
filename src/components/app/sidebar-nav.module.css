@@ -4,13 +4,18 @@
   width: 18rem;
   flex-shrink: 0;
   flex-direction: column;
-  border-right: 1px solid #e2e8f0;
-  background: #ffffff;
+  border-right: 1px solid #1f2937;
+  background: #090b1b;
+  position:sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
 }
 
 .brandBlock {
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #1f2937;
   padding: 1.25rem;
+  background: #090b1b;
 }
 
 .brandLink {
@@ -26,7 +31,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  background: #020617;
+  background: #090b1b;
   font-size: 0.875rem;
   font-weight: 900;
   color: #ffffff;
@@ -35,13 +40,13 @@
 .brandName {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #020617;
+  color: #ffffff;
 }
 
 .brandSubtext {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .nav {
@@ -83,21 +88,21 @@
   padding: 0 0.75rem;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #475569;
+  color: #94a3b8;
   transition:
     background 150ms ease,
     color 150ms ease;
 }
 
 .link:hover {
-  background: #f8fafc;
-  color: #020617;
+  background: #1f2937;
+  color: #ffffff;
 }
 
 .activePrimary,
 .activePrimary:hover {
-  background: #020617;
-  color: #ffffff;
+  background: #1f2937;
+  color: #ae5eff;
 }
 
 .activeAdmin,
@@ -112,7 +117,7 @@
 }
 
 .profileBlock {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #1f2937;
   padding: 1rem;
 }
 
@@ -121,7 +126,7 @@
   align-items: center;
   gap: 0.75rem;
   border-radius: 0.5rem;
-  background: #f8fafc;
+  background: #1f2937;
   padding: 0.75rem;
 }
 
@@ -139,13 +144,13 @@
 .profileName {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #020617;
+  color: #ffffff;
 }
 
 .profileRole {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 @media (min-width: 1024px) {

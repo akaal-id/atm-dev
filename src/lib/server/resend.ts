@@ -72,7 +72,7 @@ export async function sendNotificationEmail(notification: AppNotification, user?
     to: user.email,
     subject: notification.title,
     html: `
-      <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#0f172a">
+      <div style="font-family:Plus Jakarta Sans, sans-serif;line-height:1.6;color:#0f172a">
         <h1 style="font-size:20px;margin:0 0 12px">Akaal Team Management</h1>
         <p style="font-size:16px;margin:0 0 12px"><strong>${title}</strong></p>
         <p style="margin:0 0 20px;color:#475569">${description}</p>

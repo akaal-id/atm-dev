@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { demoPassword } from "@/lib/data/seed";
 import { cleanEmptyStrings, getRecordId, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
+import { notifyApproversAboutLeaveRequest } from "@/lib/server/leave-requests";
 import { createResource, listResource } from "@/lib/server/store";
+import type { LeaveRequest, User } from "@/lib/types";
 import { UploadError } from "@/lib/server/uploads";
 
 const departmentPhraseCodes: Record<string, string> = {
@@ -148,6 +150,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
 
   const record = await createResource(resource, payload as never);
   const entityId = getRecordId(record as unknown as Record<string, unknown>, resource);
+
+  if (resource === "Leave_Requests") {
+    const users = await listResource("Users");
+    const requester = users.find((user) => user.user_id === String(payload.user_id ?? access.user.user_id)) as User | undefined;
+    if (requester) {
+      await notifyApproversAboutLeaveRequest(record as LeaveRequest, requester);
+    }
+  }
 
   if (resource === "Tasks" && Array.isArray(payload.assigned_to)) {
     await Promise.all(

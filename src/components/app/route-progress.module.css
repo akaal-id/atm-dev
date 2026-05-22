@@ -44,6 +44,10 @@
   opacity: 0;
 }
 
+.hidden .label {
+  visibility: hidden;
+}
+
 .visible {
   opacity: 1;
 }

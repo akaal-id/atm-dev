@@ -27,6 +27,14 @@ export function percent(value: number) {
   return `${Math.max(0, Math.min(100, Math.round(value)))}%`;
 }
 
+export function isNumericDisplay(value: unknown) {
+  if (typeof value === "number") return true;
+  if (typeof value !== "string") return false;
+  const text = value.trim();
+  if (!text) return false;
+  return /^[\d%.,+\-:/\s]+$/.test(text);
+}
+
 export function initials(name: string) {
   return name
     .split(" ")

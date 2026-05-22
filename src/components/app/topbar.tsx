@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { NotificationLink } from "@/components/app/notification-actions";
 import { AppIcon } from "@/components/app/icons";
 import { Avatar } from "@/components/ui/avatar";
 import { pageCopy } from "@/lib/navigation";
@@ -26,6 +27,9 @@ function getCopy(pathname: string) {
 export function Topbar({ user, unreadCount, recentNotifications }: TopbarProps) {
   const pathname = usePathname();
   const copy = getCopy(pathname);
+  const previewNotifications = [...recentNotifications]
+    .sort((left, right) => Number(left.is_read) - Number(right.is_read) || new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
+    .slice(0, 3);
 
   return (
     <header className={styles.header}>
@@ -58,13 +62,25 @@ export function Topbar({ user, unreadCount, recentNotifications }: TopbarProps) 
                 <p className={styles.userEmail}>{user.email}</p>
               </div>
               <div className={styles.notificationList}>
-                {recentNotifications.slice(0, 3).map((notification) => (
-                  <Link key={notification.notification_id} href={notification.related_link || "/notifications"} className={styles.notificationItem}>
-                    <p className={styles.notificationTitle}>{notification.title}</p>
-                    <p className={styles.notificationText}>{notification.description}</p>
-                  </Link>
-                ))}
+                {previewNotifications.length === 0 ? (
+                  <p className={styles.notificationEmpty}>No notifications yet.</p>
+                ) : (
+                  previewNotifications.map((notification) => (
+                    <NotificationLink
+                      key={notification.notification_id}
+                      notification={notification}
+                      href={notification.related_link || "/notifications"}
+                      className={notification.is_read ? styles.notificationItem : `${styles.notificationItem} ${styles.notificationItemUnread}`}
+                    >
+                      <p className={styles.notificationTitle}>{notification.title}</p>
+                      <p className={styles.notificationText}>{notification.description}</p>
+                    </NotificationLink>
+                  ))
+                )}
               </div>
+              <Link href="/notifications" className={styles.notificationFooter}>
+                View all notifications
+              </Link>
               <form action="/api/auth/logout" method="post" className={styles.logoutForm}>
                 <button className={styles.logoutButton}>
                   <AppIcon name="LogOut" className={styles.icon} />

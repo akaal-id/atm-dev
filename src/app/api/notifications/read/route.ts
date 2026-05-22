@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { readPayload, redirectBack, requireApiPermission, wantsJson } from "@/lib/server/api";
@@ -8,15 +9,20 @@ export async function POST(request: NextRequest) {
   if (access.error) return access.error;
 
   const payload = await readPayload(request);
-  const notificationId = String(payload.notification_id ?? "");
+  const notificationId = String(payload.notification_id ?? "").trim();
   const notifications = await listResource("Notifications");
   const mine = notifications.filter((notification) => notification.user_id === access.user.user_id);
-
-  await Promise.all(
-    mine
-      .filter((notification) => !notificationId || notification.notification_id === notificationId)
-      .map((notification) => updateResource("Notifications", notification.notification_id, { is_read: true })),
+  const toMark = mine.filter(
+    (notification) =>
+      !notification.is_read && (!notificationId || notification.notification_id === notificationId),
   );
 
-  return wantsJson(request) ? NextResponse.json({ ok: true }) : redirectBack(request, "/notifications");
+  await Promise.all(
+    toMark.map((notification) => updateResource("Notifications", notification.notification_id, { is_read: true })),
+  );
+
+  revalidatePath("/dashboard", "layout");
+
+  const body = { ok: true, updated: toMark.length };
+  return wantsJson(request) ? NextResponse.json(body) : redirectBack(request, "/notifications");
 }

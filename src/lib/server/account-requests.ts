@@ -226,7 +226,7 @@ async function sendRequestReceivedEmail(user: User) {
     to: user.email,
     from: onboardingFromEmail(),
     subject: "Your ATM account request was received",
-    html: `<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#0f172a"><h1 style="font-size:20px">Akaal Team Management</h1><p>Hi ${name}, your account request has been sent to the admin team.</p><p>You will receive a verification key after an admin approves your request.</p></div>`,
+    html: `<div style="font-family:Plus Jakarta Sans, sans-serif;line-height:1.6;color:#0f172a"><h1 style="font-size:20px">Akaal Team Management</h1><p>Hi ${name}, your account request has been sent to the admin team.</p><p>You will receive a verification key after an admin approves your request.</p></div>`,
     text: `Hi ${user.full_name}, your ATM account request has been sent to the admin team. You will receive a verification key after an admin approves your request.`,
   });
 }
@@ -239,7 +239,7 @@ async function sendVerificationKeyEmail(user: User, key: string) {
     to: user.email,
     from: onboardingFromEmail(),
     subject: "Your ATM verification key",
-    html: `<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#0f172a"><h1 style="font-size:20px">Akaal Team Management</h1><p>Hi ${name}, your account request was approved.</p><p style="font-size:24px;font-weight:800;letter-spacing:0.18em">${key}</p><p>Submit this key to activate your account.</p><p><a href="${verifyUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700">Verify account</a></p></div>`,
+    html: `<div style="font-family:Plus Jakarta Sans, sans-serif;line-height:1.6;color:#0f172a"><h1 style="font-size:20px">Akaal Team Management</h1><p>Hi ${name}, your account request was approved.</p><p style="font-family:Geist Mono, ui-monospace, monospace;font-size:24px;font-weight:800;letter-spacing:0.18em">${key}</p><p>Submit this key to activate your account.</p><p><a href="${verifyUrl}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px;font-weight:700">Verify account</a></p></div>`,
     text: `Hi ${user.full_name}, your ATM account request was approved. Verification key: ${key}. Verify here: ${appUrl("/verify")}`,
   });
 }
@@ -252,7 +252,7 @@ async function sendRejectedEmail(user: User, reason: string) {
     to: user.email,
     from: onboardingFromEmail(),
     subject: "Your ATM account request was not approved",
-    html: `<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#0f172a"><h1 style="font-size:20px">Akaal Team Management</h1><p>Hi ${name}, your account request was not approved.</p><p>${safeReason}</p></div>`,
+    html: `<div style="font-family:Plus Jakarta Sans, sans-serif;line-height:1.6;color:#0f172a"><h1 style="font-size:20px">Akaal Team Management</h1><p>Hi ${name}, your account request was not approved.</p><p>${safeReason}</p></div>`,
     text: `Hi ${user.full_name}, your ATM account request was not approved. ${reason || "Please contact your team admin for details."}`,
   });
 }

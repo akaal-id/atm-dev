@@ -5,6 +5,7 @@ import { googleSheetsDatabaseSchema, type SheetName } from "@/lib/data/schema";
 import { appendAppsScriptRow, deleteAppsScriptRow, isAppsScriptConfigured, readAppsScriptSheet, updateAppsScriptRow } from "@/lib/server/apps-script";
 import { appendSheetRow, isGoogleSheetsConfigured, readSheet, updateSheetRow } from "@/lib/server/google-sheets";
 import { sendNotificationEmail } from "@/lib/server/resend";
+import { normalizeSupabaseRecords } from "@/lib/server/normalize-records";
 import {
   deleteSupabaseResource,
   insertSupabaseResource,
@@ -95,7 +96,7 @@ export function getResourceIdField(resource: ResourceName) {
 export async function listResource<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
   if (shouldUseSupabase()) {
     const rows = await readSupabaseResource(resource);
-    return rows as unknown as ResourceItem<R>[];
+    return normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
   }
 
   if (shouldUseAppsScript()) {

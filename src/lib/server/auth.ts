@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 
-import { departments, roles } from "@/lib/data/seed";
+import { departments as seedDepartments, roles as seedRoles } from "@/lib/data/seed";
 import { hasPermission } from "@/lib/permissions";
 import { authOptions } from "@/lib/server/next-auth-options";
 import { listResource } from "@/lib/server/store";
@@ -84,12 +84,17 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await getSession();
   if (!session) return null;
 
-  const users = await listResource("Users");
+  const [users, departments, roles] = await Promise.all([
+    listResource("Users"),
+    listResource("Departments"),
+    listResource("Roles"),
+  ]);
   const user = users.find((candidate) => candidate.user_id === session.userId && candidate.is_active);
   if (!user) return null;
 
-  const role = roles.find((candidate) => candidate.role_id === user.role_id) ?? roles[roles.length - 1];
-  const department = departments.find((candidate) => candidate.department_id === user.department_id) ?? departments[0];
+  const role = roles.find((candidate) => candidate.role_id === user.role_id) ?? seedRoles[seedRoles.length - 1];
+  const department =
+    departments.find((candidate) => candidate.department_id === user.department_id) ?? seedDepartments[0];
   const { password_hash_or_auth_id: passwordHash, ...safeUser } = user;
   void passwordHash;
 

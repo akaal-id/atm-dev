@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { markNavigation } from "@/lib/safe-router-refresh";
 import styles from "./route-progress.module.css";
 
 function isSameOriginNavigation(target: EventTarget | null) {
@@ -31,6 +32,9 @@ export function RouteProgress() {
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const visibleRef = useRef(visible);
+
+  visibleRef.current = visible;
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) window.clearInterval(timerRef.current);
@@ -54,7 +58,7 @@ export function RouteProgress() {
   }, [clearTimers]);
 
   const finish = useCallback(() => {
-    if (!visible) return;
+    if (!visibleRef.current) return;
     if (timerRef.current) window.clearInterval(timerRef.current);
     timerRef.current = null;
     setProgress(100);
@@ -62,7 +66,7 @@ export function RouteProgress() {
       setVisible(false);
       setProgress(100);
     }, 280);
-  }, [visible]);
+  }, []);
 
   useEffect(() => {
     const startTimer = window.setTimeout(() => {
@@ -84,10 +88,16 @@ export function RouteProgress() {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      if (isSameOriginNavigation(event.target)) start();
+      if (isSameOriginNavigation(event.target)) {
+        markNavigation();
+        start();
+      }
     };
 
-    const handleSubmit = () => start();
+    const handleSubmit = () => {
+      markNavigation();
+      start();
+    };
 
     window.addEventListener("click", handleClick, true);
     window.addEventListener("submit", handleSubmit, true);
@@ -100,6 +110,7 @@ export function RouteProgress() {
   }, [clearTimers, start]);
 
   useEffect(() => {
+    markNavigation();
     const timer = window.setTimeout(() => finish(), 0);
     return () => window.clearTimeout(timer);
   }, [finish, pathname, searchParams]);
@@ -111,7 +122,9 @@ export function RouteProgress() {
       <div className={styles.track}>
         <div className={styles.bar} style={{ transform: `scaleX(${scale})` }} />
       </div>
-      {visible ? <div className={styles.label}>{Math.round(progress)}%</div> : null}
+      <div className={styles.label} aria-hidden={!visible}>
+        {Math.round(progress)}%
+      </div>
     </div>
   );
 }

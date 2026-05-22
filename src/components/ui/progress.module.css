@@ -12,6 +12,11 @@
   color: #64748b;
 }
 
+.meta span:last-child {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
 .track {
   height: 0.5rem;
   overflow: hidden;

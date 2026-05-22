@@ -1,14 +1,43 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, useEffect, useRef } from "react";
+
+import { markNavigation, scheduleRouterRefresh } from "@/lib/safe-router-refresh";
 
 export function LiveRefresh({ interval = 30000 }: { interval?: number }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const refreshingRef = useRef(false);
 
   useEffect(() => {
-    const timer = window.setInterval(() => router.refresh(), interval);
-    return () => window.clearInterval(timer);
+    markNavigation();
+  }, [pathname]);
+
+  useEffect(() => {
+    const refreshInterval = process.env.NODE_ENV === "development" ? Math.max(interval, 120000) : interval;
+
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || refreshingRef.current) return;
+      refreshingRef.current = true;
+      startTransition(() => {
+        scheduleRouterRefresh(router);
+      });
+      window.setTimeout(() => {
+        refreshingRef.current = false;
+      }, 5000);
+    };
+
+    const timer = window.setInterval(refresh, refreshInterval);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [interval, router]);
 
   return null;

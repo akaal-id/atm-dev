@@ -11,7 +11,9 @@ import styles from "./app-shell.module.css";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const notifications = (await listResource("Notifications")).filter((notification) => notification.user_id === user.user_id);
+  const notifications = (await listResource("Notifications"))
+    .filter((notification) => notification.user_id === user.user_id)
+    .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
   const visiblePrimary = primaryNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleAdmin = adminNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleBottom = bottomNavigation.filter((item) => hasPermission(user.role_id, item.permission));

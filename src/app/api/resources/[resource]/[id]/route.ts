@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { hasPermission } from "@/lib/permissions";
 import { cleanEmptyStrings, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
 import { createResource, deleteResource, getResourceById, updateResource } from "@/lib/server/store";
 import { UploadError } from "@/lib/server/uploads";
@@ -40,6 +41,12 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
   if (access.error) return access.error;
 
   const patch = normalizePayload(cleanEmptyStrings(payload));
+  if (resource === "Leave_Requests" && (patch.status !== undefined || patch.approved_by !== undefined || patch.approval_note !== undefined)) {
+    if (!hasPermission(access.user.role_id, "attendance:approve")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
   if (resource === "Tasks" && patch.status === "Done") {
     patch.completed_at = new Date().toISOString();
     patch.progress ??= 100;

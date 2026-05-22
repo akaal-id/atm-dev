@@ -23,6 +23,8 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
+import { Page, ScrollRow } from "@/components/app/page-layout";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -30,7 +32,28 @@ import { LinkifiedText } from "@/components/ui/linkified-text";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Progress } from "@/components/ui/progress";
 import { StatusPill, statusTone } from "@/components/ui/status-pill";
-import { attendanceStatuses, employeeStatusOptions, projectStatuses, taskStatuses } from "@/lib/permissions";
+import {
+  activeTasks,
+  activeUsers,
+  announcementsForUser,
+  attendanceLateCount,
+  completedTasks,
+  currentWeekRange,
+  directoryUsers,
+  getClockStatus,
+  getTodayAttendance,
+  jakartaToday,
+  latestAnnouncementLabel,
+  pendingLeaveRequests,
+  taskCompletionRate,
+  tasksDueOnDate,
+  teamAttendanceRateThisWeek,
+  upcomingBirthdays,
+  userAttendanceRateThisWeek,
+  visibleTasksForUser,
+  clampProgress,
+} from "@/lib/metrics";
+import { attendanceStatuses, employeeStatusOptions, hasPermission, projectStatuses, taskStatuses } from "@/lib/permissions";
 import type {
   ActivityLog,
   Announcement,
@@ -51,7 +74,7 @@ import type {
   User,
   UserBadge,
 } from "@/lib/types";
-import { cn, formatDate, formatShortDate, groupBy, percent } from "@/lib/utils";
+import { cn, formatDate, formatShortDate, groupBy, isNumericDisplay, percent } from "@/lib/utils";
 
 export type AppData = {
   currentUser: CurrentUser;
@@ -89,8 +112,12 @@ function dataSourceLabel() {
   return "Seed fallback";
 }
 
-function visibleTasksForUser(tasks: Task[], userId: string) {
-  return tasks.filter((task) => task.assigned_to.includes(userId));
+function supabaseConfigLabel() {
+  return process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_ID ? "Configured" : "Not configured";
+}
+
+function supabaseSecretLabel() {
+  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY ? "Configured" : "Not configured";
 }
 
 function scoreForUser(points: GamificationPoint[], userId: string) {
@@ -117,9 +144,9 @@ function leaderboardRows(data: Pick<AppData, "users" | "points" | "badges" | "us
 
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h2 className="text-base font-semibold tracking-normal text-slate-950">{title}</h2>
-      {action}
+    <div className="flex min-w-0 items-center justify-between gap-3">
+      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
@@ -128,17 +155,84 @@ function EmptyState({ label }: { label: string }) {
   return <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-medium text-slate-500">{label}</div>;
 }
 
+function LeaveApprovalActions({ requestId, canApprove, status }: { requestId: string; canApprove: boolean; status: string }) {
+  if (!canApprove || status !== "Pending Approval") return null;
+
+  return (
+    <div className="mt-4 grid gap-2 lg:min-w-80 lg:grid-cols-2">
+      <form action={`/api/admin/leave-requests/${requestId}`} method="post" className="grid gap-2">
+        <input type="hidden" name="intent" value="approve" />
+        <input name="approval_note" className="input" placeholder="Approval note (optional)" />
+        <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+          <CheckCircle2 className="h-4 w-4" />
+          Approve
+        </button>
+      </form>
+      <form action={`/api/admin/leave-requests/${requestId}`} method="post" className="grid gap-2">
+        <input type="hidden" name="intent" value="reject" />
+        <input name="approval_note" className="input" placeholder="Reason for rejection" />
+        <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50">
+          <XCircle className="h-4 w-4" />
+          Reject
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function LeaveRequestCard({
+  request,
+  users,
+  canApprove,
+}: {
+  request: LeaveRequest;
+  users: User[];
+  canApprove: boolean;
+}) {
+  const approverName = request.approved_by ? userName(users, request.approved_by) : "";
+
+  return (
+    <div className="rounded-lg border border-slate-200 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold text-slate-950">{userName(users, request.user_id)}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {request.request_type} from {formatShortDate(request.start_date)} to {formatShortDate(request.end_date)}
+          </p>
+        </div>
+        <StatusPill status={request.status} />
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">{request.reason}</p>
+      {request.attachment_url ? (
+        <a href={request.attachment_url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-blue-600">
+          View attachment
+        </a>
+      ) : null}
+      {request.approval_note ? (
+        <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+          <span className="font-semibold text-slate-950">{request.status === "Approved" ? "Approval note" : "Rejection note"}:</span> {request.approval_note}
+          {approverName ? <span className="mt-1 block text-xs font-medium text-slate-400">By {approverName}</span> : null}
+        </p>
+      ) : null}
+      <LeaveApprovalActions requestId={request.request_id} canApprove={canApprove} status={request.status} />
+    </div>
+  );
+}
+
 function DataToolbar({ tabs }: { tabs: string[] }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex max-w-full overflow-x-auto rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
         {tabs.map((tab, index) => (
-          <button key={tab} className={cn("h-9 rounded-md px-3 text-sm font-semibold text-slate-500", index === 0 && "bg-slate-950 text-white")}>
+          <button
+            key={tab}
+            className={cn("h-9 shrink-0 whitespace-nowrap rounded-md px-3 text-sm font-semibold text-slate-500", index === 0 && "bg-slate-950 text-white")}
+          >
             {tab}
           </button>
         ))}
       </div>
-      <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300">
+      <button className="inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300">
         <Filter className="h-4 w-4" />
         Filter
       </button>
@@ -148,30 +242,48 @@ function DataToolbar({ tabs }: { tabs: string[] }) {
 
 export function DashboardView(data: AppData) {
   const myTasks = visibleTasksForUser(data.tasks, data.currentUser.user_id);
-  const completedTasks = myTasks.filter((task) => task.status === "Done" || task.status === "Approved");
-  const pendingApprovals = data.leaveRequests.filter((request) => request.status === "Pending Approval");
+  const myActiveTasks = activeTasks(myTasks);
+  const myCompletedTasks = completedTasks(myTasks);
+  const dueToday = tasksDueOnDate(myActiveTasks, jakartaToday());
+  const canApproveLeave = hasPermission(data.currentUser.role_id, "attendance:approve");
+  const pendingApprovals = pendingLeaveRequests(data.leaveRequests, canApproveLeave ? { approverView: true } : { userId: data.currentUser.user_id });
+  const attendanceRate = teamAttendanceRateThisWeek(data.attendance, data.users);
+  const weekRange = currentWeekRange();
   const unread = data.notifications.filter((notification) => notification.user_id === data.currentUser.user_id && !notification.is_read);
-  const upcomingEvents = data.calendarEvents.slice(0, 4);
+  const upcomingEvents = [...data.calendarEvents]
+    .sort((left, right) => left.start_date.localeCompare(right.start_date))
+    .slice(0, 4);
   const leaderboard = leaderboardRows(data).slice(0, 4);
-  const todayMonthDay = new Intl.DateTimeFormat("en-CA", { month: "2-digit", day: "2-digit", timeZone: "Asia/Jakarta" }).format(new Date());
-  const birthdays = data.users.filter((user) => user.birthday.slice(5) === todayMonthDay || user.birthday.slice(5) > todayMonthDay).slice(0, 3);
+  const birthdays = upcomingBirthdays(data.users, 30).slice(0, 3);
 
   return (
-    <div className="space-y-5">
+    <Page>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Today tasks" value={String(myTasks.length)} detail={`${completedTasks.length} completed or approved`} icon={CheckSquare} tone="dark" />
-        <MetricCard label="Attendance" value="96%" detail="Team attendance this week" icon={CalendarCheck} tone="green" />
-        <MetricCard label="Approvals" value={String(pendingApprovals.length)} detail="Pending attendance requests" icon={ShieldCheck} tone="yellow" />
+        <MetricCard
+          label="Active tasks"
+          value={String(myActiveTasks.length)}
+          detail={`${dueToday.length} due today · ${myCompletedTasks.length} completed`}
+          icon={CheckSquare}
+          tone="dark"
+        />
+        <MetricCard label="Attendance" value={`${attendanceRate}%`} detail={`Team checked-in this week (${weekRange.start} to ${weekRange.end})`} icon={CalendarCheck} tone="green" />
+        <MetricCard
+          label="Approvals"
+          value={String(pendingApprovals.length)}
+          detail={canApproveLeave ? "Leave requests awaiting approval" : "Your leave requests pending"}
+          icon={ShieldCheck}
+          tone="yellow"
+        />
         <MetricCard label="Unread" value={String(unread.length)} detail="Mentions and reminders" icon={Bell} tone="blue" />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1.4fr_0.9fr]">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
         <Card>
           <CardHeader>
             <SectionTitle title="Today focus" action={<Link href="/tasks/my" className="text-sm font-semibold text-blue-600">Open tasks</Link>} />
           </CardHeader>
           <CardBody className="space-y-3">
-            {myTasks.slice(0, 5).map((task) => (
+            {myActiveTasks.slice(0, 5).map((task) => (
               <article key={task.task_id} className="rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -183,14 +295,14 @@ export function DashboardView(data: AppData) {
                   <StatusPill status={task.status} />
                 </div>
                 <div className="mt-4">
-                  <Progress value={task.progress} label={`Due ${formatShortDate(task.due_date)}`} />
+                  <Progress value={clampProgress(task.progress)} label={`Due ${formatShortDate(task.due_date)}`} />
                 </div>
               </article>
             ))}
           </CardBody>
         </Card>
 
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <Card>
             <CardHeader>
               <SectionTitle title="Performance" action={<Trophy className="h-4 w-4 text-amber-500" />} />
@@ -204,7 +316,7 @@ export function DashboardView(data: AppData) {
                     <p className="truncate text-sm font-semibold text-slate-950">{row.user.full_name}</p>
                     <p className="text-xs text-slate-500">{row.badges[0]?.badge_name ?? "Building streak"}</p>
                   </div>
-                  <p className="text-sm font-bold text-slate-950">{row.points}</p>
+                  <p className="font-mono text-sm font-bold tabular-nums text-slate-950">{row.points}</p>
                 </div>
               ))}
             </CardBody>
@@ -260,22 +372,23 @@ export function DashboardView(data: AppData) {
           </CardBody>
         </Card>
       </div>
-    </div>
+    </Page>
   );
 }
 
 export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "team" }) {
   const tasks = scope === "my" ? visibleTasksForUser(data.tasks, data.currentUser.user_id) : data.tasks;
+  const activeTaskCount = activeTasks(tasks).length;
   const grouped = groupBy(tasks, (task) => task.status);
 
   if (scope === "team") {
     return (
-      <div className="space-y-5">
+      <Page>
         <DataToolbar tabs={["Board", "List", "Calendar", "Project"]} />
-        <div className="grid gap-5 xl:grid-cols-[1fr_24rem]">
-          <div className="grid gap-4 overflow-x-auto lg:grid-cols-4">
+        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+          <ScrollRow className="lg:grid-cols-4">
             {["To Do", "In Progress", "Waiting Approval", "Need Revision"].map((status) => (
-              <Card key={status} className="min-w-72">
+              <Card key={status} className="w-[min(100%,17.5rem)] shrink-0 snap-start lg:w-auto lg:min-w-0 lg:shrink">
                 <CardHeader>
                   <SectionTitle title={status} action={<Badge>{grouped[status]?.length ?? 0}</Badge>} />
                 </CardHeader>
@@ -287,20 +400,20 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
                 </CardBody>
               </Card>
             ))}
-          </div>
+          </ScrollRow>
           <CreateTaskForm data={data} title="Create team task" />
         </div>
-      </div>
+      </Page>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <Page>
       <DataToolbar tabs={["List", "Board", "Calendar"]} />
-      <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <Card>
           <CardHeader>
-            <SectionTitle title="Assigned to you" action={<Badge tone="blue">{tasks.length} active</Badge>} />
+            <SectionTitle title="Assigned to you" action={<Badge tone="blue">{activeTaskCount} active</Badge>} />
           </CardHeader>
           <CardBody className="space-y-3">
             {tasks.map((task) => (
@@ -313,14 +426,13 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
             <SectionTitle title="Upcoming deadlines" />
           </CardHeader>
           <CardBody className="space-y-3">
-            {tasks
-              .filter((task) => task.status !== "Done")
+            {activeTasks(tasks)
               .sort((a, b) => a.due_date.localeCompare(b.due_date))
               .slice(0, 5)
               .map((task) => (
-                <Link href={`/tasks/${task.task_id}`} key={task.task_id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">{task.title}</p>
+                <Link href={`/tasks/${task.task_id}`} key={task.task_id} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-950">{task.title}</p>
                     <p className="text-xs text-slate-500">{formatShortDate(task.due_date)}</p>
                   </div>
                   <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
@@ -330,7 +442,7 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
         </Card>
         <CreateTaskForm data={data} title="Create task" />
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -351,7 +463,7 @@ function CreateTaskForm({ data, title }: { data: AppData; title: string }) {
           <Field label="Description">
             <textarea name="description" required className="input min-h-24 resize-y" placeholder="What needs to be done?" />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Project">
               <select name="project_id" className="input">
                 <option value="">No project</option>
@@ -370,7 +482,7 @@ function CreateTaskForm({ data, title }: { data: AppData; title: string }) {
               </select>
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Due date">
               <input name="due_date" type="date" required className="input" />
             </Field>
@@ -405,7 +517,7 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
     <article className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link href={`/tasks/${task.task_id}`} className="font-semibold text-slate-950 transition hover:text-blue-600">
+          <Link href={`/tasks/${task.task_id}`} className="break-words font-semibold text-slate-950 transition hover:text-blue-600">
             {task.title}
           </Link>
           {!compact ? <LinkifiedText text={task.description} className="mt-1 line-clamp-2 text-sm text-slate-500" /> : null}
@@ -419,7 +531,7 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
         ))}
       </div>
       <div className="mt-4">
-        <Progress value={task.progress} label={`Due ${formatShortDate(task.due_date)}`} />
+        <Progress value={clampProgress(task.progress)} label={`Due ${formatShortDate(task.due_date)}`} />
       </div>
       <div className="mt-4 flex -space-x-2">
         {task.assigned_to.map((id) => (
@@ -436,20 +548,20 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
   const project = data.projects.find((candidate) => candidate.project_id === task.project_id);
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1fr_24rem]">
-      <div className="space-y-5">
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+      <div className="min-w-0 space-y-5">
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-normal text-slate-950">{task.title}</h2>
+              <div className="min-w-0">
+                <h2 className="break-words text-2xl font-semibold tracking-normal text-slate-950">{task.title}</h2>
                 <LinkifiedText text={task.description} className="mt-2 max-w-3xl text-sm leading-6 text-slate-500" />
               </div>
               <StatusPill status={task.status} />
             </div>
           </CardHeader>
           <CardBody className="space-y-5">
-            <Progress value={task.progress} />
+            <Progress value={clampProgress(task.progress)} />
             <div className="grid gap-3 sm:grid-cols-3">
               <InfoTile label="Project" value={project?.project_name ?? "No project"} />
               <InfoTile label="Due date" value={formatDate(task.due_date)} />
@@ -502,7 +614,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
         </Card>
       </div>
 
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
         <TaskUpdateForm task={task} users={data.users} />
         <Card>
           <CardHeader>
@@ -566,14 +678,14 @@ function InfoTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-200 p-4">
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 break-words text-sm font-semibold text-slate-950">{value}</p>
     </div>
   );
 }
 
 export function ProjectsView(data: AppData) {
   return (
-    <div className="space-y-5">
+    <Page>
       <DataToolbar tabs={["All", "Active", "Review", "Completed"]} />
       <div className="grid gap-4 lg:grid-cols-3">
         {data.projects.map((project) => (
@@ -589,7 +701,7 @@ export function ProjectsView(data: AppData) {
             </CardHeader>
             <CardBody className="space-y-4">
               <p className="line-clamp-3 text-sm leading-6 text-slate-600">{project.description}</p>
-              <Progress value={project.progress} label={`Deadline ${formatShortDate(project.deadline)}`} />
+              <Progress value={clampProgress(project.progress)} label={`Deadline ${formatShortDate(project.deadline)}`} />
               <div className="flex items-center justify-between">
                 <div className="flex -space-x-2">
                   {project.members.slice(0, 4).map((id) => (
@@ -602,7 +714,7 @@ export function ProjectsView(data: AppData) {
           </Card>
         ))}
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -610,9 +722,9 @@ export function CalendarView(data: AppData) {
   const grouped = groupBy(data.calendarEvents, (event) => event.start_date.slice(0, 10));
 
   return (
-    <div className="space-y-5">
+    <Page>
       <DataToolbar tabs={["Month", "Week", "Day"]} />
-      <div className="grid gap-5 xl:grid-cols-[20rem_1fr]">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
             <SectionTitle title="Categories" />
@@ -651,24 +763,57 @@ export function CalendarView(data: AppData) {
           </CardBody>
         </Card>
       </div>
-    </div>
+    </Page>
   );
 }
 
-export function AttendanceView(data: AppData) {
-  const myAttendance = data.attendance.filter((item) => item.user_id === data.currentUser.user_id);
-  const teamAttendance = data.attendance;
-  const pendingRequests = data.leaveRequests.filter((request) => request.status === "Pending Approval");
+export function AttendanceView(data: AppData & { canApproveLeave: boolean }) {
+  const todayRecord = getTodayAttendance(data.attendance, data.currentUser.user_id);
+  const clockStatus = getClockStatus(todayRecord);
+  const weekRange = currentWeekRange();
+  const pendingRequests = pendingLeaveRequests(data.leaveRequests, data.canApproveLeave ? { approverView: true } : { userId: data.currentUser.user_id });
 
   return (
-    <div className="space-y-5">
+    <Page>
       <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard label="Clock status" value={myAttendance[0]?.clock_out ? "Complete" : "Active"} detail={myAttendance[0]?.clock_in ? `Clocked in ${myAttendance[0].clock_in}` : "Ready to start"} icon={Clock3} />
-        <MetricCard label="Late records" value={String(teamAttendance.filter((item) => item.status === "Late").length)} detail="This visible period" icon={AlarmClock} tone="yellow" />
-        <MetricCard label="Requests" value={String(pendingRequests.length)} detail="Awaiting approval" icon={CalendarCheck} tone="blue" />
+        <MetricCard label="Clock status" value={clockStatus.value} detail={clockStatus.detail} icon={Clock3} />
+        <MetricCard
+          label="Late records"
+          value={String(attendanceLateCount(data.attendance, weekRange))}
+          detail={`Team late days this week (${weekRange.start} to ${weekRange.end})`}
+          icon={AlarmClock}
+          tone="yellow"
+        />
+        <MetricCard
+          label="Requests"
+          value={String(pendingRequests.length)}
+          detail={data.canApproveLeave ? "Awaiting your approval" : "Your pending leave requests"}
+          icon={CalendarCheck}
+          tone="blue"
+        />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[22rem_1fr]">
+      {data.canApproveLeave && pendingRequests.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <SectionTitle
+              title="Leave requests to review"
+              action={
+                <Link href="/attendance/request" className="text-sm font-semibold text-blue-600">
+                  Open queue
+                </Link>
+              }
+            />
+          </CardHeader>
+          <CardBody className="space-y-3">
+            {pendingRequests.map((request) => (
+              <LeaveRequestCard key={request.request_id} request={request} users={data.users} canApprove={data.canApproveLeave} />
+            ))}
+          </CardBody>
+        </Card>
+      ) : null}
+
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
             <SectionTitle title="Today actions" />
@@ -702,7 +847,7 @@ export function AttendanceView(data: AppData) {
           <CardBody className="overflow-x-auto">
             <DataTable
               headers={["Employee", "Date", "Clock in", "Clock out", "Status", "Approval"]}
-              rows={teamAttendance.map((item) => [
+              rows={data.attendance.map((item) => [
                 userName(data.users, item.user_id),
                 formatDate(item.date),
                 item.clock_in || "-",
@@ -714,13 +859,18 @@ export function AttendanceView(data: AppData) {
           </CardBody>
         </Card>
       </div>
-    </div>
+    </Page>
   );
 }
 
-export function LeaveRequestView(data: AppData) {
+export function LeaveRequestView(data: AppData & { canApproveLeave: boolean }) {
+  const pendingRequests = data.leaveRequests.filter((request) => request.status === "Pending Approval");
+  const myRequests = data.leaveRequests.filter((request) => request.user_id === data.currentUser.user_id);
+  const queueTitle = data.canApproveLeave ? "Approval queue" : "My requests";
+  const queueItems = data.canApproveLeave ? data.leaveRequests : myRequests;
+
   return (
-    <div className="grid gap-5 lg:grid-cols-[24rem_1fr]">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
       <Card>
         <CardHeader>
           <SectionTitle title="Submit request" />
@@ -735,7 +885,7 @@ export function LeaveRequestView(data: AppData) {
                 ))}
               </select>
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Start"><input name="start_date" type="date" required className="input" /></Field>
               <Field label="End"><input name="end_date" type="date" required className="input" /></Field>
             </div>
@@ -751,21 +901,23 @@ export function LeaveRequestView(data: AppData) {
 
       <Card>
         <CardHeader>
-          <SectionTitle title="Approval queue" />
+          <SectionTitle
+            title={queueTitle}
+            action={
+              data.canApproveLeave ? (
+                <Badge tone={pendingRequests.length > 0 ? "yellow" : "green"}>{pendingRequests.length} pending</Badge>
+              ) : null
+            }
+          />
         </CardHeader>
         <CardBody className="space-y-3">
-          {data.leaveRequests.map((request) => (
-            <div key={request.request_id} className="rounded-lg border border-slate-200 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-slate-950">{userName(data.users, request.user_id)}</p>
-                  <p className="mt-1 text-sm text-slate-500">{request.request_type} from {formatShortDate(request.start_date)} to {formatShortDate(request.end_date)}</p>
-                </div>
-                <StatusPill status={request.status} />
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">{request.reason}</p>
-            </div>
-          ))}
+          {queueItems.length === 0 ? (
+            <EmptyState label={data.canApproveLeave ? "No leave requests yet." : "You have not submitted any leave requests."} />
+          ) : (
+            queueItems.map((request) => (
+              <LeaveRequestCard key={request.request_id} request={request} users={data.users} canApprove={data.canApproveLeave} />
+            ))
+          )}
         </CardBody>
       </Card>
     </div>
@@ -773,14 +925,17 @@ export function LeaveRequestView(data: AppData) {
 }
 
 export function AnnouncementsView(data: AppData & { canManage: boolean }) {
+  const visibleAnnouncements = announcementsForUser(data.announcements, data.currentUser);
+  const pinnedCount = visibleAnnouncements.filter((announcement) => announcement.is_pinned).length;
+
   return (
-    <div className="grid gap-5 xl:grid-cols-[1fr_24rem]">
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <Card>
         <CardHeader>
-          <SectionTitle title="Company feed" action={<Badge tone="blue">{data.announcements.length} posts</Badge>} />
+          <SectionTitle title="Company feed" action={<Badge tone="blue">{visibleAnnouncements.length} posts</Badge>} />
         </CardHeader>
         <CardBody className="space-y-4">
-          {data.announcements.map((announcement) => (
+          {visibleAnnouncements.map((announcement) => (
             <article key={announcement.announcement_id} className="rounded-lg border border-slate-200 p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={announcement.is_pinned ? "yellow" : "blue"}>{announcement.category}</Badge>
@@ -811,8 +966,9 @@ export function AnnouncementsView(data: AppData & { canManage: boolean }) {
             </form>
           ) : (
             <div className="space-y-3">
-              <InfoTile label="Unread" value="2 announcements" />
-              <InfoTile label="Last read" value="Today" />
+              <InfoTile label="Visible posts" value={`${visibleAnnouncements.length} announcement${visibleAnnouncements.length === 1 ? "" : "s"}`} />
+              <InfoTile label="Pinned" value={`${pinnedCount} pinned`} />
+              <InfoTile label="Latest update" value={latestAnnouncementLabel(visibleAnnouncements)} />
             </div>
           )}
         </CardBody>
@@ -822,14 +978,16 @@ export function AnnouncementsView(data: AppData & { canManage: boolean }) {
 }
 
 export function EmployeesView(data: AppData) {
-  const directoryUsers = data.users.filter((user) => user.signup_status !== "rejected");
+  const employees = directoryUsers(data.users);
+  const activeEmployeeCount = activeUsers(data.users).length;
+  const birthdayCount = upcomingBirthdays(data.users, 30).length;
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard label="Active employees" value={String(data.users.filter((user) => user.is_active).length)} detail="Across all departments" icon={Users} />
+    <Page>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <MetricCard label="Active employees" value={String(activeEmployeeCount)} detail={`${employees.length} in directory`} icon={Users} />
         <MetricCard label="Departments" value={String(data.departments.length)} detail="Leader assigned teams" icon={ShieldCheck} tone="blue" />
-        <MetricCard label="Birthdays" value={String(data.users.length)} detail="Tracked in calendar" icon={Cake} tone="yellow" />
+        <MetricCard label="Birthdays" value={String(birthdayCount)} detail="Upcoming in the next 30 days" icon={Cake} tone="yellow" />
       </div>
       <Card>
         <CardHeader>
@@ -838,7 +996,7 @@ export function EmployeesView(data: AppData) {
         <CardBody className="overflow-x-auto">
           <DataTable
             headers={["Name", "Department", "Position", "Status", "Role", "Performance"]}
-            rows={directoryUsers.map((user) => [
+            rows={employees.map((user) => [
               <Link key="name" href={`/employees/${user.user_id}`} className="flex items-center gap-3 font-semibold text-slate-950"><Avatar name={user.full_name} size="sm" /> {user.full_name}</Link>,
               departmentName(data.departments, user.department_id),
               user.position,
@@ -849,23 +1007,25 @@ export function EmployeesView(data: AppData) {
           />
         </CardBody>
       </Card>
-    </div>
+    </Page>
   );
 }
 
 export function EmployeeProfileView({ data, employee }: { data: AppData; employee: User }) {
   const employeeTasks = visibleTasksForUser(data.tasks, employee.user_id);
   const employeeAttendance = data.attendance.filter((item) => item.user_id === employee.user_id);
+  const employeeDoneTasks = completedTasks(employeeTasks);
+  const weekAttendanceRate = userAttendanceRateThisWeek(data.attendance, employee.user_id);
   const score = scoreForUser(data.points, employee.user_id);
   const canManageEmployees = data.currentUser.role.permissions_json.includes("employees:manage");
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[22rem_1fr]">
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
       <Card>
         <CardBody className="space-y-5">
           <div className="flex flex-col items-center text-center">
             <Avatar name={employee.full_name} image={employee.profile_photo} size="lg" />
-            <h2 className="mt-4 text-xl font-semibold tracking-normal text-slate-950">{employee.full_name}</h2>
+            <h2 className="mt-4 break-words text-xl font-semibold tracking-normal text-slate-950">{employee.full_name}</h2>
             <p className="text-sm text-slate-500">{employee.position}</p>
           </div>
           <div className="grid gap-3">
@@ -878,11 +1038,11 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
         </CardBody>
       </Card>
 
-      <div className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-3">
+      <div className="min-w-0 space-y-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <MetricCard label="Performance score" value={String(score)} detail="All-time points" icon={Trophy} tone="yellow" />
-          <MetricCard label="Assigned tasks" value={String(employeeTasks.length)} detail={`${employeeTasks.filter((task) => task.status === "Done").length} done`} icon={CheckSquare} />
-          <MetricCard label="Attendance records" value={String(employeeAttendance.length)} detail="Visible history" icon={CalendarCheck} tone="green" />
+          <MetricCard label="Assigned tasks" value={String(employeeTasks.length)} detail={`${employeeDoneTasks.length} completed`} icon={CheckSquare} />
+          <MetricCard label="Attendance this week" value={`${weekAttendanceRate}%`} detail={`${employeeAttendance.length} records on file`} icon={CalendarCheck} tone="green" />
         </div>
         <Card>
           <CardHeader>
@@ -977,7 +1137,7 @@ export function LeaderboardView(data: AppData) {
   const podium = [rows[1], rows[0], rows[2]].filter(Boolean);
 
   return (
-    <div className="space-y-5">
+    <Page>
       <DataToolbar tabs={["Weekly", "Monthly", "All-time", "Department"]} />
       <Card>
         <CardBody>
@@ -994,7 +1154,7 @@ export function LeaderboardView(data: AppData) {
                     <Avatar name={row.user.full_name} size="lg" />
                     <p className="mt-3 font-semibold text-slate-950">{row.user.full_name}</p>
                     <p className="text-sm text-slate-500">{row.badges[0]?.badge_name ?? "Team Player"}</p>
-                    <p className="mt-3 text-3xl font-semibold tracking-normal text-slate-950">{row.points}</p>
+                    <p className="mt-3 font-mono text-3xl font-semibold tabular-nums tracking-normal text-slate-950">{row.points}</p>
                   </div>
                   <div className={cn("mt-5 rounded-lg", rank === 1 ? "h-28 bg-amber-300" : rank === 2 ? "h-20 bg-slate-200" : "h-16 bg-blue-200")} />
                 </div>
@@ -1021,31 +1181,58 @@ export function LeaderboardView(data: AppData) {
           />
         </CardBody>
       </Card>
-    </div>
+    </Page>
   );
 }
 
 export function NotificationsView(data: AppData) {
-  const myNotifications = data.notifications.filter((notification) => notification.user_id === data.currentUser.user_id);
+  const myNotifications = data.notifications
+    .filter((notification) => notification.user_id === data.currentUser.user_id)
+    .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  const unreadCount = myNotifications.filter((notification) => !notification.is_read).length;
 
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
-        <SectionTitle title="Notification history" action={<Badge tone="blue">{myNotifications.length}</Badge>} />
+        <SectionTitle
+          title="Notification history"
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              {unreadCount > 0 ? <Badge tone="yellow">{unreadCount} unread</Badge> : <Badge tone="green">All read</Badge>}
+              <MarkAllNotificationsReadButton
+                disabled={unreadCount === 0}
+                className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+          }
+        />
       </CardHeader>
       <CardBody className="space-y-3">
-        {myNotifications.map((notification) => (
-          <Link key={notification.notification_id} href={notification.related_link || "/dashboard"} className={cn("flex gap-3 rounded-lg border p-4 transition hover:bg-slate-50", notification.is_read ? "border-slate-200" : "border-blue-200 bg-blue-50")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm">
-              <Bell className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-slate-950">{notification.title}</p>
-              <p className="mt-1 text-sm text-slate-600">{notification.description}</p>
-              <p className="mt-2 text-xs font-medium text-slate-400">{formatDate(notification.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
-            </div>
-          </Link>
-        ))}
+        {myNotifications.length === 0 ? (
+          <EmptyState label="No notifications yet." />
+        ) : (
+          myNotifications.map((notification) => (
+            <NotificationLink
+              key={notification.notification_id}
+              notification={notification}
+              href={notification.related_link || "/dashboard"}
+              className={cn("flex gap-3 rounded-lg border p-4 transition hover:bg-slate-50", notification.is_read ? "border-slate-200" : "border-blue-200 bg-blue-50")}
+            >
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm">
+                <Bell className="h-4 w-4" />
+                {!notification.is_read ? <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-white" aria-hidden="true" /> : null}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-slate-950">{notification.title}</p>
+                  {!notification.is_read ? <Badge tone="blue">Unread</Badge> : null}
+                </div>
+                <p className="mt-1 text-sm text-slate-600">{notification.description}</p>
+                <p className="mt-2 text-xs font-medium text-slate-400">{formatDate(notification.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
+              </div>
+            </NotificationLink>
+          ))
+        )}
       </CardBody>
     </Card>
   );
@@ -1053,14 +1240,18 @@ export function NotificationsView(data: AppData) {
 
 export function AdminView(data: AppData) {
   const pendingRequests = data.users.filter((user) => user.signup_status === "pending" || user.signup_status === "approved");
+  const activeEmployeeCount = activeUsers(data.users).length;
+  const completionRate = taskCompletionRate(data.tasks);
+  const lateTasks = data.tasks.filter((task) => task.status === "Late").length;
+  const pendingLeave = pendingLeaveRequests(data.leaveRequests, { approverView: true }).length;
 
   return (
-    <div className="space-y-5">
+    <Page>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Total users" value={String(data.users.length)} detail="Registered accounts" icon={Users} />
-        <MetricCard label="Active employees" value={String(data.users.filter((user) => user.is_active).length)} detail="Currently active" icon={Activity} tone="green" />
-        <MetricCard label="Completion rate" value={percent((data.tasks.filter((task) => task.status === "Done").length / data.tasks.length) * 100)} detail="Task delivery" icon={Gauge} tone="blue" />
-        <MetricCard label="Late tasks" value={String(data.tasks.filter((task) => task.status === "Late").length)} detail="Needs attention" icon={AlarmClock} tone="yellow" />
+        <MetricCard label="Total users" value={String(directoryUsers(data.users).length)} detail="Registered accounts" icon={Users} />
+        <MetricCard label="Active employees" value={String(activeEmployeeCount)} detail="Currently active" icon={Activity} tone="green" />
+        <MetricCard label="Completion rate" value={percent(completionRate)} detail={data.tasks.length === 0 ? "No tasks yet" : `${completedTasks(data.tasks).length} of ${data.tasks.length} tasks done`} icon={Gauge} tone="blue" />
+        <MetricCard label="Late tasks" value={String(lateTasks)} detail={pendingLeave > 0 ? `${pendingLeave} leave requests pending` : "Needs attention"} icon={AlarmClock} tone="yellow" />
       </div>
       <Card>
         <CardHeader>
@@ -1106,7 +1297,7 @@ export function AdminView(data: AppData) {
           )}
         </CardBody>
       </Card>
-      <div className="grid gap-5 xl:grid-cols-[1fr_24rem]">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
         <ActivityFeed logs={data.activityLogs} users={data.users} />
         <Card>
           <CardHeader>
@@ -1119,7 +1310,7 @@ export function AdminView(data: AppData) {
           </CardBody>
         </Card>
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -1132,9 +1323,9 @@ function ActivityFeed({ logs, users }: { logs: ActivityLog[]; users: User[] }) {
       <CardBody className="space-y-3">
         {logs.map((log) => (
           <div key={log.log_id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
-            <div className="mt-1 h-2 w-2 rounded-full bg-blue-600" />
-            <div>
-              <p className="text-sm font-semibold text-slate-950">{log.description}</p>
+            <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+            <div className="min-w-0">
+              <p className="break-words text-sm font-semibold text-slate-950">{log.description}</p>
               <p className="mt-1 text-xs text-slate-500">{userName(users, log.user_id)} - {formatDate(log.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
             </div>
           </div>
@@ -1146,7 +1337,7 @@ function ActivityFeed({ logs, users }: { logs: ActivityLog[]; users: User[] }) {
 
 export function SettingsView(data: AppData) {
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_24rem]">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <Card>
         <CardHeader>
           <SectionTitle title="CMS settings" />
@@ -1164,8 +1355,8 @@ export function SettingsView(data: AppData) {
         </CardHeader>
         <CardBody className="space-y-3">
           <InfoTile label="Source" value={dataSourceLabel()} />
-          <InfoTile label="Supabase URL" value={process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_ID ? "Configured" : "Not configured"} />
-          <InfoTile label="Supabase secret" value={process.env.SUPABASE_SECRET_KEY ? "Configured" : "Not configured"} />
+          <InfoTile label="Supabase URL" value={supabaseConfigLabel()} />
+          <InfoTile label="Supabase secret" value={supabaseSecretLabel()} />
           {process.env.ATM_DATA_MODE !== "supabase" ? (
             <form action="/api/admin/migrate-supabase" method="post">
               <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -1183,7 +1374,7 @@ export function DepartmentsManagerView(data: AppData) {
   const usersByDepartment = groupBy(data.users, (user) => user.department_id || "unassigned");
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[24rem_1fr]">
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
       <Card>
         <CardHeader>
           <SectionTitle title="Add department" />
@@ -1234,7 +1425,7 @@ export function DepartmentsManagerView(data: AppData) {
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-slate-950">{department.department_name}</p>
                         <p className="text-xs font-medium text-slate-500">
-                          {memberCount} member{memberCount === 1 ? "" : "s"} · ID <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.7rem] text-slate-700">{department.department_id}</code>
+                          {memberCount} member{memberCount === 1 ? "" : "s"} · ID <code className="break-all rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.7rem] text-slate-700">{department.department_id}</code>
                         </p>
                       </div>
                     </div>
@@ -1341,7 +1532,7 @@ export function AttendanceSettingsView(data: AppData) {
 
 export function GamificationSettingsView(data: AppData) {
   return (
-    <div className="grid gap-5 lg:grid-cols-[24rem_1fr]">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
       <Card>
         <CardHeader><SectionTitle title="Point rules" /></CardHeader>
         <CardBody className="space-y-3">
@@ -1373,7 +1564,7 @@ export function GamificationSettingsView(data: AppData) {
 
 export function InviteView(data: AppData) {
   return (
-    <div className="grid gap-5 lg:grid-cols-[28rem_1fr]">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
       <Card>
         <CardHeader><SectionTitle title="Invite employee" /></CardHeader>
         <CardBody>
@@ -1389,11 +1580,11 @@ export function InviteView(data: AppData) {
             <Field label="Position"><input name="position" required className="input" /></Field>
             <Field label="Bio"><textarea name="bio" className="input" rows={4} /></Field>
             <Field label="Department"><select name="department_id" className="input">{data.departments.map((department) => <option key={department.department_id} value={department.department_id}>{department.department_name}</option>)}</select></Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Role"><select name="role_id" className="input">{data.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.role_name}</option>)}</select></Field>
               <Field label="Status"><select name="employment_status" className="input">{employeeStatusOptions.map((status) => <option key={status}>{status}</option>)}</select></Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Birthday"><input name="birthday" type="date" className="input" /></Field>
               <Field label="Join date"><input name="join_date" type="date" className="input" /></Field>
             </div>
@@ -1428,6 +1619,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function DataTable({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) {
   return (
+    <div className="-mx-1 overflow-x-auto overscroll-x-contain px-1 sm:mx-0 sm:px-0">
     <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
       <thead>
         <tr>
@@ -1440,18 +1632,27 @@ function DataTable({ headers, rows }: { headers: string[]; rows: React.ReactNode
         {rows.map((row, rowIndex) => (
           <tr key={rowIndex}>
             {row.map((cell, cellIndex) => (
-              <td key={cellIndex} className="border-b border-slate-100 px-3 py-3 align-middle text-slate-700">{cell}</td>
+              <td
+                key={cellIndex}
+                className={cn(
+                  "border-b border-slate-100 px-3 py-3 align-middle text-slate-700",
+                  isNumericDisplay(cell) && "font-mono tabular-nums",
+                )}
+              >
+                {cell}
+              </td>
             ))}
           </tr>
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 
 export function StatusCatalogView() {
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-2">
       <Card>
         <CardHeader><SectionTitle title="Task statuses" /></CardHeader>
         <CardBody className="flex flex-wrap gap-2">{taskStatuses.map((status) => <StatusPill key={status} status={status} />)}</CardBody>

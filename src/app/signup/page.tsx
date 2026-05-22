@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/server/auth";
 import { listResource } from "@/lib/server/store";
+
+import { submitSignupRequest } from "./actions";
 import { PasswordField } from "./password-field";
 import styles from "./signup.module.css";
 
@@ -35,7 +37,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           </div>
         ) : null}
 
-        <form action="/api/auth/signup" method="post" encType="multipart/form-data" className={styles.form}>
+        <form action={submitSignupRequest} className={styles.form}>
           <label className={styles.field}>
             <span>
               Full name <b className={styles.requiredMark}>*</b>
