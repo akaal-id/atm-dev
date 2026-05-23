@@ -1,4 +1,4 @@
-const CACHE_NAME = "atm-pwa-v1";
+const CACHE_NAME = "atm-pwa-v2";
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [OFFLINE_URL, "/icon.svg", "/manifest.webmanifest"];
 

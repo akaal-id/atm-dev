@@ -81,9 +81,26 @@ export function toSignupRequestInput(input: ParsedSignupForm) {
   };
 }
 
+export function signupValidationError(input: ParsedSignupForm) {
+  if (!input.full_name || !input.email || !input.department_id || !input.birthday || !input.join_date) {
+    return "missing";
+  }
+
+  if (!input.password || input.password.length < 8) {
+    return "password";
+  }
+
+  if (input.password !== input.confirm_password) {
+    return "mismatch";
+  }
+
+  return null;
+}
+
 export async function resolveSignupRedirectPath(input: ParsedSignupForm) {
-  if (!isValidSignupForm(input)) {
-    return "/signup?error=invalid";
+  const validationError = signupValidationError(input);
+  if (validationError) {
+    return `/signup?error=${validationError}`;
   }
 
   const result = await createSignupRequest(toSignupRequestInput(input));

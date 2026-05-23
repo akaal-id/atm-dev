@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/server/auth";
 import { listResource } from "@/lib/server/store";
 
-import { submitSignupRequest } from "./actions";
 import { PasswordField } from "./password-field";
+import { SignupForm } from "./signup-form";
 import styles from "./signup.module.css";
+
+export const dynamic = "force-dynamic";
 
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getCurrentUser();
@@ -26,8 +28,18 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <p className={styles.text}>After you submit this request, an admin can approve it and email you a verification key.</p>
 
         {params.error === "exists" ? <div className={styles.error}>An active account already exists for this email.</div> : null}
-        {params.error === "invalid" ? <div className={styles.error}>Please check your signup details and use a password with at least 8 characters.</div> : null}
-        {params.error === "upload" ? <div className={styles.error}>Profile photo upload failed. Please use a JPG, PNG, WebP, or GIF under 5MB.</div> : null}
+        {params.error === "missing" ? <div className={styles.error}>Please fill in all required fields before submitting.</div> : null}
+        {params.error === "password" ? <div className={styles.error}>Use a password with at least 8 characters.</div> : null}
+        {params.error === "mismatch" ? <div className={styles.error}>Password and confirm password must match.</div> : null}
+        {params.error === "invalid" ? <div className={styles.error}>Please check your signup details and try again.</div> : null}
+        {params.error === "upload" ? (
+          <div className={styles.error}>
+            Profile photo upload failed. Use a JPG, PNG, WebP, GIF, or HEIC image under 5MB, or leave the photo empty and try again.
+          </div>
+        ) : null}
+        {params.error === "server" ? (
+          <div className={styles.error}>We could not save your request right now. Please try again in a moment.</div>
+        ) : null}
         {params.error === "oauth_email" ? <div className={styles.error}>Your social account did not provide an email address.</div> : null}
 
         {googleEnabled || appleEnabled ? (
@@ -37,7 +49,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           </div>
         ) : null}
 
-        <form action={submitSignupRequest} className={styles.form}>
+        <SignupForm>
           <label className={styles.field}>
             <span>
               Full name <b className={styles.requiredMark}>*</b>
@@ -55,7 +67,12 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           <label className={styles.field}>
             <span>Profile photo</span>
             <input name="profile_photo" type="url" className="input" placeholder="https://..." />
-            <input name="profile_photo_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="input" />
+            <input
+              name="profile_photo_file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
+              className="input"
+            />
           </label>
           <label className={styles.field}>
             <span>Phone</span>
@@ -90,8 +107,10 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
             <span>Bio</span>
             <textarea name="bio" className="input" rows={4} placeholder="Tell the team a little about your role or background." />
           </label>
-          <button className={styles.submit}>Request account</button>
-        </form>
+          <button className={styles.submit} type="submit">
+            Request account
+          </button>
+        </SignupForm>
 
         <p className={styles.footerText}>
           Already verified? <Link href="/login">Sign in</Link>

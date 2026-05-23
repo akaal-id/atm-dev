@@ -2,7 +2,7 @@ import "server-only";
 
 import { makeId } from "@/lib/utils";
 
-const imageMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const imageMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
 const attachmentMimeTypes = [
   ...imageMimeTypes,
   "application/pdf",
@@ -13,9 +13,12 @@ const attachmentMimeTypes = [
 
 const extensionByMimeType: Record<string, string> = {
   "image/jpeg": "jpg",
+  "image/jpg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
+  "image/heic": "heic",
+  "image/heif": "heif",
   "application/pdf": "pdf",
   "text/plain": "txt",
   "application/msword": "doc",
@@ -66,47 +69,70 @@ function uploadConfigForField(fieldName: string) {
   };
 }
 
+const extensionByFileName: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+};
+
 function fileExtension(file: File) {
   const cleanName = file.name.toLowerCase().split("?")[0] ?? "";
   const extension = cleanName.includes(".") ? cleanName.split(".").pop() : "";
   return extension || extensionByMimeType[file.type] || "bin";
 }
 
+function resolveMimeType(file: File, allowedMimeTypes: string[]) {
+  if (file.type && allowedMimeTypes.includes(file.type)) return file.type;
+
+  const extension = fileExtension(file);
+  const inferred = extensionByFileName[extension];
+  if (inferred && allowedMimeTypes.includes(inferred)) return inferred;
+
+  return file.type;
+}
+
 let bucketPromise: Promise<void> | null = null;
 
 async function ensureUploadBucket() {
-  if (bucketPromise) return bucketPromise;
+  if (!bucketPromise) {
+    bucketPromise = (async () => {
+      const baseUrl = supabaseUrl();
+      const bucket = bucketName();
+      const check = await fetch(`${baseUrl}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
+        cache: "no-store",
+        headers: uploadHeaders(),
+      });
 
-  bucketPromise = (async () => {
-    const baseUrl = supabaseUrl();
-    const bucket = bucketName();
-    const check = await fetch(`${baseUrl}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
-      cache: "no-store",
-      headers: uploadHeaders(),
+      if (check.ok) return;
+
+      if (check.status !== 404) {
+        throw new UploadError(`Could not verify Supabase Storage bucket. Status ${check.status}.`);
+      }
+
+      const create = await fetch(`${baseUrl}/storage/v1/bucket`, {
+        method: "POST",
+        headers: uploadHeaders(),
+        body: JSON.stringify({
+          id: bucket,
+          name: bucket,
+          public: true,
+          file_size_limit: 10 * 1024 * 1024,
+          allowed_mime_types: attachmentMimeTypes,
+        }),
+      });
+
+      if (!create.ok && create.status !== 409) {
+        throw new UploadError(`Could not create Supabase Storage bucket. Status ${create.status}.`);
+      }
+    })().catch((error) => {
+      bucketPromise = null;
+      throw error;
     });
-
-    if (check.ok) return;
-
-    if (check.status !== 404) {
-      throw new UploadError(`Could not verify Supabase Storage bucket. Status ${check.status}.`);
-    }
-
-    const create = await fetch(`${baseUrl}/storage/v1/bucket`, {
-      method: "POST",
-      headers: uploadHeaders(),
-      body: JSON.stringify({
-        id: bucket,
-        name: bucket,
-        public: true,
-        file_size_limit: 10 * 1024 * 1024,
-        allowed_mime_types: attachmentMimeTypes,
-      }),
-    });
-
-    if (!create.ok && create.status !== 409) {
-      throw new UploadError(`Could not create Supabase Storage bucket. Status ${create.status}.`);
-    }
-  })();
+  }
 
   return bucketPromise;
 }
@@ -118,8 +144,9 @@ export async function uploadFormFile(file: File, fieldName: string) {
   if (file.size > config.maxBytes) {
     throw new UploadError(`File is too large. Maximum size is ${Math.round(config.maxBytes / 1024 / 1024)}MB.`);
   }
-  if (!config.allowedMimeTypes.includes(file.type)) {
-    throw new UploadError("Unsupported file type. Upload an image, PDF, text, or Word document.");
+  const contentType = resolveMimeType(file, config.allowedMimeTypes);
+  if (!contentType || !config.allowedMimeTypes.includes(contentType)) {
+    throw new UploadError("Unsupported file type. Upload a JPG, PNG, WebP, GIF, or HEIC image.");
   }
 
   await ensureUploadBucket();
@@ -127,10 +154,10 @@ export async function uploadFormFile(file: File, fieldName: string) {
   const baseUrl = supabaseUrl();
   const bucket = bucketName();
   const path = `${config.folder}/${new Date().toISOString().slice(0, 10)}/${makeId("upl")}.${fileExtension(file)}`;
-  const response = await fetch(`${baseUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${path}`, {
+  const response = await fetch(`${baseUrl}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
     headers: {
-      ...uploadHeaders(file.type || "application/octet-stream"),
+      ...uploadHeaders(contentType),
       "cache-control": "3600",
       "x-upsert": "false",
     },

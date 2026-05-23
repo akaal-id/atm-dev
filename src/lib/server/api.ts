@@ -134,7 +134,15 @@ export async function readPayload(request: Request | NextRequest) {
     }
 
     const value = values[0];
-    if (value !== undefined) payload[key] = coerceField(key, value);
+    if (value === undefined) continue;
+
+    const nextValue = coerceField(key, value);
+    const targetKey = targetFieldForUpload(key);
+    if (nextValue === "" && typeof payload[targetKey] === "string" && payload[targetKey]) {
+      continue;
+    }
+
+    payload[key] = nextValue;
   }
 
   return payload;
