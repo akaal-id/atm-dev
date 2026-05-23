@@ -386,9 +386,9 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
       <Page>
         <DataToolbar tabs={["Board", "List", "Calendar", "Project"]} />
         <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-          <ScrollRow className="lg:grid-cols-4">
+          <ScrollRow>
             {["To Do", "In Progress", "Waiting Approval", "Need Revision"].map((status) => (
-              <Card key={status} className="w-[min(100%,17.5rem)] shrink-0 snap-start lg:w-auto lg:min-w-0 lg:shrink">
+              <Card key={status} className="w-[min(100%,17.5rem)] shrink-0 snap-start">
                 <CardHeader>
                   <SectionTitle title={status} action={<Badge>{grouped[status]?.length ?? 0}</Badge>} />
                 </CardHeader>

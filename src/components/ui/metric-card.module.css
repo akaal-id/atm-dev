@@ -17,7 +17,7 @@
   margin-top: 0.75rem;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 1.875rem;
-  font-weight: 700;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 2.25rem;
   letter-spacing: -0.02em;
@@ -36,6 +36,8 @@
   display: flex;
   width: 2.75rem;
   height: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;

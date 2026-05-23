@@ -21,20 +21,15 @@
 .brandLink {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .logo {
   display: flex;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 1.625rem;
+  height: 1.625rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  background: #090b1b;
-  font-size: 0.875rem;
-  font-weight: 900;
-  color: #ffffff;
 }
 
 .brandName {
@@ -47,6 +42,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: #94a3b8;
+  margin-top: -0.25rem;
 }
 
 .nav {
@@ -86,8 +82,8 @@
   gap: 0.75rem;
   border-radius: 0.5rem;
   padding: 0 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: #94a3b8;
   transition:
     background 150ms ease,
@@ -103,6 +99,7 @@
 .activePrimary:hover {
   background: #1f2937;
   color: #ae5eff;
+  font-weight: 700;
 }
 
 .activeAdmin,
@@ -142,13 +139,14 @@
 }
 
 .profileName {
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #ffffff;
 }
 
 .profileRole {
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
   font-weight: 600;
   color: #94a3b8;
 }

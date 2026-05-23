@@ -23,7 +23,14 @@ export function SidebarNav({ user, items, adminItems }: SidebarNavProps) {
     <aside className={styles.sidebar}>
       <div className={styles.brandBlock}>
         <Link href="/dashboard" className={styles.brandLink}>
-          <div className={styles.logo}>ATM</div>
+          <img
+            src="/icon/mono-akaal-white.png"
+            alt="Akaal Logo"
+            className={styles.logo}
+            width={24}
+            height={24}
+          />
+    
           <div>
             <p className={styles.brandName}>Akaal Team</p>
             <p className={styles.brandSubtext}>Management</p>
