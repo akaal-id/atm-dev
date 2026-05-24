@@ -6,14 +6,15 @@ import { Topbar } from "@/components/app/topbar";
 import { adminNavigation, bottomNavigation, primaryNavigation } from "@/lib/navigation";
 import { hasPermission } from "@/lib/permissions";
 import { requireUser } from "@/lib/server/auth";
-import { listResource } from "@/lib/server/store";
+import { listResourceByField } from "@/lib/server/store";
 import styles from "./app-shell.module.css";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-  const notifications = (await listResource("Notifications"))
-    .filter((notification) => notification.user_id === user.user_id)
-    .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
+  const notifications = await listResourceByField("Notifications", "user_id", user.user_id, {
+    limit: 20,
+    orderBy: "created_at",
+  });
   const visiblePrimary = primaryNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleAdmin = adminNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleBottom = bottomNavigation.filter((item) => hasPermission(user.role_id, item.permission));

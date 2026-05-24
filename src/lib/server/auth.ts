@@ -5,11 +5,12 @@ import { jwtVerify, SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
+import { cache } from "react";
 
 import { departments as seedDepartments, roles as seedRoles } from "@/lib/data/seed";
 import { hasPermission } from "@/lib/permissions";
 import { authOptions } from "@/lib/server/next-auth-options";
-import { listResource } from "@/lib/server/store";
+import { listResource, listResourceByField } from "@/lib/server/store";
 import type { CurrentUser, Permission, RoleKey, User } from "@/lib/types";
 
 export const sessionCookieName = "atm_session";
@@ -57,7 +58,7 @@ export async function getSession() {
   const email = nextAuthSession?.user?.email;
   if (!email) return null;
 
-  const users = await listResource("Users");
+  const users = await listResourceByField("Users", "email", email.toLowerCase(), { limit: 1 });
   const user = users.find((candidate) => candidate.email.toLowerCase() === email.toLowerCase() && candidate.is_active) as User | undefined;
   if (!user) return null;
 
@@ -69,8 +70,9 @@ export async function getSession() {
 }
 
 export async function authenticateUser(email: string, password: string) {
-  const users = await listResource("Users");
-  const user = users.find((candidate) => candidate.email.toLowerCase() === email.toLowerCase() && candidate.is_active) as User | undefined;
+  const normalizedEmail = email.toLowerCase();
+  const users = await listResourceByField("Users", "email", normalizedEmail, { limit: 1 });
+  const user = users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail && candidate.is_active) as User | undefined;
 
   if (!user) return null;
 
@@ -80,12 +82,12 @@ export async function authenticateUser(email: string, password: string) {
   return user;
 }
 
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<CurrentUser | null> {
   const session = await getSession();
   if (!session) return null;
 
   const [users, departments, roles] = await Promise.all([
-    listResource("Users"),
+    listResourceByField("Users", "user_id", session.userId, { limit: 1 }),
     listResource("Departments"),
     listResource("Roles"),
   ]);
@@ -103,7 +105,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     role,
     department,
   };
-}
+});
 
 export async function requireUser() {
   const user = await getCurrentUser();

@@ -24,6 +24,13 @@ export const supabaseTables: Record<SupabaseResourceName, string> = {
   Settings: "settings",
 };
 
+export interface SupabaseReadOptions {
+  filters?: Record<string, string | number | boolean>;
+  limit?: number;
+  orderBy?: string;
+  ascending?: boolean;
+}
+
 class SupabaseStoreError extends Error {
   constructor(
     message: string,
@@ -115,6 +122,25 @@ export async function readSupabaseResource(resource: SupabaseResourceName) {
   return requestSupabase<Record<string, unknown>[]>(
     `/rest/v1/${table}?select=*&order=created_at.desc.nullslast`,
   );
+}
+
+export async function readSupabaseResourceWhere(resource: SupabaseResourceName, options: SupabaseReadOptions) {
+  const table = tableFor(resource);
+  const params = new URLSearchParams({ select: "*" });
+
+  Object.entries(options.filters ?? {}).forEach(([field, value]) => {
+    params.set(field, `eq.${String(value)}`);
+  });
+
+  if (options.orderBy) {
+    params.set("order", `${options.orderBy}.${options.ascending ? "asc" : "desc"}.nullslast`);
+  }
+
+  if (typeof options.limit === "number") {
+    params.set("limit", String(options.limit));
+  }
+
+  return requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${params.toString()}`);
 }
 
 export async function insertSupabaseResource(resource: SupabaseResourceName, record: Record<string, unknown>) {

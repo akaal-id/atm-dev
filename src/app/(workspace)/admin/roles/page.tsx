@@ -4,6 +4,6 @@ import { getAppData } from "@/lib/server/app-data";
 
 export default async function AdminRolesPage() {
   await requirePermission("roles:manage");
-  const data = await getAppData();
+  const data = await getAppData(["Roles"]);
   return <RolesView {...data} />;
 }

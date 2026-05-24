@@ -11,6 +11,7 @@ import {
   insertSupabaseResource,
   isSupabaseConfigured,
   readSupabaseResource,
+  readSupabaseResourceWhere,
   updateSupabaseResource,
 } from "@/lib/server/supabase-store";
 import type { AppNotification, User } from "@/lib/types";
@@ -110,6 +111,38 @@ export async function listResource<R extends ResourceName>(resource: R): Promise
   }
 
   return store[resource] as ResourceItem<R>[];
+}
+
+export async function listResourceByField<R extends ResourceName>(
+  resource: R,
+  field: string,
+  value: string | number | boolean,
+  options: { limit?: number; orderBy?: string; ascending?: boolean } = {},
+): Promise<ResourceItem<R>[]> {
+  if (shouldUseSupabase()) {
+    const rows = await readSupabaseResourceWhere(resource, {
+      filters: { [field]: value },
+      limit: options.limit,
+      orderBy: options.orderBy,
+      ascending: options.ascending,
+    });
+    return normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
+  }
+
+  let rows = (await listResource(resource)).filter((item) => {
+    const record = item as unknown as Record<string, unknown>;
+    return String(record[field] ?? "") === String(value);
+  });
+
+  if (options.orderBy) {
+    rows = [...rows].sort((left, right) => {
+      const leftValue = String((left as unknown as Record<string, unknown>)[options.orderBy!] ?? "");
+      const rightValue = String((right as unknown as Record<string, unknown>)[options.orderBy!] ?? "");
+      return options.ascending ? leftValue.localeCompare(rightValue) : rightValue.localeCompare(leftValue);
+    });
+  }
+
+  return typeof options.limit === "number" ? rows.slice(0, options.limit) : rows;
 }
 
 export async function getResourceById<R extends ResourceName>(resource: R, id: string): Promise<ResourceItem<R> | undefined> {

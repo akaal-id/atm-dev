@@ -4,7 +4,7 @@ import { getAppData } from "@/lib/server/app-data";
 
 export default async function AdminSettingsPage() {
   await requirePermission("settings:manage");
-  const data = await getAppData();
+  const data = await getAppData(["Users", "Departments", "Settings"]);
   return (
     <div className="space-y-5">
       <SettingsView {...data} />

@@ -34,7 +34,9 @@ export function RouteProgress() {
   const hideTimerRef = useRef<number | null>(null);
   const visibleRef = useRef(visible);
 
-  visibleRef.current = visible;
+  useEffect(() => {
+    visibleRef.current = visible;
+  }, [visible]);
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) window.clearInterval(timerRef.current);
@@ -45,6 +47,7 @@ export function RouteProgress() {
 
   const start = useCallback(() => {
     clearTimers();
+    visibleRef.current = true;
     setVisible(true);
     setProgress(8);
 
@@ -63,6 +66,7 @@ export function RouteProgress() {
     timerRef.current = null;
     setProgress(100);
     hideTimerRef.current = window.setTimeout(() => {
+      visibleRef.current = false;
       setVisible(false);
       setProgress(100);
     }, 280);
@@ -70,13 +74,17 @@ export function RouteProgress() {
 
   useEffect(() => {
     const startTimer = window.setTimeout(() => {
+      visibleRef.current = true;
       setVisible(true);
       setProgress(12);
     }, 0);
 
     const timer = window.setTimeout(() => {
       setProgress(100);
-      hideTimerRef.current = window.setTimeout(() => setVisible(false), 280);
+      hideTimerRef.current = window.setTimeout(() => {
+        visibleRef.current = false;
+        setVisible(false);
+      }, 280);
     }, 360);
 
     return () => {

@@ -3,7 +3,7 @@ import AppleProvider from "next-auth/providers/apple";
 import GoogleProvider from "next-auth/providers/google";
 
 import { createSignupRequest } from "@/lib/server/account-requests";
-import { listResource } from "@/lib/server/store";
+import { listResourceByField } from "@/lib/server/store";
 import type { User } from "@/lib/types";
 
 const providers: NextAuthOptions["providers"] = [];
@@ -41,7 +41,7 @@ export const authOptions: NextAuthOptions = {
       if (!account || account.provider === "credentials") return true;
       if (!user.email) return "/signup?error=oauth_email";
 
-      const users = await listResource("Users");
+      const users = await listResourceByField("Users", "email", user.email.toLowerCase(), { limit: 1 });
       const existing = users.find((candidate) => candidate.email.toLowerCase() === user.email?.toLowerCase()) as User | undefined;
 
       if (existing?.is_active) return true;
@@ -58,7 +58,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session }) {
       if (!session.user?.email) return session;
 
-      const users = await listResource("Users");
+      const users = await listResourceByField("Users", "email", session.user.email.toLowerCase(), { limit: 1 });
       const appUser = users.find((candidate) => candidate.email.toLowerCase() === session.user?.email?.toLowerCase() && candidate.is_active) as User | undefined;
 
       if (appUser) {

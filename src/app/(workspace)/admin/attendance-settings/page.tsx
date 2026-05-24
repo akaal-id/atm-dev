@@ -4,6 +4,6 @@ import { getAppData } from "@/lib/server/app-data";
 
 export default async function AdminAttendanceSettingsPage() {
   await requirePermission("settings:manage");
-  const data = await getAppData();
+  const data = await getAppData(["Settings"]);
   return <AttendanceSettingsView {...data} />;
 }

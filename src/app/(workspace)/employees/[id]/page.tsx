@@ -7,7 +7,7 @@ import { getAppData } from "@/lib/server/app-data";
 export default async function EmployeeProfilePage({ params }: { params: Promise<{ id: string }> }) {
   await requirePermission("employees:view");
   const { id } = await params;
-  const data = await getAppData();
+  const data = await getAppData(["Users", "Departments", "Roles", "Tasks", "Attendance", "Gamification_Points"]);
   const employee = data.users.find((candidate) => candidate.user_id === id);
 
   if (!employee) notFound();

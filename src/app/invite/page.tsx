@@ -5,7 +5,7 @@ import { getAppData } from "@/lib/server/app-data";
 
 export default async function InvitePage() {
   await requirePermission("employees:manage");
-  const data = await getAppData();
+  const data = await getAppData(["Departments", "Roles"]);
   return (
     <AppShell>
       <InviteView {...data} />
