@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef } from "react";
 
-import { markNavigation, scheduleRouterRefresh } from "@/lib/safe-router-refresh";
+import { isUserEditing, markNavigation, scheduleRouterRefresh } from "@/lib/safe-router-refresh";
 
 export function LiveRefresh({ interval = 30000 }: { interval?: number }) {
   const router = useRouter();
@@ -18,7 +18,7 @@ export function LiveRefresh({ interval = 30000 }: { interval?: number }) {
     const refreshInterval = process.env.NODE_ENV === "development" ? Math.max(interval, 120000) : interval;
 
     const refresh = () => {
-      if (document.visibilityState !== "visible" || refreshingRef.current) return;
+      if (document.visibilityState !== "visible" || refreshingRef.current || isUserEditing()) return;
       refreshingRef.current = true;
       startTransition(() => {
         scheduleRouterRefresh(router);
