@@ -2,8 +2,8 @@ import type { Announcement, Attendance, CurrentUser, LeaveRequest, Task, User } 
 
 const JAKARTA_TIMEZONE = "Asia/Jakarta";
 
-const COMPLETED_TASK_STATUSES = new Set(["Done", "Approved", "Completed"]);
-const ACTIVE_TASK_STATUSES_EXCLUDED = new Set(["Done", "Cancelled", "Approved", "Completed"]);
+const COMPLETED_TASK_STATUSES = new Set(["Finished", "Done", "Approved", "Completed"]);
+const ACTIVE_TASK_STATUSES_EXCLUDED = new Set(["Finished", "Done", "Cancelled", "Approved", "Completed"]);
 const ABSENT_ATTENDANCE_STATUSES = new Set(["Absent", "Rejected"]);
 
 export function jakartaToday() {

@@ -17,7 +17,7 @@ interface TransactionalEmail {
 }
 
 function getFromEmail() {
-  return process.env.RESEND_FROM_EMAIL || "Akaal Team Management <onboarding@resend.dev>";
+  return process.env.RESEND_FROM_EMAIL || "Akaal Team Management <onboarding@akaal.id>";
 }
 
 function escapeHtml(value: string) {

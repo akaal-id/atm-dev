@@ -9,6 +9,8 @@ import { resourceNames } from "@/lib/server/store";
 import { uploadFormFile } from "@/lib/server/uploads";
 import type { Permission } from "@/lib/types";
 
+const listFields = new Set(["assigned_to", "labels", "members", "target_users", "mentions", "links"]);
+
 const readPermissions: Partial<Record<ResourceName, Permission[]>> = {
   Users: ["employees:view", "employees:manage"],
   Departments: ["employees:view", "settings:manage"],
@@ -16,7 +18,7 @@ const readPermissions: Partial<Record<ResourceName, Permission[]>> = {
   Tasks: ["tasks:own", "tasks:team", "tasks:manage"],
   Task_Comments: ["tasks:own", "tasks:team", "tasks:manage"],
   Task_Checklists: ["tasks:own", "tasks:team", "tasks:manage"],
-  Projects: ["projects:manage", "tasks:team"],
+  Projects: ["dashboard:view", "tasks:own", "tasks:team", "projects:manage"],
   Attendance: ["attendance:own", "attendance:team"],
   Leave_Requests: ["attendance:own", "attendance:approve"],
   Announcements: ["announcements:view"],
@@ -35,7 +37,7 @@ const writePermissions: Partial<Record<ResourceName, Permission[]>> = {
   Roles: ["roles:manage"],
   Tasks: ["tasks:own", "tasks:team", "tasks:manage"],
   Task_Comments: ["tasks:own", "tasks:team", "tasks:manage"],
-  Task_Checklists: ["tasks:manage"],
+  Task_Checklists: ["tasks:own", "tasks:team", "tasks:manage"],
   Projects: ["projects:manage"],
   Attendance: ["attendance:own", "attendance:team"],
   Leave_Requests: ["attendance:own", "attendance:approve"],
@@ -76,9 +78,11 @@ function coerceField(key: string, value: FormDataEntryValue) {
   if (typeof File !== "undefined" && value instanceof File) return "";
 
   const text = String(value);
-  if (["is_active", "is_completed", "is_pinned", "is_read"].includes(key)) return text === "on" || text === "true" || text === "TRUE";
+  if (["is_active", "is_completed", "assignee_completed", "pm_approved", "is_pinned", "is_read"].includes(key)) {
+    return text === "on" || text === "true" || text === "TRUE";
+  }
   if (["progress", "points"].includes(key)) return Number(text);
-  if (["assigned_to", "labels", "members", "target_users", "mentions", "links"].includes(key)) {
+  if (listFields.has(key)) {
     if (!text) return [];
     try {
       const parsed = JSON.parse(text);
@@ -129,7 +133,8 @@ export async function readPayload(request: Request | NextRequest) {
     if (values.every(isEmptyFile)) continue;
 
     if (values.length > 1) {
-      payload[key] = values.map((value) => coerceField(key, value)).filter(Boolean);
+      const nextValues = values.map((value) => coerceField(key, value)).filter(Boolean);
+      payload[key] = listFields.has(key) ? nextValues.flatMap((value) => (Array.isArray(value) ? value : [value])) : nextValues;
       continue;
     }
 

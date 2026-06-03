@@ -23,8 +23,10 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
-import { Page, ScrollRow } from "@/components/app/page-layout";
+import { Page } from "@/components/app/page-layout";
+import { TaskBoard } from "@/components/app/task-board";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -155,6 +157,22 @@ function EmptyState({ label }: { label: string }) {
   return <div className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm font-medium text-slate-500">{label}</div>;
 }
 
+function TicketId({ id }: { id: string }) {
+  return <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600">#{id}</code>;
+}
+
+function BoardStage({ status, dueDate }: { status: Task["status"]; dueDate?: string }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Board stage</span>
+      <div className="flex items-center gap-2">
+        {dueDate ? <span className="text-xs font-medium text-slate-500">Due {formatShortDate(dueDate)}</span> : null}
+        <StatusPill status={status} />
+      </div>
+    </div>
+  );
+}
+
 function LeaveApprovalActions({ requestId, canApprove, status }: { requestId: string; canApprove: boolean; status: string }) {
   if (!canApprove || status !== "Pending Approval") return null;
 
@@ -219,7 +237,7 @@ function LeaveRequestCard({
   );
 }
 
-function DataToolbar({ tabs }: { tabs: string[] }) {
+function DataToolbar({ tabs, action }: { tabs: string[]; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex max-w-full overflow-x-auto rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
@@ -232,10 +250,13 @@ function DataToolbar({ tabs }: { tabs: string[] }) {
           </button>
         ))}
       </div>
-      <button className="inline-flex h-10 shrink-0 items-center gap-2 self-start rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300">
-        <Filter className="h-4 w-4" />
-        Filter
-      </button>
+      <div className="flex flex-wrap items-center gap-2 self-start">
+        <button className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300">
+          <Filter className="h-4 w-4" />
+          Filter
+        </button>
+        {action}
+      </div>
     </div>
   );
 }
@@ -287,6 +308,7 @@ export function DashboardView(data: AppData) {
               <article key={task.task_id} className="rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
+                    <TicketId id={task.task_id} />
                     <Link href={`/tasks/${task.task_id}`} className="font-semibold text-slate-950 transition hover:text-blue-600">
                       {task.title}
                     </Link>
@@ -294,9 +316,7 @@ export function DashboardView(data: AppData) {
                   </div>
                   <StatusPill status={task.status} />
                 </div>
-                <div className="mt-4">
-                  <Progress value={clampProgress(task.progress)} label={`Due ${formatShortDate(task.due_date)}`} />
-                </div>
+                <div className="mt-4"><BoardStage status={task.status} dueDate={task.due_date} /></div>
               </article>
             ))}
           </CardBody>
@@ -379,37 +399,35 @@ export function DashboardView(data: AppData) {
 export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "team" }) {
   const tasks = scope === "my" ? visibleTasksForUser(data.tasks, data.currentUser.user_id) : data.tasks;
   const activeTaskCount = activeTasks(tasks).length;
-  const grouped = groupBy(tasks, (task) => task.status);
+  const canCreateTasks =
+    hasPermission(data.currentUser.role_id, "tasks:own") ||
+    hasPermission(data.currentUser.role_id, "tasks:team") ||
+    hasPermission(data.currentUser.role_id, "tasks:manage");
+  const canMoveFinished = hasPermission(data.currentUser.role_id, "tasks:team") || hasPermission(data.currentUser.role_id, "tasks:manage");
+  const taskModalUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }));
+  const taskBoardUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name }));
+  const taskModalProjects = data.projects.map((project) => ({
+    project_id: project.project_id,
+    project_name: project.project_name,
+    ticket_id_prefix: project.ticket_id_prefix || "",
+  }));
+  const createTaskAction = canCreateTasks ? (
+    <CreateTaskModal currentUser={data.currentUser} users={taskModalUsers} projects={taskModalProjects} />
+  ) : null;
 
   if (scope === "team") {
     return (
       <Page>
-        <DataToolbar tabs={["Board", "List", "Calendar", "Project"]} />
-        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-          <ScrollRow>
-            {["To Do", "In Progress", "Waiting Approval", "Need Revision"].map((status) => (
-              <Card key={status} className="w-[min(100%,17.5rem)] shrink-0 snap-start">
-                <CardHeader>
-                  <SectionTitle title={status} action={<Badge>{grouped[status]?.length ?? 0}</Badge>} />
-                </CardHeader>
-                <CardBody className="space-y-3">
-                  {(grouped[status] ?? []).map((task) => (
-                    <TaskCard key={task.task_id} task={task} users={data.users} compact />
-                  ))}
-                  {!grouped[status]?.length ? <EmptyState label="No tasks in this lane" /> : null}
-                </CardBody>
-              </Card>
-            ))}
-          </ScrollRow>
-          <CreateTaskForm data={data} title="Create team task" />
-        </div>
+        <DataToolbar tabs={["Board", "List", "Calendar", "Project"]} action={createTaskAction} />
+        <TaskBoard tasks={tasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} />
       </Page>
     );
   }
 
   return (
     <Page>
-      <DataToolbar tabs={["List", "Board", "Calendar"]} />
+      <DataToolbar tabs={["Board", "List", "Calendar"]} action={createTaskAction} />
+      <TaskBoard tasks={tasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} />
       <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
         <Card>
           <CardHeader>
@@ -440,75 +458,8 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
               ))}
           </CardBody>
         </Card>
-        <CreateTaskForm data={data} title="Create task" />
       </div>
     </Page>
-  );
-}
-
-function CreateTaskForm({ data, title }: { data: AppData; title: string }) {
-  const activeUsers = data.users.filter((user) => user.is_active);
-
-  return (
-    <Card>
-      <CardHeader>
-        <SectionTitle title={title} action={<Plus className="h-4 w-4 text-blue-600" />} />
-      </CardHeader>
-      <CardBody>
-        <form action="/api/resources/Tasks" method="post" className="space-y-4">
-          <input type="hidden" name="assigned_by" value={data.currentUser.user_id} />
-          <Field label="Title">
-            <input name="title" required className="input" placeholder="Write a clear task title" />
-          </Field>
-          <Field label="Description">
-            <textarea name="description" required className="input min-h-24 resize-y" placeholder="What needs to be done?" />
-          </Field>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Project">
-              <select name="project_id" className="input">
-                <option value="">No project</option>
-                {data.projects.map((project) => (
-                  <option key={project.project_id} value={project.project_id}>
-                    {project.project_name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Priority">
-              <select name="priority" defaultValue="Medium" className="input">
-                {["Low", "Medium", "High", "Urgent"].map((priority) => (
-                  <option key={priority}>{priority}</option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Due date">
-              <input name="due_date" type="date" required className="input" />
-            </Field>
-            <Field label="Progress">
-              <input name="progress" type="number" min="0" max="100" defaultValue="0" className="input" />
-            </Field>
-          </div>
-          <Field label="Assign to">
-            <select name="assigned_to" multiple required defaultValue={[data.currentUser.user_id]} className="input min-h-32">
-              {activeUsers.map((user) => (
-                <option key={user.user_id} value={user.user_id}>
-                  {user.full_name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Labels">
-            <input name="labels" className="input" placeholder="Design, Urgent, Client" />
-          </Field>
-          <button className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
-            <Plus className="h-4 w-4" />
-            Create task
-          </button>
-        </form>
-      </CardBody>
-    </Card>
   );
 }
 
@@ -517,6 +468,7 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
     <article className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
+          <TicketId id={task.task_id} />
           <Link href={`/tasks/${task.task_id}`} className="break-words font-semibold text-slate-950 transition hover:text-blue-600">
             {task.title}
           </Link>
@@ -530,15 +482,70 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
           <Badge key={label}>{label}</Badge>
         ))}
       </div>
-      <div className="mt-4">
-        <Progress value={clampProgress(task.progress)} label={`Due ${formatShortDate(task.due_date)}`} />
-      </div>
+      <div className="mt-4"><BoardStage status={task.status} dueDate={task.due_date} /></div>
       <div className="mt-4 flex -space-x-2">
         {task.assigned_to.map((id) => (
           <Avatar key={id} name={userName(users, id)} size="sm" />
         ))}
       </div>
     </article>
+  );
+}
+
+function ChecklistToggle({
+  checklistId,
+  field,
+  checked,
+  disabled,
+  label,
+}: {
+  checklistId: string;
+  field: "assignee_completed" | "pm_approved";
+  checked: boolean;
+  disabled?: boolean;
+  label: string;
+}) {
+  return (
+    <form action={`/api/resources/Task_Checklists/${checklistId}`} method="post">
+      <input type="hidden" name={field} value={String(!checked)} />
+      <button
+        disabled={disabled}
+        className={cn(
+          "inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition",
+          checked ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+          disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
+        <span className={cn("grid h-4 w-4 place-items-center rounded border", checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300")}>
+          {checked ? <CheckCircle2 className="h-3 w-3" /> : null}
+        </span>
+        {label}
+      </button>
+    </form>
+  );
+}
+
+function WorkflowChecklistItem({ item, task, data }: { item: TaskChecklist; task: Task; data: AppData }) {
+  const canManageTask = hasPermission(data.currentUser.role_id, "tasks:manage") || hasPermission(data.currentUser.role_id, "tasks:team");
+  const isAssignee = task.assigned_to.includes(data.currentUser.user_id);
+  const assigneeDone = item.assignee_completed || item.is_completed;
+
+  return (
+    <div className="rounded-lg border border-slate-200 p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={cn("break-words text-sm font-semibold", assigneeDone && item.pm_approved ? "text-slate-500 line-through" : "text-slate-950")}>{item.title}</p>
+          <p className="mt-1 text-xs font-medium text-slate-400">
+            Assignee {assigneeDone ? "done" : "open"} · PM {item.pm_approved ? "approved" : "pending"}
+          </p>
+        </div>
+        <StatusPill status={item.pm_approved ? "Ready" : assigneeDone ? "Waiting Approval" : "To Do"} />
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <ChecklistToggle checklistId={item.checklist_id} field="assignee_completed" checked={assigneeDone} disabled={!canManageTask && !isAssignee} label="Assignee" />
+        <ChecklistToggle checklistId={item.checklist_id} field="pm_approved" checked={item.pm_approved} disabled={!canManageTask || !assigneeDone} label="PM" />
+      </div>
+    </div>
   );
 }
 
@@ -554,6 +561,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
           <CardHeader>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
+                <TicketId id={task.task_id} />
                 <h2 className="break-words text-2xl font-semibold tracking-normal text-slate-950">{task.title}</h2>
                 <LinkifiedText text={task.description} className="mt-2 max-w-3xl text-sm leading-6 text-slate-500" />
               </div>
@@ -561,7 +569,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
             </div>
           </CardHeader>
           <CardBody className="space-y-5">
-            <Progress value={clampProgress(task.progress)} />
+            <BoardStage status={task.status} dueDate={task.due_date} />
             <div className="grid gap-3 sm:grid-cols-3">
               <InfoTile label="Project" value={project?.project_name ?? "No project"} />
               <InfoTile label="Due date" value={formatDate(task.due_date)} />
@@ -576,11 +584,16 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
           </CardHeader>
           <CardBody className="space-y-3">
             {checklist.map((item) => (
-              <div key={item.checklist_id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
-                <CheckCircle2 className={cn("h-5 w-5", item.is_completed ? "text-emerald-600" : "text-slate-300")} />
-                <p className={cn("text-sm font-medium", item.is_completed ? "text-slate-500 line-through" : "text-slate-950")}>{item.title}</p>
-              </div>
+              <WorkflowChecklistItem key={item.checklist_id} item={item} task={task} data={data} />
             ))}
+            <form action="/api/resources/Task_Checklists" method="post" className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-3 sm:flex-row">
+              <input type="hidden" name="task_id" value={task.task_id} />
+              <input name="title" required className="input" placeholder="Add subtask" />
+              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+                <Plus className="h-4 w-4" />
+                Add
+              </button>
+            </form>
           </CardBody>
         </Card>
 
@@ -615,7 +628,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
       </div>
 
       <div className="min-w-0 space-y-5">
-        <TaskUpdateForm task={task} users={data.users} />
+        <TaskUpdateForm task={task} users={data.users} currentUser={data.currentUser} />
         <Card>
           <CardHeader>
             <SectionTitle title="Assignees" />
@@ -638,26 +651,17 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
   );
 }
 
-function TaskUpdateForm({ task, users }: { task: Task; users: User[] }) {
+function TaskUpdateForm({ task, users, currentUser }: { task: Task; users: User[]; currentUser: CurrentUser }) {
   const activeUsers = users.filter((user) => user.is_active);
+  const canFinish = hasPermission(currentUser.role_id, "tasks:manage") || hasPermission(currentUser.role_id, "tasks:team");
 
   return (
     <Card>
       <CardHeader>
         <SectionTitle title="Update task" />
       </CardHeader>
-      <CardBody>
+      <CardBody className="space-y-4">
         <form action={`/api/resources/Tasks/${task.task_id}`} method="post" className="space-y-4">
-          <Field label="Status">
-            <select name="status" defaultValue={task.status} className="input">
-              {taskStatuses.map((status) => (
-                <option key={status}>{status}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Progress">
-            <input name="progress" type="number" min="0" max="100" defaultValue={task.progress} className="input" />
-          </Field>
           <Field label="Reassign">
             <select name="assigned_to" multiple defaultValue={task.assigned_to} className="input min-h-32">
               {activeUsers.map((user) => (
@@ -669,6 +673,12 @@ function TaskUpdateForm({ task, users }: { task: Task; users: User[] }) {
           </Field>
           <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Save task update</button>
         </form>
+        {canFinish && task.status === "Ready" ? (
+          <form action={`/api/resources/Tasks/${task.task_id}`} method="post">
+            <input type="hidden" name="status" value="Finished" />
+            <button className="h-11 w-full rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Mark finished</button>
+          </form>
+        ) : null}
       </CardBody>
     </Card>
   );
@@ -684,15 +694,60 @@ function InfoTile({ label, value }: { label: string; value: string }) {
 }
 
 export function ProjectsView(data: AppData) {
+  const canManageProjects = hasPermission(data.currentUser.role_id, "projects:manage");
+  const activeProjectUsers = data.users.filter((user) => user.is_active);
+
   return (
     <Page>
       <DataToolbar tabs={["All", "Active", "Review", "Completed"]} />
-      <div className="grid gap-4 lg:grid-cols-3">
+      {canManageProjects ? (
+        <Card>
+          <CardHeader>
+            <SectionTitle title="Add project" action={<Plus className="h-4 w-4 text-blue-600" />} />
+          </CardHeader>
+          <CardBody>
+            <form action="/api/resources/Projects" method="post" className="grid gap-4 lg:grid-cols-2">
+              <Field label="Project name"><input name="project_name" required className="input" placeholder="Halal Expo Indonesia" /></Field>
+              <Field label="Ticket ID code"><input name="ticket_id_prefix" className="input" placeholder="HEI" maxLength={5} /></Field>
+              <Field label="Owner">
+                <select name="owner_user_id" className="input" defaultValue={data.currentUser.user_id}>
+                  {activeProjectUsers.map((user) => <option key={user.user_id} value={user.user_id}>{user.full_name}</option>)}
+                </select>
+              </Field>
+              <Field label="Deadline"><input name="deadline" type="date" required className="input" /></Field>
+              <Field label="Priority"><select name="priority" defaultValue="Medium" className="input">{["Low", "Medium", "High", "Urgent"].map((priority) => <option key={priority}>{priority}</option>)}</select></Field>
+              <Field label="Status"><select name="status" defaultValue="Not Started" className="input">{projectStatuses.map((status) => <option key={status}>{status}</option>)}</select></Field>
+              <Field label="Members">
+                <div className="grid max-h-44 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
+                  {activeProjectUsers.map((user) => (
+                    <label key={user.user_id} className="flex min-w-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                      <input name="members" type="checkbox" value={user.user_id} defaultChecked={user.user_id === data.currentUser.user_id} className="h-4 w-4 accent-slate-950" />
+                      <span className="truncate">{user.full_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Links"><input name="links" className="input" placeholder="https://brief.url, https://drive.url" /></Field>
+              <Field label="Description"><textarea name="description" required className="input min-h-28 resize-y" /></Field>
+              <Field label="Notes"><textarea name="notes" className="input min-h-28 resize-y" /></Field>
+              <div className="flex items-end lg:col-span-2">
+                <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  Add project
+                </button>
+              </div>
+            </form>
+          </CardBody>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-2">
         {data.projects.map((project) => (
           <Card key={project.project_id}>
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
+                  <TicketId id={project.ticket_id_prefix || project.project_id} />
                   <p className="font-semibold text-slate-950">{project.project_name}</p>
                   <p className="mt-1 text-sm text-slate-500">Owner: {userName(data.users, project.owner_user_id)}</p>
                 </div>
@@ -710,6 +765,49 @@ export function ProjectsView(data: AppData) {
                 </div>
                 <Badge tone={project.priority === "Urgent" ? "red" : project.priority === "High" ? "yellow" : "neutral"}>{project.priority}</Badge>
               </div>
+              {canManageProjects ? (
+                <details className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit project</summary>
+                  <form action={`/api/resources/Projects/${project.project_id}`} method="post" className="mt-4 grid gap-3">
+                    <Field label="Project name"><input name="project_name" required className="input" defaultValue={project.project_name} /></Field>
+                    <Field label="Ticket ID code"><input name="ticket_id_prefix" required className="input" defaultValue={project.ticket_id_prefix} maxLength={5} /></Field>
+                    <Field label="Owner">
+                      <select name="owner_user_id" className="input" defaultValue={project.owner_user_id}>
+                        {activeProjectUsers.map((user) => <option key={user.user_id} value={user.user_id}>{user.full_name}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Status"><select name="status" className="input" defaultValue={project.status}>{projectStatuses.map((status) => <option key={status}>{status}</option>)}</select></Field>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field label="Priority"><select name="priority" className="input" defaultValue={project.priority}>{["Low", "Medium", "High", "Urgent"].map((priority) => <option key={priority}>{priority}</option>)}</select></Field>
+                      <Field label="Progress"><input name="progress" type="number" min="0" max="100" className="input" defaultValue={project.progress} /></Field>
+                    </div>
+                    <Field label="Deadline"><input name="deadline" type="date" required className="input" defaultValue={project.deadline} /></Field>
+                    <Field label="Members">
+                      <div className="grid max-h-44 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 sm:grid-cols-2">
+                        {activeProjectUsers.map((user) => (
+                          <label key={user.user_id} className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+                            <input name="members" type="checkbox" value={user.user_id} defaultChecked={project.members.includes(user.user_id)} className="h-4 w-4 accent-slate-950" />
+                            <span className="truncate">{user.full_name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </Field>
+                    <Field label="Links"><input name="links" className="input" defaultValue={project.links.join(", ")} /></Field>
+                    <Field label="Description"><textarea name="description" required className="input min-h-24 resize-y" defaultValue={project.description} /></Field>
+                    <Field label="Notes"><textarea name="notes" className="input min-h-24 resize-y" defaultValue={project.notes} /></Field>
+                    <div className="flex flex-wrap gap-2">
+                      <button className="h-11 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">Save project</button>
+                    </div>
+                  </form>
+                  <form action={`/api/resources/Projects/${project.project_id}`} method="post" className="mt-2">
+                    <input type="hidden" name="_method" value="delete" />
+                    <button className="inline-flex h-11 items-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4" />
+                      Remove project
+                    </button>
+                  </form>
+                </details>
+              ) : null}
             </CardBody>
           </Card>
         ))}

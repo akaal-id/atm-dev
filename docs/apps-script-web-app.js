@@ -48,9 +48,21 @@ const SCHEMA = {
     "completed_at",
   ],
   Task_Comments: ["comment_id", "task_id", "user_id", "comment", "mentions", "created_at", "updated_at"],
-  Task_Checklists: ["checklist_id", "task_id", "title", "is_completed", "created_at", "updated_at"],
+  Task_Checklists: [
+    "checklist_id",
+    "task_id",
+    "title",
+    "is_completed",
+    "assignee_completed",
+    "assignee_completed_by",
+    "pm_approved",
+    "pm_approved_by",
+    "created_at",
+    "updated_at",
+  ],
   Projects: [
     "project_id",
+    "ticket_id_prefix",
     "project_name",
     "description",
     "owner_user_id",
@@ -126,7 +138,7 @@ const SCHEMA = {
 
 const LIST_FIELDS = new Set(["assigned_to", "labels", "members", "target_users", "mentions", "links"]);
 const JSON_FIELDS = new Set(["permissions_json", "criteria_json"]);
-const BOOLEAN_FIELDS = new Set(["is_active", "is_completed", "is_pinned", "is_read"]);
+const BOOLEAN_FIELDS = new Set(["is_active", "is_completed", "assignee_completed", "pm_approved", "is_pinned", "is_read"]);
 const NUMBER_FIELDS = new Set(["progress", "points"]);
 
 function doPost(event) {

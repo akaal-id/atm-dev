@@ -8,7 +8,7 @@ type SheetRecord = Record<string, unknown>;
 
 const listFields = new Set(["assigned_to", "labels", "members", "target_users", "mentions", "links"]);
 const jsonFields = new Set(["permissions_json", "criteria_json"]);
-const booleanFields = new Set(["is_active", "is_completed", "is_pinned", "is_read"]);
+const booleanFields = new Set(["is_active", "is_completed", "assignee_completed", "pm_approved", "is_pinned", "is_read"]);
 const numberFields = new Set(["progress", "points"]);
 
 function getPrivateKey() {

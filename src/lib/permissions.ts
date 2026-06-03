@@ -16,7 +16,7 @@ export const employeeStatusOptions = [
   "Inactive",
 ] as const;
 
-export const taskStatuses = ["To Do", "In Progress", "Waiting Approval", "Need Revision", "Approved", "Done", "Late", "Cancelled"] as const;
+export const taskStatuses = ["To Do", "In Progress", "Waiting Approval", "Ready", "Finished", "Cancelled"] as const;
 
 export const projectStatuses = [
   "Not Started",

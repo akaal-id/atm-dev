@@ -188,8 +188,7 @@ export async function createResource<R extends ResourceName>(resource: R, payloa
 
 async function sendEmailForNotification(notification: AppNotification) {
   try {
-    const users = await listResource("Users");
-    const user = users.find((candidate) => candidate.user_id === notification.user_id) as User | undefined;
+    const [user] = (await listResourceByField("Users", "user_id", notification.user_id, { limit: 1 })) as User[];
     const result = await sendNotificationEmail(notification, user);
 
     if (!result.ok) {

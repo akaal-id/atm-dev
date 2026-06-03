@@ -51,6 +51,7 @@ create table if not exists public.roles (
 
 create table if not exists public.projects (
   project_id text primary key,
+  ticket_id_prefix text not null default '',
   project_name text not null default '',
   description text not null default '',
   owner_user_id text not null default '',
@@ -97,6 +98,10 @@ create table if not exists public.task_checklists (
   task_id text not null default '',
   title text not null default '',
   is_completed boolean not null default false,
+  assignee_completed boolean not null default false,
+  assignee_completed_by text not null default '',
+  pm_approved boolean not null default false,
+  pm_approved_by text not null default '',
   created_at text not null default '',
   updated_at text not null default ''
 );
@@ -245,6 +250,7 @@ create index if not exists users_department_idx on public.users (department_id);
 create index if not exists tasks_project_idx on public.tasks (project_id);
 create index if not exists tasks_due_date_idx on public.tasks (due_date);
 create index if not exists task_comments_task_idx on public.task_comments (task_id);
+create index if not exists task_checklists_task_idx on public.task_checklists (task_id);
 create index if not exists attendance_user_date_idx on public.attendance (user_id, date);
 create index if not exists leave_requests_user_idx on public.leave_requests (user_id);
 create index if not exists notifications_user_read_idx on public.notifications (user_id, is_read);
@@ -252,3 +258,12 @@ create index if not exists gamification_points_user_idx on public.gamification_p
 create index if not exists activity_logs_created_idx on public.activity_logs (created_at);
 
 commit;
+
+-- Existing Supabase projects can run this migration safely after the original schema:
+alter table if exists public.task_checklists add column if not exists assignee_completed boolean not null default false;
+alter table if exists public.projects add column if not exists ticket_id_prefix text not null default '';
+alter table if exists public.task_checklists add column if not exists assignee_completed_by text not null default '';
+alter table if exists public.task_checklists add column if not exists pm_approved boolean not null default false;
+alter table if exists public.task_checklists add column if not exists pm_approved_by text not null default '';
+update public.task_checklists set assignee_completed = true where is_completed = true and assignee_completed = false;
+create index if not exists task_checklists_task_idx on public.task_checklists (task_id);

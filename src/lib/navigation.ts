@@ -26,8 +26,8 @@ export interface NavigationItem {
 export const primaryNavigation: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
   { label: "My Tasks", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" },
-  { label: "Team Tasks", href: "/tasks/team", icon: "Users", permission: "tasks:team" },
-  { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "projects:manage" },
+  { label: "Team Tasks", href: "/tasks/team", icon: "Users", permission: "dashboard:view" },
+  { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "dashboard:view" },
   { label: "Calendar", href: "/calendar", icon: "CalendarDays", permission: "dashboard:view" },
   { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
   { label: "Announcements", href: "/announcements", icon: "Megaphone", permission: "announcements:view" },

@@ -79,6 +79,10 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
 
   if (resource === "Task_Checklists") {
     normalized.is_completed = ensureBoolean(row.is_completed);
+    normalized.assignee_completed = row.assignee_completed === undefined ? ensureBoolean(row.is_completed) : ensureBoolean(row.assignee_completed);
+    normalized.assignee_completed_by = String(row.assignee_completed_by ?? "");
+    normalized.pm_approved = ensureBoolean(row.pm_approved);
+    normalized.pm_approved_by = String(row.pm_approved_by ?? "");
   }
 
   return normalized;

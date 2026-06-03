@@ -28,6 +28,8 @@ export type TaskStatus =
   | "To Do"
   | "In Progress"
   | "Waiting Approval"
+  | "Ready"
+  | "Finished"
   | "Need Revision"
   | "Approved"
   | "Done"
@@ -157,12 +159,17 @@ export interface TaskChecklist {
   task_id: string;
   title: string;
   is_completed: boolean;
+  assignee_completed: boolean;
+  assignee_completed_by: string;
+  pm_approved: boolean;
+  pm_approved_by: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface Project {
   project_id: string;
+  ticket_id_prefix: string;
   project_name: string;
   description: string;
   owner_user_id: string;
