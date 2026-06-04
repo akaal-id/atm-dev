@@ -1,4 +1,5 @@
-const CACHE_NAME = "atm-pwa-v4";
+const APP_VERSION = "V2.1";
+const CACHE_NAME = "atm-pwa-v2-1";
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -13,7 +14,6 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(STATIC_ASSETS))
-      .then(() => self.skipWaiting()),
   );
 });
 
@@ -24,6 +24,16 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+
+  if (event.data?.type === "GET_VERSION") {
+    event.source?.postMessage({ type: "APP_VERSION", version: APP_VERSION });
+  }
 });
 
 function shouldBypassRuntimeCache(request) {

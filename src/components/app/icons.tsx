@@ -15,6 +15,7 @@ import {
   Megaphone,
   MessageCircle,
   Plus,
+  RefreshCw,
   Search,
   Settings,
   Shield,
@@ -48,6 +49,7 @@ export const iconMap = {
   LogOut,
   MessageCircle,
   Plus,
+  RefreshCw,
   Search,
   Zap,
 } as const;

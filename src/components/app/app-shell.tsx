@@ -1,7 +1,6 @@
 import { BottomNav } from "@/components/app/bottom-nav";
 import { DeviceNotifications } from "@/components/app/device-notifications";
 import { LiveRefresh } from "@/components/app/live-refresh";
-import { PwaRegister } from "@/components/app/pwa-register";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { Topbar } from "@/components/app/topbar";
 import { adminNavigation, bottomNavigation, primaryNavigation } from "@/lib/navigation";
@@ -22,7 +21,6 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={styles.shell}>
-      <PwaRegister />
       <DeviceNotifications />
       <LiveRefresh />
       <div className={styles.layout}>
