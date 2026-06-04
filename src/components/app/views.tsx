@@ -25,6 +25,7 @@ import {
 
 import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { CreateProjectModal } from "@/components/app/create-project-modal";
+import { EmployeeAdminControls } from "@/components/app/employee-admin-controls";
 import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
 import { Page } from "@/components/app/page-layout";
 import { TaskBoard } from "@/components/app/task-board";
@@ -643,7 +644,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
                     <p className="text-sm font-semibold text-slate-950">{userName(data.users, comment.user_id)}</p>
                     <p className="text-xs text-slate-500">{formatDate(comment.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{comment.comment}</p>
+                      <LinkifiedText text={comment.comment} className="mt-2 text-sm leading-6 text-slate-600" />
                 </div>
               </div>
             ))}
@@ -1322,76 +1323,29 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
               <SectionTitle title="Admin controls" />
             </CardHeader>
             <CardBody className="space-y-4">
-              <form action={`/api/resources/Users/${employee.user_id}`} method="post" encType="multipart/form-data" className="grid gap-4 md:grid-cols-2">
-                <Field label="Full name">
-                  <input name="full_name" required className="input" defaultValue={employee.full_name} />
-                </Field>
-                <Field label="Email">
-                  <input name="email" required type="email" className="input" defaultValue={employee.email} />
-                </Field>
-                <Field label="Position">
-                  <input name="position" required className="input" defaultValue={employee.position} />
-                </Field>
-                <Field label="Department">
-                  <select name="department_id" className="input" defaultValue={employee.department_id}>
-                    {data.departments.map((department) => (
-                      <option key={department.department_id} value={department.department_id}>
-                        {department.department_name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Role">
-                  <select name="role_id" className="input" defaultValue={employee.role_id}>
-                    {data.roles.map((role) => (
-                      <option key={role.role_id} value={role.role_id}>
-                        {role.role_name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Employment status">
-                  <select name="employment_status" className="input" defaultValue={employee.employment_status}>
-                    {employeeStatusOptions.map((status) => (
-                      <option key={status}>{status}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Birthday">
-                  <input name="birthday" type="date" className="input" defaultValue={employee.birthday} />
-                </Field>
-                <Field label="Join date">
-                  <input name="join_date" type="date" className="input" defaultValue={employee.join_date} />
-                </Field>
-                <Field label="Account status">
-                  <select name="is_active" className="input" defaultValue={String(employee.is_active)}>
-                    <option value="true">Active</option>
-                    <option value="false">Inactive</option>
-                  </select>
-                </Field>
-                <Field label="Profile photo">
-                  <input name="profile_photo" type="url" className="input" defaultValue={employee.profile_photo} />
-                  <input name="profile_photo_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="input" />
-                </Field>
-                <Field label="Bio">
-                  <textarea name="bio" className="input" rows={4} defaultValue={employee.bio} />
-                </Field>
-                <div className="flex items-end">
-                  <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">Save user</button>
-                </div>
-              </form>
-
-              {employee.user_id !== data.currentUser.user_id ? (
-                <form action={`/api/resources/Users/${employee.user_id}`} method="post">
-                  <input type="hidden" name="_method" value="delete" />
-                  <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 md:w-auto">
-                    <Trash2 className="h-4 w-4" />
-                    Remove user account
-                  </button>
-                </form>
-              ) : (
-                <p className="text-sm font-medium text-slate-500">You cannot remove your own account while signed in.</p>
-              )}
+              <EmployeeAdminControls
+                employee={{
+                  user_id: employee.user_id,
+                  full_name: employee.full_name,
+                  email: employee.email,
+                  position: employee.position,
+                  department_id: employee.department_id,
+                  role_id: employee.role_id,
+                  employment_status: employee.employment_status,
+                  birthday: employee.birthday,
+                  join_date: employee.join_date,
+                  is_active: employee.is_active,
+                  profile_photo: employee.profile_photo,
+                  bio: employee.bio,
+                }}
+                departments={data.departments.map((department) => ({
+                  department_id: department.department_id,
+                  department_name: department.department_name,
+                }))}
+                roles={data.roles.map((role) => ({ role_id: role.role_id, role_name: role.role_name }))}
+                statuses={employeeStatusOptions}
+                canRemove={employee.user_id !== data.currentUser.user_id}
+              />
             </CardBody>
           </Card>
         ) : null}

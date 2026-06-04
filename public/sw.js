@@ -1,4 +1,4 @@
-const CACHE_NAME = "atm-pwa-v3";
+const CACHE_NAME = "atm-pwa-v4";
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -26,6 +26,16 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+function shouldBypassRuntimeCache(request) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return true;
+  if (url.pathname.startsWith("/_next/")) return true;
+  if (url.pathname.startsWith("/api/")) return true;
+  if (url.searchParams.has("_rsc")) return true;
+  if (request.headers.get("accept")?.includes("text/x-component")) return true;
+  return false;
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
 
@@ -40,6 +50,10 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.method !== "GET") return;
+  if (shouldBypassRuntimeCache(request)) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
