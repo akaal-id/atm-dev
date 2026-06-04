@@ -1,6 +1,12 @@
-const CACHE_NAME = "atm-pwa-v2";
+const CACHE_NAME = "atm-pwa-v3";
 const OFFLINE_URL = "/offline";
-const STATIC_ASSETS = [OFFLINE_URL, "/icon.svg", "/manifest.webmanifest"];
+const STATIC_ASSETS = [
+  OFFLINE_URL,
+  "/icon/atm-icon-192.png",
+  "/icon/atm-icon-512.png",
+  "/icon/apple-touch-icon.png",
+  "/manifest.webmanifest",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
