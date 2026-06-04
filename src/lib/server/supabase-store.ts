@@ -31,6 +31,10 @@ export interface SupabaseReadOptions {
   ascending?: boolean;
 }
 
+const optionalSupabaseFields: Partial<Record<SupabaseResourceName, string[]>> = {
+  Tasks: ["need_leader_approval"],
+};
+
 class SupabaseStoreError extends Error {
   constructor(
     message: string,
@@ -40,6 +44,27 @@ class SupabaseStoreError extends Error {
     super(message);
     this.name = "SupabaseStoreError";
   }
+}
+
+function stripOptionalFields(resource: SupabaseResourceName, record: Record<string, unknown>) {
+  const optionalFields = optionalSupabaseFields[resource] ?? [];
+  const next = { ...record };
+  let changed = false;
+
+  optionalFields.forEach((field) => {
+    if (field in next) {
+      delete next[field];
+      changed = true;
+    }
+  });
+
+  return changed ? next : record;
+}
+
+function canRetryWithoutOptionalFields(resource: SupabaseResourceName, error: unknown, record: Record<string, unknown>) {
+  const optionalFields = optionalSupabaseFields[resource] ?? [];
+  if (optionalFields.length === 0 || !(error instanceof SupabaseStoreError) || error.status !== 400) return false;
+  return optionalFields.some((field) => field in record && error.preview?.includes(field));
 }
 
 function supabaseUrl() {
@@ -145,11 +170,22 @@ export async function readSupabaseResourceWhere(resource: SupabaseResourceName, 
 
 export async function insertSupabaseResource(resource: SupabaseResourceName, record: Record<string, unknown>) {
   const table = tableFor(resource);
-  const rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}`, {
-    method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(record),
-  });
+  let rows: Record<string, unknown>[];
+
+  try {
+    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}`, {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(record),
+    });
+  } catch (error) {
+    if (!canRetryWithoutOptionalFields(resource, error, record)) throw error;
+    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}`, {
+      method: "POST",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(stripOptionalFields(resource, record)),
+    });
+  }
 
   return rows[0];
 }
@@ -163,11 +199,21 @@ export async function upsertSupabaseResources(resource: SupabaseResourceName, id
 
   for (let index = 0; index < records.length; index += batchSize) {
     const batch = records.slice(index, index + batchSize);
-    await requestSupabase<undefined>(`/rest/v1/${table}?on_conflict=${encodeURIComponent(idField)}`, {
-      method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify(batch),
-    });
+    try {
+      await requestSupabase<undefined>(`/rest/v1/${table}?on_conflict=${encodeURIComponent(idField)}`, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(batch),
+      });
+    } catch (error) {
+      const sampleRecord = batch.find((record) => canRetryWithoutOptionalFields(resource, error, record));
+      if (!sampleRecord) throw error;
+      await requestSupabase<undefined>(`/rest/v1/${table}?on_conflict=${encodeURIComponent(idField)}`, {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify(batch.map((record) => stripOptionalFields(resource, record))),
+      });
+    }
     total += batch.length;
   }
 
@@ -176,11 +222,22 @@ export async function upsertSupabaseResources(resource: SupabaseResourceName, id
 
 export async function updateSupabaseResource(resource: SupabaseResourceName, idField: string, id: string, patch: Record<string, unknown>) {
   const table = tableFor(resource);
-  const rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${filterById(idField, id)}`, {
-    method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(patch),
-  });
+  let rows: Record<string, unknown>[];
+
+  try {
+    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${filterById(idField, id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(patch),
+    });
+  } catch (error) {
+    if (!canRetryWithoutOptionalFields(resource, error, patch)) throw error;
+    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${filterById(idField, id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify(stripOptionalFields(resource, patch)),
+    });
+  }
 
   return rows[0];
 }

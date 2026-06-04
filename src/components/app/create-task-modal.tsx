@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 
 import type { CurrentUser } from "@/lib/types";
@@ -30,6 +30,7 @@ export function CreateTaskModal({
   title?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [needLeaderApproval, setNeedLeaderApproval] = useState(false);
   const activeUsers = users.filter((user) => user.is_active);
 
   return (
@@ -63,6 +64,7 @@ export function CreateTaskModal({
 
             <form action="/api/resources/Tasks" method="post" className="space-y-5 p-5">
               <input type="hidden" name="assigned_by" value={currentUser.user_id} />
+              <input type="hidden" name="need_leader_approval" value={String(needLeaderApproval)} />
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Title">
@@ -97,6 +99,29 @@ export function CreateTaskModal({
                   </select>
                 </Field>
               </div>
+
+              <button
+                type="button"
+                aria-pressed={needLeaderApproval}
+                onClick={() => setNeedLeaderApproval((current) => !current)}
+                className={cn(
+                  "flex w-full items-center justify-between gap-3 rounded-lg border p-4 text-left transition",
+                  needLeaderApproval ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+                )}
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className={cn("grid h-9 w-9 place-items-center rounded-lg", needLeaderApproval ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500")}>
+                    <ShieldCheck className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">Need Leader Approval</span>
+                    <span className="mt-1 block text-xs font-medium text-slate-500">Show Leader approval checkboxes for Manager, Admin, or Super Admin review.</span>
+                  </span>
+                </span>
+                <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", needLeaderApproval ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500")}>
+                  {needLeaderApproval ? "On" : "Off"}
+                </span>
+              </button>
 
               <Field label="Assignees">
                 <div className="grid max-h-56 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">

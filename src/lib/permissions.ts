@@ -1,5 +1,5 @@
 import { allPermissions, roles } from "@/lib/data/seed";
-import type { Permission, RoleKey } from "@/lib/types";
+import type { EmployeeStatus, Permission, RoleKey } from "@/lib/types";
 
 export const employeeStatusOptions = [
   "Intern",
@@ -58,4 +58,8 @@ export function hasAnyPermission(roleId: RoleKey, permissions: Permission[]) {
 
 export function roleLabel(roleId: RoleKey) {
   return getRole(roleId).role_name;
+}
+
+export function canApproveTaskAsLeader(user: { role_id: RoleKey; employment_status: EmployeeStatus | string }) {
+  return user.role_id === "super_admin" || user.role_id === "admin" || user.employment_status === "Manager";
 }

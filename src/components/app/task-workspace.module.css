@@ -64,6 +64,7 @@
 .filterPanel {
   display: grid;
   gap: 0.75rem;
+  min-width: 0;
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   background: #ffffff;
@@ -115,6 +116,7 @@
 .filterGrid {
   display: grid;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .filterField {
@@ -162,6 +164,7 @@
 .listRow {
   display: grid;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .listHeader {
@@ -178,7 +181,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   background: #ffffff;
-  padding: 1rem;
+  padding: 0.875rem;
   box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
 }
 
@@ -190,6 +193,8 @@
   display: block;
   margin-top: 0.5rem;
   overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+  line-height: 1.35;
   font-weight: 800;
   color: #020617;
   transition: color 150ms ease;
@@ -205,13 +210,18 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
   font-size: 0.8125rem;
   line-height: 1.5;
   color: #64748b;
 }
 
 .cell {
+  display: grid;
+  gap: 0.125rem;
   min-width: 0;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 0.75rem;
 }
 
 .cellLabel {
@@ -226,7 +236,7 @@
 .cellText {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-size: 0.875rem;
   font-weight: 700;
   color: #334155;
@@ -235,6 +245,7 @@
 .avatarLine {
   display: flex;
   min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: 0.5rem;
 }
@@ -253,6 +264,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .calendarLayout {
@@ -465,9 +477,48 @@
   .filterGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .listRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 1rem;
+  }
+
+  .taskMain {
+    grid-column: 1 / -1;
+  }
+
+  .cell {
+    min-height: 4rem;
+    border-top: 0;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    padding: 0.75rem;
+  }
 }
 
 @media (min-width: 1024px) {
+  .filterPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .listRow {
+    grid-template-columns: minmax(0, 1.2fr) repeat(2, minmax(0, 0.8fr));
+  }
+
+  .taskMain {
+    grid-column: 1 / -1;
+  }
+
+  .cell {
+    min-height: 4.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
   .filterPanel {
     grid-template-columns: minmax(18rem, 1fr) minmax(0, 2.4fr);
     align-items: end;
@@ -479,18 +530,39 @@
 
   .listHeader,
   .listRow {
-    grid-template-columns: minmax(18rem, 1.55fr) minmax(9rem, 0.8fr) minmax(7rem, 0.55fr) minmax(12rem, 0.95fr) minmax(9rem, 0.75fr) minmax(8rem, 0.55fr);
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.85fr) minmax(0, 0.55fr) minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 0.55fr);
     align-items: center;
+  }
+
+  .listRow {
+    padding: 1rem;
   }
 
   .listHeader {
     display: grid;
   }
 
+  .taskMain {
+    grid-column: auto;
+  }
+
+  .cell {
+    min-height: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+  }
+
   .cellLabel {
     display: none;
   }
 
+  .cellText {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1024px) {
   .calendarLayout {
     grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
   }

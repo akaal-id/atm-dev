@@ -43,6 +43,7 @@ const SCHEMA = {
     "due_date",
     "progress",
     "labels",
+    "need_leader_approval",
     "created_at",
     "updated_at",
     "completed_at",
@@ -138,7 +139,7 @@ const SCHEMA = {
 
 const LIST_FIELDS = new Set(["assigned_to", "labels", "members", "target_users", "mentions", "links"]);
 const JSON_FIELDS = new Set(["permissions_json", "criteria_json"]);
-const BOOLEAN_FIELDS = new Set(["is_active", "is_completed", "assignee_completed", "pm_approved", "is_pinned", "is_read"]);
+const BOOLEAN_FIELDS = new Set(["is_active", "is_completed", "assignee_completed", "pm_approved", "need_leader_approval", "is_pinned", "is_read"]);
 const NUMBER_FIELDS = new Set(["progress", "points"]);
 
 function doPost(event) {

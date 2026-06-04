@@ -139,6 +139,7 @@ export interface Task {
   due_date: string;
   progress: number;
   labels: string[];
+  need_leader_approval?: boolean;
   created_at: string;
   updated_at: string;
   completed_at?: string;

@@ -57,7 +57,8 @@ import {
   visibleTasksForUser,
   clampProgress,
 } from "@/lib/metrics";
-import { attendanceStatuses, employeeStatusOptions, hasPermission, projectStatuses, taskStatuses } from "@/lib/permissions";
+import { attendanceStatuses, canApproveTaskAsLeader, employeeStatusOptions, hasPermission, projectStatuses, taskStatuses } from "@/lib/permissions";
+import { taskNeedsLeaderApproval, visibleTaskLabels } from "@/lib/task-approval";
 import type {
   ActivityLog,
   Announcement,
@@ -433,7 +434,7 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
     hasPermission(data.currentUser.role_id, "tasks:own") ||
     hasPermission(data.currentUser.role_id, "tasks:team") ||
     hasPermission(data.currentUser.role_id, "tasks:manage");
-  const canMoveFinished = hasPermission(data.currentUser.role_id, "tasks:team") || hasPermission(data.currentUser.role_id, "tasks:manage");
+  const canMoveFinished = canApproveTaskAsLeader(data.currentUser);
   const taskModalUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }));
   const taskModalProjects = data.projects.map((project) => ({
     project_id: project.project_id,
@@ -474,7 +475,7 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
-        {task.labels.slice(0, 3).map((label) => (
+        {visibleTaskLabels(task.labels).slice(0, 3).map((label) => (
           <Badge key={label}>{label}</Badge>
         ))}
       </div>
@@ -523,23 +524,30 @@ function ChecklistToggle({
 
 function WorkflowChecklistItem({ item, task, data }: { item: TaskChecklist; task: Task; data: AppData }) {
   const canManageTask = hasPermission(data.currentUser.role_id, "tasks:manage") || hasPermission(data.currentUser.role_id, "tasks:team");
+  const canLeaderApprove = canApproveTaskAsLeader(data.currentUser);
   const isAssignee = task.assigned_to.includes(data.currentUser.user_id);
   const assigneeDone = item.assignee_completed || item.is_completed;
+  const needsLeaderApproval = taskNeedsLeaderApproval(task);
+  const itemComplete = assigneeDone && (!needsLeaderApproval || item.pm_approved);
+  const itemStatus = needsLeaderApproval ? (item.pm_approved ? "Ready" : assigneeDone ? "Waiting Approval" : "To Do") : assigneeDone ? "Ready" : "To Do";
 
   return (
     <div className="rounded-lg border border-slate-200 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className={cn("break-words text-sm font-semibold", assigneeDone && item.pm_approved ? "text-slate-500 line-through" : "text-slate-950")}>{item.title}</p>
+          <p className={cn("break-words text-sm font-semibold", itemComplete ? "text-slate-500 line-through" : "text-slate-950")}>{item.title}</p>
           <p className="mt-1 text-xs font-medium text-slate-400">
-            Assignee {assigneeDone ? "done" : "open"} · PM {item.pm_approved ? "approved" : "pending"}
+            Assignee {assigneeDone ? "done" : "open"}
+            {needsLeaderApproval ? <> · Leader {item.pm_approved ? "approved" : "pending"}</> : null}
           </p>
         </div>
-        <StatusPill status={item.pm_approved ? "Ready" : assigneeDone ? "Waiting Approval" : "To Do"} />
+        <StatusPill status={itemStatus} />
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <ChecklistToggle checklistId={item.checklist_id} field="assignee_completed" checked={assigneeDone} disabled={!canManageTask && !isAssignee} label="Assignee" />
-        <ChecklistToggle checklistId={item.checklist_id} field="pm_approved" checked={item.pm_approved} disabled={!canManageTask || !assigneeDone} label="PM" />
+        {needsLeaderApproval ? (
+          <ChecklistToggle checklistId={item.checklist_id} field="pm_approved" checked={item.pm_approved} disabled={!canLeaderApprove || !assigneeDone} label="Leader" />
+        ) : null}
       </div>
     </div>
   );
@@ -627,7 +635,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
       </div>
 
       <div className="min-w-0 space-y-5">
-        <TaskUpdateForm task={task} users={data.users} currentUser={data.currentUser} />
+        <TaskUpdateForm task={task} checklist={checklist} users={data.users} currentUser={data.currentUser} />
         <Card>
           <CardHeader>
             <SectionTitle title="Assignees" />
@@ -650,10 +658,13 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
   );
 }
 
-function TaskUpdateForm({ task, users, currentUser }: { task: Task; users: User[]; currentUser: CurrentUser }) {
+function TaskUpdateForm({ task, checklist, users, currentUser }: { task: Task; checklist: TaskChecklist[]; users: User[]; currentUser: CurrentUser }) {
   const activeUsers = users.filter((user) => user.is_active);
-  const canFinish = hasPermission(currentUser.role_id, "tasks:manage") || hasPermission(currentUser.role_id, "tasks:team");
-  const canMarkDone = canFinish || task.assigned_to.includes(currentUser.user_id);
+  const canLeaderApprove = canApproveTaskAsLeader(currentUser);
+  const canSubmitDone = canLeaderApprove || task.assigned_to.includes(currentUser.user_id);
+  const needsLeaderApproval = taskNeedsLeaderApproval(task);
+  const leaderApprovalComplete = !needsLeaderApproval || (checklist.length > 0 ? checklist.every((item) => item.pm_approved) : canLeaderApprove);
+  const doneDisabled = needsLeaderApproval && !leaderApprovalComplete;
 
   return (
     <Card>
@@ -661,12 +672,19 @@ function TaskUpdateForm({ task, users, currentUser }: { task: Task; users: User[
         <SectionTitle title="Update task" />
       </CardHeader>
       <CardBody className="space-y-4">
-        {canMarkDone && task.status !== "Finished" ? (
+        {canSubmitDone && task.status !== "Finished" ? (
           <form action={`/api/tasks/${task.task_id}/done`} method="post">
-            <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">
+            <button
+              disabled={doneDisabled}
+              className={cn(
+                "inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white transition",
+                doneDisabled ? "cursor-not-allowed bg-slate-300 text-slate-500" : "bg-emerald-600 hover:bg-emerald-700",
+              )}
+            >
               <CheckCircle2 className="h-4 w-4" />
-              Task Done
+              Submit Done
             </button>
+            {doneDisabled ? <p className="mt-2 text-xs font-semibold text-amber-600">Leader approval is required before this task can be finished.</p> : null}
           </form>
         ) : null}
         <form action={`/api/resources/Tasks/${task.task_id}`} method="post" className="space-y-4">
@@ -688,12 +706,6 @@ function TaskUpdateForm({ task, users, currentUser }: { task: Task; users: User[
           </Field>
           <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Save assignees</button>
         </form>
-        {canFinish && task.status === "Ready" ? (
-          <form action={`/api/resources/Tasks/${task.task_id}`} method="post">
-            <input type="hidden" name="status" value="Finished" />
-            <button className="h-11 w-full rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">Mark finished</button>
-          </form>
-        ) : null}
       </CardBody>
     </Card>
   );

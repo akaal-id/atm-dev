@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Permission } from "@/lib/types";
 import type { ResourceName } from "@/lib/server/store";
+import { taskNeedsLeaderApproval } from "@/lib/task-approval";
 
 function ensureStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String);
@@ -55,6 +56,10 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
   if (resource === "Tasks") {
     normalized.assigned_to = ensureStringArray(row.assigned_to);
     normalized.labels = ensureStringArray(row.labels);
+    normalized.need_leader_approval = taskNeedsLeaderApproval({
+      labels: normalized.labels as string[],
+      need_leader_approval: row.need_leader_approval as boolean | string | number | undefined,
+    });
     normalized.progress = ensureNumber(row.progress);
   }
 

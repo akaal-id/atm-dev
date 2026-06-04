@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { StatusPill } from "@/components/ui/status-pill";
 import { activeTasks, completedTasks, jakartaToday } from "@/lib/metrics";
+import { visibleTaskLabels } from "@/lib/task-approval";
 import type { CurrentUser, Project, Task, User } from "@/lib/types";
 import { cn, formatShortDate, groupBy } from "@/lib/utils";
 import styles from "./task-workspace.module.css";
@@ -96,7 +97,7 @@ function filterTasks(tasks: Task[], users: User[], projects: Project[], filters:
       task.description,
       task.status,
       task.priority,
-      task.labels.join(" "),
+      visibleTaskLabels(task.labels).join(" "),
       userName(users, task.assigned_by),
       assigneeNames,
       projectName(projects, task.project_id),
@@ -145,7 +146,7 @@ function TaskListRow({ task, users, projects }: { task: Task; users: User[]; pro
         <LinkifiedText text={task.description} className={styles.taskDescription} />
         <div className={cn(styles.metaRow, "mt-3")}>
           <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
-          {task.labels.slice(0, 2).map((label) => (
+          {visibleTaskLabels(task.labels).slice(0, 2).map((label) => (
             <Badge key={label}>{label}</Badge>
           ))}
         </div>

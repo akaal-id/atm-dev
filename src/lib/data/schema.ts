@@ -39,6 +39,7 @@ export const appDatabaseSchema = {
     "due_date",
     "progress",
     "labels",
+    "need_leader_approval",
     "created_at",
     "updated_at",
     "completed_at",

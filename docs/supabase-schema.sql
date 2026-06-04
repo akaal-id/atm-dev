@@ -78,6 +78,7 @@ create table if not exists public.tasks (
   due_date text not null default '',
   progress integer not null default 0,
   labels jsonb not null default '[]'::jsonb,
+  need_leader_approval boolean not null default false,
   created_at text not null default '',
   updated_at text not null default '',
   completed_at text not null default ''
@@ -265,5 +266,6 @@ alter table if exists public.projects add column if not exists ticket_id_prefix 
 alter table if exists public.task_checklists add column if not exists assignee_completed_by text not null default '';
 alter table if exists public.task_checklists add column if not exists pm_approved boolean not null default false;
 alter table if exists public.task_checklists add column if not exists pm_approved_by text not null default '';
+alter table if exists public.tasks add column if not exists need_leader_approval boolean not null default false;
 update public.task_checklists set assignee_completed = true where is_completed = true and assignee_completed = false;
 create index if not exists task_checklists_task_idx on public.task_checklists (task_id);

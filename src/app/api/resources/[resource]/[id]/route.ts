@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { hasPermission } from "@/lib/permissions";
+import { canApproveTaskAsLeader, hasPermission } from "@/lib/permissions";
 import { cleanEmptyStrings, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
 import { awardTaskDonePoints } from "@/lib/server/gamification";
 import { createResource, deleteResource, getResourceById, updateResource } from "@/lib/server/store";
 import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
 import { UploadError } from "@/lib/server/uploads";
+import { taskNeedsLeaderApproval } from "@/lib/task-approval";
 import type { Task, TaskStatus } from "@/lib/types";
 import { progressForWorkflowStatus, workflowBoardStatuses } from "@/lib/workflow";
 
@@ -71,8 +72,10 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (nextStatus === "Finished" && !canMoveAnyTask) {
-      return NextResponse.json({ error: "Only leaders and admins can move a task to Finished." }, { status: 403 });
+    const existingTaskNeedsLeaderApproval = existingTask ? taskNeedsLeaderApproval(existingTask) : true;
+
+    if (nextStatus === "Finished" && !canApproveTaskAsLeader(access.user) && !(isAssignee && !existingTaskNeedsLeaderApproval)) {
+      return NextResponse.json({ error: "Only task assignees without leader approval, Managers, Admins, and Super Admins can finish tasks." }, { status: 403 });
     }
 
     patch.status = nextStatus;
@@ -93,14 +96,20 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
     const existing = await getResourceById("Task_Checklists", id);
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const task = await getResourceById("Tasks", existing.task_id);
+    if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
     const canManageTask = hasPermission(access.user.role_id, "tasks:manage") || hasPermission(access.user.role_id, "tasks:team");
+    const canLeaderApprove = canApproveTaskAsLeader(access.user);
     const isAssignee = Array.isArray(task?.assigned_to) && task.assigned_to.includes(access.user.user_id);
 
     if (!canManageTask && !isAssignee) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (patch.pm_approved !== undefined && !canManageTask) {
+    if (patch.pm_approved !== undefined && !taskNeedsLeaderApproval(task as Task)) {
+      return NextResponse.json({ error: "Leader approval is not required for this task." }, { status: 400 });
+    }
+
+    if (patch.pm_approved !== undefined && !canLeaderApprove) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

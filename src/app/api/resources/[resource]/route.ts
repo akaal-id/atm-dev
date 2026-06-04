@@ -6,6 +6,7 @@ import { cleanEmptyStrings, getRecordId, normalizePayload, parseResource, readPa
 import { notifyApproversAboutLeaveRequest } from "@/lib/server/leave-requests";
 import { createResource, listResource } from "@/lib/server/store";
 import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
+import { setLeaderApprovalRequirement } from "@/lib/task-approval";
 import type { LeaveRequest, User } from "@/lib/types";
 import { UploadError } from "@/lib/server/uploads";
 
@@ -176,13 +177,15 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   }
 
   if (resource === "Tasks") {
+    const needLeaderApproval = Boolean(payload.need_leader_approval);
     payload.task_id ||= await nextTicketId(String(payload.project_id ?? ""), String(payload.title ?? ""));
     payload.assigned_by ??= access.user.user_id;
     payload.assigned_to = Array.isArray(payload.assigned_to) && payload.assigned_to.length > 0 ? payload.assigned_to : [access.user.user_id];
     payload.status ??= "To Do";
     payload.priority ??= "Medium";
     payload.progress = 0;
-    payload.labels = Array.isArray(payload.labels) ? payload.labels : [];
+    payload.labels = setLeaderApprovalRequirement(Array.isArray(payload.labels) ? payload.labels : [], needLeaderApproval);
+    payload.need_leader_approval = needLeaderApproval;
     payload.completed_at ??= "";
   }
 

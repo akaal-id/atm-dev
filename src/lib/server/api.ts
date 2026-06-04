@@ -78,7 +78,7 @@ function coerceField(key: string, value: FormDataEntryValue) {
   if (typeof File !== "undefined" && value instanceof File) return "";
 
   const text = String(value);
-  if (["is_active", "is_completed", "assignee_completed", "pm_approved", "is_pinned", "is_read"].includes(key)) {
+  if (["is_active", "is_completed", "assignee_completed", "pm_approved", "need_leader_approval", "is_pinned", "is_read"].includes(key)) {
     return text === "on" || text === "true" || text === "TRUE";
   }
   if (["progress", "points"].includes(key)) return Number(text);

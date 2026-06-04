@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { hasPermission } from "@/lib/permissions";
+import { canApproveTaskAsLeader } from "@/lib/permissions";
 import { awardTaskDonePoints } from "@/lib/server/gamification";
 import { redirectBack, requireApiPermission, wantsJson } from "@/lib/server/api";
 import { createResource, getResourceById, listResource, updateResource } from "@/lib/server/store";
-import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
+import { taskNeedsLeaderApproval } from "@/lib/task-approval";
 import type { Task } from "@/lib/types";
 import { progressForWorkflowStatus } from "@/lib/workflow";
 
@@ -16,16 +16,25 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const task = (await getResourceById("Tasks", id)) as Task | undefined;
   if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-  const canManageTask = hasPermission(access.user.role_id, "tasks:manage") || hasPermission(access.user.role_id, "tasks:team");
+  const canLeaderFinish = canApproveTaskAsLeader(access.user);
   const isAssignee = task.assigned_to.includes(access.user.user_id);
 
-  if (!canManageTask && !isAssignee) {
+  if (!canLeaderFinish && !isAssignee) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (task.status !== "Finished") {
-    const checklist = (await listResource("Task_Checklists")).filter((item) => item.task_id === id);
+  const now = new Date().toISOString();
+  const checklist = (await listResource("Task_Checklists")).filter((item) => item.task_id === id);
+  const needsLeaderApproval = taskNeedsLeaderApproval(task);
+  const leaderApprovalComplete = checklist.length > 0 ? checklist.every((item) => item.pm_approved) : canLeaderFinish;
 
+  if (needsLeaderApproval && !leaderApprovalComplete) {
+    return wantsJson(request)
+      ? NextResponse.json({ error: "Leader approval is required before this task can be finished." }, { status: 409 })
+      : redirectBack(request, `/tasks/${id}`);
+  }
+
+  if (task.status !== "Finished") {
     if (checklist.length > 0) {
       await Promise.all(
         checklist.map((item) =>
@@ -33,21 +42,21 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
             is_completed: true,
             assignee_completed: true,
             assignee_completed_by: access.user.user_id,
+            ...(needsLeaderApproval ? {} : { pm_approved: false, pm_approved_by: "" }),
           }),
         ),
       );
-      await syncTaskWorkflowStatus(id);
-    } else {
-      await updateResource("Tasks", id, {
-        status: "Waiting Approval",
-        progress: progressForWorkflowStatus("Waiting Approval"),
-        completed_at: "",
-      });
     }
+
+    await updateResource("Tasks", id, {
+      status: "Finished",
+      progress: progressForWorkflowStatus("Finished"),
+      completed_at: now,
+    });
   }
 
-  if (isAssignee) {
-    await awardTaskDonePoints(task, access.user.user_id);
+  if (task.status !== "Finished") {
+    await Promise.all(task.assigned_to.map((userId) => awardTaskDonePoints(task, userId)));
   }
 
   await createResource("Activity_Logs", {
@@ -56,7 +65,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     entity_type: "Tasks",
     entity_id: id,
     description: `${access.user.full_name} marked task ${id} as done.`,
-    created_at: new Date().toISOString(),
+    created_at: now,
   });
 
   return wantsJson(request) ? NextResponse.json({ ok: true }) : redirectBack(request, `/tasks/${id}`);
