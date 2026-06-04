@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { CreateTaskModal } from "@/components/app/create-task-modal";
+import { CreateProjectModal } from "@/components/app/create-project-modal";
 import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
 import { Page } from "@/components/app/page-layout";
 import { TaskBoard } from "@/components/app/task-board";
@@ -144,6 +145,10 @@ function leaderboardRows(data: Pick<AppData, "users" | "points" | "badges" | "us
     .sort((a, b) => b.points - a.points);
 }
 
+function canManageLeaderboardScore(user: CurrentUser) {
+  return user.role_id === "super_admin" || user.role_id === "admin" || user.employment_status === "Manager";
+}
+
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
@@ -261,6 +266,29 @@ function DataToolbar({ tabs, action }: { tabs: string[]; action?: React.ReactNod
   );
 }
 
+function DashboardPinnedUpdates({ data }: { data: AppData }) {
+  const pinnedAnnouncements = announcementsForUser(data.announcements, data.currentUser)
+    .filter((announcement) => announcement.is_pinned)
+    .sort((left, right) => right.scheduled_at.localeCompare(left.scheduled_at))
+    .slice(0, 2);
+
+  if (pinnedAnnouncements.length === 0) return null;
+
+  return (
+    <div className="grid gap-2">
+      {pinnedAnnouncements.map((announcement) => (
+        <Link key={announcement.announcement_id} href="/announcements" className="flex min-w-0 items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm transition hover:border-blue-300 hover:bg-blue-100">
+          <Badge tone={announcement.category === "Important" ? "yellow" : "blue"}>{announcement.category}</Badge>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-950">{announcement.title}</p>
+            <p className="mt-0.5 truncate text-xs text-blue-700">{formatDate(announcement.scheduled_at)}</p>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export function DashboardView(data: AppData) {
   const myTasks = visibleTasksForUser(data.tasks, data.currentUser.user_id);
   const myActiveTasks = activeTasks(myTasks);
@@ -279,6 +307,8 @@ export function DashboardView(data: AppData) {
 
   return (
     <Page>
+      <DashboardPinnedUpdates data={data} />
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Active tasks"
@@ -553,6 +583,9 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
   const comments = data.comments.filter((comment) => comment.task_id === task.task_id);
   const checklist = data.checklists.filter((item) => item.task_id === task.task_id);
   const project = data.projects.find((candidate) => candidate.project_id === task.project_id);
+  const taskLogs = data.activityLogs
+    .filter((log) => log.entity_type === "Tasks" && log.entity_id === task.task_id)
+    .sort((left, right) => right.created_at.localeCompare(left.created_at));
 
   return (
     <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
@@ -645,7 +678,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
             ))}
           </CardBody>
         </Card>
-        <ActivityFeed logs={data.activityLogs} users={data.users} />
+        <ActivityFeed logs={taskLogs} users={data.users} title="Task activity" emptyLabel="No activity yet." />
       </div>
     </div>
   );
@@ -654,6 +687,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
 function TaskUpdateForm({ task, users, currentUser }: { task: Task; users: User[]; currentUser: CurrentUser }) {
   const activeUsers = users.filter((user) => user.is_active);
   const canFinish = hasPermission(currentUser.role_id, "tasks:manage") || hasPermission(currentUser.role_id, "tasks:team");
+  const canMarkDone = canFinish || task.assigned_to.includes(currentUser.user_id);
 
   return (
     <Card>
@@ -661,17 +695,32 @@ function TaskUpdateForm({ task, users, currentUser }: { task: Task; users: User[
         <SectionTitle title="Update task" />
       </CardHeader>
       <CardBody className="space-y-4">
+        {canMarkDone && task.status !== "Finished" ? (
+          <form action={`/api/tasks/${task.task_id}/done`} method="post">
+            <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">
+              <CheckCircle2 className="h-4 w-4" />
+              Task Done
+            </button>
+          </form>
+        ) : null}
         <form action={`/api/resources/Tasks/${task.task_id}`} method="post" className="space-y-4">
           <Field label="Reassign">
-            <select name="assigned_to" multiple defaultValue={task.assigned_to} className="input min-h-32">
+            <div className="grid max-h-56 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
               {activeUsers.map((user) => (
-                <option key={user.user_id} value={user.user_id}>
-                  {user.full_name}
-                </option>
+                <label
+                  key={user.user_id}
+                  className={cn(
+                    "flex min-w-0 items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm",
+                    task.assigned_to.includes(user.user_id) && "border-blue-200 bg-blue-50 text-blue-700",
+                  )}
+                >
+                  <input name="assigned_to" type="checkbox" value={user.user_id} defaultChecked={task.assigned_to.includes(user.user_id)} className="h-4 w-4 accent-slate-950" />
+                  <span className="truncate">{user.full_name}</span>
+                </label>
               ))}
-            </select>
+            </div>
           </Field>
-          <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Save task update</button>
+          <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Save assignees</button>
         </form>
         {canFinish && task.status === "Ready" ? (
           <form action={`/api/resources/Tasks/${task.task_id}`} method="post">
@@ -696,50 +745,12 @@ function InfoTile({ label, value }: { label: string; value: string }) {
 export function ProjectsView(data: AppData) {
   const canManageProjects = hasPermission(data.currentUser.role_id, "projects:manage");
   const activeProjectUsers = data.users.filter((user) => user.is_active);
+  const projectModalUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }));
+  const createProjectAction = canManageProjects ? <CreateProjectModal currentUser={data.currentUser} users={projectModalUsers} /> : null;
 
   return (
     <Page>
-      <DataToolbar tabs={["All", "Active", "Review", "Completed"]} />
-      {canManageProjects ? (
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Add project" action={<Plus className="h-4 w-4 text-blue-600" />} />
-          </CardHeader>
-          <CardBody>
-            <form action="/api/resources/Projects" method="post" className="grid gap-4 lg:grid-cols-2">
-              <Field label="Project name"><input name="project_name" required className="input" placeholder="Halal Expo Indonesia" /></Field>
-              <Field label="Ticket ID code"><input name="ticket_id_prefix" className="input" placeholder="HEI" maxLength={5} /></Field>
-              <Field label="Owner">
-                <select name="owner_user_id" className="input" defaultValue={data.currentUser.user_id}>
-                  {activeProjectUsers.map((user) => <option key={user.user_id} value={user.user_id}>{user.full_name}</option>)}
-                </select>
-              </Field>
-              <Field label="Deadline"><input name="deadline" type="date" required className="input" /></Field>
-              <Field label="Priority"><select name="priority" defaultValue="Medium" className="input">{["Low", "Medium", "High", "Urgent"].map((priority) => <option key={priority}>{priority}</option>)}</select></Field>
-              <Field label="Status"><select name="status" defaultValue="Not Started" className="input">{projectStatuses.map((status) => <option key={status}>{status}</option>)}</select></Field>
-              <Field label="Members">
-                <div className="grid max-h-44 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
-                  {activeProjectUsers.map((user) => (
-                    <label key={user.user_id} className="flex min-w-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                      <input name="members" type="checkbox" value={user.user_id} defaultChecked={user.user_id === data.currentUser.user_id} className="h-4 w-4 accent-slate-950" />
-                      <span className="truncate">{user.full_name}</span>
-                    </label>
-                  ))}
-                </div>
-              </Field>
-              <Field label="Links"><input name="links" className="input" placeholder="https://brief.url, https://drive.url" /></Field>
-              <Field label="Description"><textarea name="description" required className="input min-h-28 resize-y" /></Field>
-              <Field label="Notes"><textarea name="notes" className="input min-h-28 resize-y" /></Field>
-              <div className="flex items-end lg:col-span-2">
-                <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto">
-                  <Plus className="h-4 w-4" />
-                  Add project
-                </button>
-              </div>
-            </form>
-          </CardBody>
-        </Card>
-      ) : null}
+      <DataToolbar tabs={["All", "Active", "Review", "Completed"]} action={createProjectAction} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         {data.projects.map((project) => (
@@ -816,8 +827,130 @@ export function ProjectsView(data: AppData) {
   );
 }
 
+type CalendarActivity = {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  date: string;
+  href: string;
+};
+
+function dateKey(value: string) {
+  return String(value || "").slice(0, 10);
+}
+
+function currentMonthKey() {
+  return jakartaToday().slice(0, 7);
+}
+
+function monthTitle(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+function monthCells(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const firstDay = new Date(Date.UTC(year, month - 1, 1));
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const leadingEmptyCells = firstDay.getUTCDay();
+  const cells: Array<string | null> = Array.from({ length: leadingEmptyCells }, () => null);
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(`${monthKey}-${String(day).padStart(2, "0")}`);
+  }
+
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+function birthdayInMonth(user: User, monthKey: string) {
+  const monthDay = dateKey(user.birthday).slice(5, 10);
+  if (!monthDay) return "";
+  return `${monthKey}-${monthDay.slice(3, 5)}`;
+}
+
+function buildCalendarActivities(data: AppData, monthKey: string): CalendarActivity[] {
+  const activities: CalendarActivity[] = [];
+  const inMonth = (date: string) => dateKey(date).startsWith(monthKey);
+
+  data.calendarEvents.filter((event) => inMonth(event.start_date)).forEach((event) => {
+    activities.push({
+      id: event.event_id,
+      title: event.title,
+      description: event.description,
+      type: event.type,
+      date: dateKey(event.start_date),
+      href: "/calendar",
+    });
+  });
+
+  data.tasks.filter((task) => inMonth(task.due_date)).forEach((task) => {
+    activities.push({
+      id: `task-${task.task_id}`,
+      title: task.title,
+      description: `${task.status} · ${task.priority}`,
+      type: "Deadline",
+      date: task.due_date,
+      href: `/tasks/${task.task_id}`,
+    });
+  });
+
+  data.projects.filter((project) => inMonth(project.deadline)).forEach((project) => {
+    activities.push({
+      id: `project-${project.project_id}`,
+      title: project.project_name,
+      description: `${project.status} · ${project.priority}`,
+      type: "Project Milestone",
+      date: project.deadline,
+      href: "/projects",
+    });
+  });
+
+  announcementsForUser(data.announcements, data.currentUser).filter((announcement) => inMonth(announcement.scheduled_at)).forEach((announcement) => {
+    activities.push({
+      id: `announcement-${announcement.announcement_id}`,
+      title: announcement.title,
+      description: announcement.category,
+      type: "Announcement",
+      date: dateKey(announcement.scheduled_at),
+      href: "/announcements",
+    });
+  });
+
+  data.leaveRequests.filter((request) => inMonth(request.start_date)).forEach((request) => {
+    activities.push({
+      id: `leave-${request.request_id}`,
+      title: `${userName(data.users, request.user_id)} ${request.request_type}`,
+      description: `${request.status} · ${formatShortDate(request.start_date)} to ${formatShortDate(request.end_date)}`,
+      type: request.request_type,
+      date: request.start_date,
+      href: "/attendance/request",
+    });
+  });
+
+  activeUsers(data.users).forEach((user) => {
+    const date = birthdayInMonth(user, monthKey);
+    if (!date || !date.startsWith(monthKey)) return;
+    activities.push({
+      id: `birthday-${user.user_id}`,
+      title: `${user.full_name}'s birthday`,
+      description: departmentName(data.departments, user.department_id),
+      type: "Birthday",
+      date,
+      href: `/employees/${user.user_id}`,
+    });
+  });
+
+  return activities.sort((left, right) => left.date.localeCompare(right.date) || left.title.localeCompare(right.title));
+}
+
 export function CalendarView(data: AppData) {
-  const grouped = groupBy(data.calendarEvents, (event) => event.start_date.slice(0, 10));
+  const monthKey = currentMonthKey();
+  const activities = buildCalendarActivities(data, monthKey);
+  const grouped = groupBy(activities, (event) => event.date);
+  const typeCounts = Object.entries(groupBy(activities, (event) => event.type)).sort((left, right) => right[1].length - left[1].length);
+  const today = jakartaToday();
 
   return (
     <Page>
@@ -825,37 +958,68 @@ export function CalendarView(data: AppData) {
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
-            <SectionTitle title="Categories" />
+            <SectionTitle title={monthTitle(monthKey)} action={<Badge tone="blue">{activities.length} activities</Badge>} />
           </CardHeader>
-          <CardBody className="grid gap-2">
-            {["Birthday", "Task", "Deadline", "Announcement", "Meeting", "Leave", "Project Milestone"].map((type) => (
-              <label key={type} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 text-sm font-semibold text-slate-700">
-                <span>{type}</span>
-                <input defaultChecked type="checkbox" className="h-4 w-4 accent-slate-950" />
-              </label>
+          <CardBody className="space-y-3">
+            {typeCounts.map(([type, events]) => (
+              <div key={type} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
+                <div className="min-w-0">
+                  <Badge tone={statusTone(type)}>{type}</Badge>
+                  <p className="mt-2 truncate text-sm font-semibold text-slate-950">{events.length} item{events.length === 1 ? "" : "s"}</p>
+                </div>
+                <span className="font-mono text-lg font-bold tabular-nums text-slate-950">{events.length}</span>
+              </div>
             ))}
+            {typeCounts.length === 0 ? <EmptyState label="No activities this month." /> : null}
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
-            <SectionTitle title="Live monthly calendar" action={<Badge tone="blue">{data.calendarEvents.length} events</Badge>} />
+            <SectionTitle title="Monthly activity" action={<Badge>Current month</Badge>} />
           </CardHeader>
-          <CardBody>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {Object.entries(grouped).map(([date, events]) => (
-                <div key={date} className="rounded-lg border border-slate-200 p-4">
-                  <p className="text-sm font-bold text-slate-950">{formatDate(date)}</p>
-                  <div className="mt-3 space-y-2">
-                    {events.map((event) => (
-                      <div key={event.event_id} className="rounded-lg bg-slate-50 p-3">
-                        <Badge tone={statusTone(event.type)}>{event.type}</Badge>
-                        <p className="mt-2 text-sm font-semibold text-slate-950">{event.title}</p>
-                        <p className="mt-1 text-xs text-slate-500">{event.description}</p>
-                      </div>
-                    ))}
-                  </div>
+          <CardBody className="space-y-4">
+            <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
+              <div className="min-w-[44rem]">
+                <div className="grid grid-cols-7 gap-2 pb-2 text-center text-xs font-bold uppercase tracking-wide text-slate-400">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                    <span key={day}>{day}</span>
+                  ))}
                 </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {monthCells(monthKey).map((date, index) => {
+                    const events = date ? grouped[date] ?? [] : [];
+
+                    return (
+                      <div key={date ?? `empty-${index}`} className={cn("min-h-32 rounded-lg border p-2", date === today ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white", !date && "bg-slate-50")}>
+                        {date ? (
+                          <>
+                            <p className="text-xs font-bold text-slate-500">{Number(date.slice(8, 10))}</p>
+                            <div className="mt-2 space-y-1">
+                              {events.slice(0, 3).map((event) => (
+                                <Link key={event.id} href={event.href} className="block min-w-0 rounded-md bg-slate-50 px-2 py-1 transition hover:bg-slate-100">
+                                  <span className="block truncate text-xs font-semibold text-slate-950">{event.title}</span>
+                                  <span className="block truncate text-[0.68rem] font-medium text-slate-500">{event.type}</span>
+                                </Link>
+                              ))}
+                              {events.length > 3 ? <p className="text-xs font-semibold text-blue-600">+{events.length - 3} more</p> : null}
+                            </div>
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {activities.slice(0, 8).map((event) => (
+                <Link key={event.id} href={event.href} className="rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50">
+                  <Badge tone={statusTone(event.type)}>{event.type}</Badge>
+                  <p className="mt-3 font-semibold text-slate-950">{event.title}</p>
+                  <p className="mt-1 text-sm text-slate-500">{formatDate(event.date)}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{event.description}</p>
+                </Link>
               ))}
             </div>
           </CardBody>
@@ -1193,6 +1357,12 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
                     ))}
                   </select>
                 </Field>
+                <Field label="Birthday">
+                  <input name="birthday" type="date" className="input" defaultValue={employee.birthday} />
+                </Field>
+                <Field label="Join date">
+                  <input name="join_date" type="date" className="input" defaultValue={employee.join_date} />
+                </Field>
                 <Field label="Account status">
                   <select name="is_active" className="input" defaultValue={String(employee.is_active)}>
                     <option value="true">Active</option>
@@ -1233,10 +1403,21 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
 export function LeaderboardView(data: AppData) {
   const rows = leaderboardRows(data);
   const podium = [rows[1], rows[0], rows[2]].filter(Boolean);
+  const recentPoints = [...data.points].sort((left, right) => right.created_at.localeCompare(left.created_at)).slice(0, 8);
+  const taskDonePointCount = data.points.filter((point) => point.source_type === "task_done").length;
+  const punctualPointCount = data.points.filter((point) => point.source_type === "punctual_attendance").length;
+  const canManageScores = canManageLeaderboardScore(data.currentUser);
+  const editableUsers = data.users.filter((user) => user.is_active);
 
   return (
     <Page>
       <DataToolbar tabs={["Weekly", "Monthly", "All-time", "Department"]} />
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard label="Point events" value={String(data.points.length)} detail="All recorded scoring actions" icon={Sparkles} tone="blue" />
+        <MetricCard label="Task done" value={String(taskDonePointCount)} detail="Completion awards issued" icon={CheckCircle2} tone="green" />
+        <MetricCard label="Punctual" value={String(punctualPointCount)} detail="On-time attendance awards" icon={Clock3} tone="yellow" />
+      </div>
+
       <Card>
         <CardBody>
           <div className="grid items-end gap-4 md:grid-cols-3">
@@ -1262,6 +1443,55 @@ export function LeaderboardView(data: AppData) {
         </CardBody>
       </Card>
 
+      {canManageScores ? (
+        <Card>
+          <CardHeader>
+            <SectionTitle title="Manage scores" action={<Badge tone="yellow">Admin</Badge>} />
+          </CardHeader>
+          <CardBody className="grid gap-4 lg:grid-cols-2">
+            <form action="/api/leaderboard/score" method="post" className="grid gap-3 rounded-lg border border-slate-200 p-4">
+              <input type="hidden" name="mode" value="adjust" />
+              <Field label="User">
+                <select name="user_id" required className="input">
+                  {editableUsers.map((user) => (
+                    <option key={user.user_id} value={user.user_id}>
+                      {user.full_name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Adjust points">
+                <input name="points" required type="number" className="input" placeholder="25 or -10" />
+              </Field>
+              <Field label="Reason">
+                <input name="reason" required className="input" placeholder="Manual correction or bonus" />
+              </Field>
+              <button className="h-11 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">Apply adjustment</button>
+            </form>
+
+            <form action="/api/leaderboard/score" method="post" className="grid gap-3 rounded-lg border border-slate-200 p-4">
+              <input type="hidden" name="mode" value="set_total" />
+              <Field label="User">
+                <select name="user_id" required className="input">
+                  {editableUsers.map((user) => (
+                    <option key={user.user_id} value={user.user_id}>
+                      {user.full_name} - current {scoreForUser(data.points, user.user_id)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Set total score">
+                <input name="target_score" required type="number" min="0" className="input" placeholder="100" />
+              </Field>
+              <Field label="Reason">
+                <input name="reason" required className="input" placeholder="Score correction" />
+              </Field>
+              <button className="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700">Set score</button>
+            </form>
+          </CardBody>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <SectionTitle title="Full ranking" />
@@ -1275,6 +1505,24 @@ export function LeaderboardView(data: AppData) {
               departmentName(data.departments, row.user.department_id),
               row.points,
               row.badges[0]?.badge_name ?? "Team Player",
+            ])}
+          />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <SectionTitle title="Recent point activity" />
+        </CardHeader>
+        <CardBody className="overflow-x-auto">
+          <DataTable
+            headers={["User", "Source", "Points", "Reason", "Date"]}
+            rows={recentPoints.map((point) => [
+              userName(data.users, point.user_id),
+              point.source_type.replaceAll("_", " "),
+              point.points,
+              point.reason,
+              formatDate(point.created_at, { hour: "2-digit", minute: "2-digit" }),
             ])}
           />
         </CardBody>
@@ -1412,13 +1660,14 @@ export function AdminView(data: AppData) {
   );
 }
 
-function ActivityFeed({ logs, users }: { logs: ActivityLog[]; users: User[] }) {
+function ActivityFeed({ logs, users, title = "Recent activity", emptyLabel = "No activity yet." }: { logs: ActivityLog[]; users: User[]; title?: string; emptyLabel?: string }) {
   return (
     <Card>
       <CardHeader>
-        <SectionTitle title="Recent activity" />
+        <SectionTitle title={title} />
       </CardHeader>
       <CardBody className="space-y-3">
+        {logs.length === 0 ? <EmptyState label={emptyLabel} /> : null}
         {logs.map((log) => (
           <div key={log.log_id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
             <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />

@@ -945,7 +945,7 @@ export const settings: Setting[] = [
   {
     setting_id: "set_points",
     setting_key: "gamification_rules",
-    setting_value: JSON.stringify({ completeTask: 50, earlyTask: 25, helpfulComment: 10, lateTask: -20, rejectedTask: -30 }),
+    setting_value: JSON.stringify({ completeTask: 50, punctualAttendance: 10, earlyTask: 25, helpfulComment: 10, lateTask: -20, rejectedTask: -30 }),
     setting_type: "json",
     updated_by: "usr_nadia",
     updated_at: "2026-05-21T08:10:00.000Z",

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { hasPermission } from "@/lib/permissions";
 import { cleanEmptyStrings, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
+import { awardTaskDonePoints } from "@/lib/server/gamification";
 import { createResource, deleteResource, getResourceById, updateResource } from "@/lib/server/store";
 import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
 import { UploadError } from "@/lib/server/uploads";
@@ -118,6 +119,7 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
     }
   }
 
+  const shouldAwardFinishedTask = resource === "Tasks" && patch.status === "Finished" && existingTask?.status !== "Finished";
   const record = await updateResource(resource, id, patch as never);
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -148,6 +150,10 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
           }),
         ),
       );
+    }
+
+    if (shouldAwardFinishedTask) {
+      await Promise.all((record as Task).assigned_to.map((userId) => awardTaskDonePoints(record as Task, userId)));
     }
   }
 
