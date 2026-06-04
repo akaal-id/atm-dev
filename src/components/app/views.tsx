@@ -28,7 +28,7 @@ import { CreateProjectModal } from "@/components/app/create-project-modal";
 import { EmployeeAdminControls } from "@/components/app/employee-admin-controls";
 import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
 import { Page } from "@/components/app/page-layout";
-import { TaskBoard } from "@/components/app/task-board";
+import { TaskWorkspace } from "@/components/app/task-workspace";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -429,14 +429,12 @@ export function DashboardView(data: AppData) {
 
 export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "team" }) {
   const tasks = scope === "my" ? visibleTasksForUser(data.tasks, data.currentUser.user_id) : data.tasks;
-  const activeTaskCount = activeTasks(tasks).length;
   const canCreateTasks =
     hasPermission(data.currentUser.role_id, "tasks:own") ||
     hasPermission(data.currentUser.role_id, "tasks:team") ||
     hasPermission(data.currentUser.role_id, "tasks:manage");
   const canMoveFinished = hasPermission(data.currentUser.role_id, "tasks:team") || hasPermission(data.currentUser.role_id, "tasks:manage");
   const taskModalUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }));
-  const taskBoardUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name }));
   const taskModalProjects = data.projects.map((project) => ({
     project_id: project.project_id,
     project_name: project.project_name,
@@ -446,50 +444,17 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
     <CreateTaskModal currentUser={data.currentUser} users={taskModalUsers} projects={taskModalProjects} />
   ) : null;
 
-  if (scope === "team") {
-    return (
-      <Page>
-        <DataToolbar tabs={["Board", "List", "Calendar", "Project"]} action={createTaskAction} />
-        <TaskBoard tasks={tasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} />
-      </Page>
-    );
-  }
-
   return (
     <Page>
-      <DataToolbar tabs={["Board", "List", "Calendar"]} action={createTaskAction} />
-      <TaskBoard tasks={tasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} />
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Assigned to you" action={<Badge tone="blue">{activeTaskCount} active</Badge>} />
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {tasks.map((task) => (
-              <TaskCard key={task.task_id} task={task} users={data.users} />
-            ))}
-          </CardBody>
-        </Card>
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Upcoming deadlines" />
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {activeTasks(tasks)
-              .sort((a, b) => a.due_date.localeCompare(b.due_date))
-              .slice(0, 5)
-              .map((task) => (
-                <Link href={`/tasks/${task.task_id}`} key={task.task_id} className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-slate-200 p-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-950">{task.title}</p>
-                    <p className="text-xs text-slate-500">{formatShortDate(task.due_date)}</p>
-                  </div>
-                  <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
-                </Link>
-              ))}
-          </CardBody>
-        </Card>
-      </div>
+      <TaskWorkspace
+        tasks={tasks}
+        users={data.users}
+        projects={data.projects}
+        currentUser={data.currentUser}
+        scope={scope}
+        canMoveFinished={canMoveFinished}
+        action={createTaskAction}
+      />
     </Page>
   );
 }
