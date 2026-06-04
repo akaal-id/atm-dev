@@ -113,6 +113,8 @@ create table if not exists public.attendance (
   date text not null default '',
   clock_in text not null default '',
   clock_out text not null default '',
+  active_minutes integer not null default 0,
+  location_count integer not null default 0,
   status text not null default 'Present',
   note text not null default '',
   approval_status text not null default 'Not Required',

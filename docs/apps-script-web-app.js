@@ -81,6 +81,8 @@ const SCHEMA = {
     "date",
     "clock_in",
     "clock_out",
+    "active_minutes",
+    "location_count",
     "status",
     "note",
     "approval_status",

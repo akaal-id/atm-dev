@@ -191,6 +191,8 @@ export interface Attendance {
   date: string;
   clock_in: string;
   clock_out: string;
+  active_minutes: number;
+  location_count: number;
   status: AttendanceStatus;
   note: string;
   approval_status: "Not Required" | "Pending Approval" | "Approved" | "Rejected";

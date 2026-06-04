@@ -7,6 +7,8 @@ alter table if exists public.task_checklists add column if not exists pm_approve
 alter table if exists public.task_checklists add column if not exists pm_approved_by text not null default '';
 alter table if exists public.tasks add column if not exists need_leader_approval boolean not null default false;
 alter table if exists public.projects add column if not exists ticket_id_prefix text not null default '';
+alter table if exists public.attendance add column if not exists active_minutes integer not null default 0;
+alter table if exists public.attendance add column if not exists location_count integer not null default 0;
 
 update public.task_checklists
 set assignee_completed = true

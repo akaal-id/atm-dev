@@ -69,6 +69,11 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
     normalized.progress = ensureNumber(row.progress);
   }
 
+  if (resource === "Attendance") {
+    normalized.active_minutes = ensureNumber(row.active_minutes);
+    normalized.location_count = ensureNumber(row.location_count);
+  }
+
   if (resource === "Announcements") {
     normalized.target_users = ensureStringArray(row.target_users);
     normalized.is_pinned = ensureBoolean(row.is_pinned);

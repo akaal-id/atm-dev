@@ -32,6 +32,7 @@ export interface SupabaseReadOptions {
 }
 
 const optionalSupabaseFields: Partial<Record<SupabaseResourceName, string[]>> = {
+  Attendance: ["active_minutes", "location_count"],
   Tasks: ["need_leader_approval"],
 };
 

@@ -26,6 +26,7 @@ import {
 import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { CreateProjectModal } from "@/components/app/create-project-modal";
 import { EmployeeAdminControls } from "@/components/app/employee-admin-controls";
+import { AttendanceTerminal } from "@/components/app/attendance-terminal";
 import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
 import { Page } from "@/components/app/page-layout";
 import { TaskWorkspace } from "@/components/app/task-workspace";
@@ -104,6 +105,13 @@ export type AppData = {
 
 function userName(users: User[], id: string) {
   return users.find((user) => user.user_id === id)?.full_name ?? "Unassigned";
+}
+
+function formatActiveMinutes(minutes: number) {
+  if (!minutes) return "-";
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
 }
 
 function departmentName(departments: Department[], id: string) {
@@ -1053,27 +1061,15 @@ export function AttendanceView(data: AppData & { canApproveLeave: boolean }) {
         </Card>
       ) : null}
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-5">
+        <AttendanceTerminal />
+
         <Card>
           <CardHeader>
-            <SectionTitle title="Today actions" />
+            <SectionTitle title="Leave request" />
           </CardHeader>
-          <CardBody className="space-y-3">
-            <form action="/api/attendance/clock" method="post">
-              <input type="hidden" name="action" value="clock_in" />
-              <button className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
-                <Clock3 className="h-4 w-4" />
-                Clock in
-              </button>
-            </form>
-            <form action="/api/attendance/clock" method="post">
-              <input type="hidden" name="action" value="clock_out" />
-              <button className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300">
-                <CheckCircle2 className="h-4 w-4" />
-                Clock out
-              </button>
-            </form>
-            <Link href="/attendance/request" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700">
+          <CardBody>
+            <Link href="/attendance/request" className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 sm:w-fit">
               <Plus className="h-4 w-4" />
               Request leave
             </Link>
@@ -1086,14 +1082,17 @@ export function AttendanceView(data: AppData & { canApproveLeave: boolean }) {
           </CardHeader>
           <CardBody className="overflow-x-auto">
             <DataTable
-              headers={["Employee", "Date", "Clock in", "Clock out", "Status", "Approval"]}
+              headers={["Employee", "Date", "Clock in", "Clock out", "Active time", "Locations", "Status", "Approval", "EOD summary"]}
               rows={data.attendance.map((item) => [
                 userName(data.users, item.user_id),
                 formatDate(item.date),
                 item.clock_in || "-",
                 item.clock_out || "-",
+                formatActiveMinutes(item.active_minutes),
+                item.location_count || "-",
                 <StatusPill key="status" status={item.status} />,
                 item.approval_status,
+                item.note || "-",
               ])}
             />
           </CardBody>
