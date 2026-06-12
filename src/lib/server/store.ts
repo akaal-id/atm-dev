@@ -247,11 +247,6 @@ export async function deleteResourcesByField<R extends ResourceName>(resource: R
 
 export async function deleteResource(resource: ResourceName, id: string) {
   const idField = idFields[resource];
-  const records = shouldUseAppsScript() || shouldUseSheets()
-    ? ((await listResource(resource)) as unknown as Array<Record<string, unknown>>)
-    : (store[resource] as unknown as Array<Record<string, unknown>>);
-  const index = records.findIndex((item) => item[idField] === id);
-  if (index === -1) return false;
 
   if (resource === "Users") {
     await updateResource("Users", id, {
@@ -267,6 +262,12 @@ export async function deleteResource(resource: ResourceName, id: string) {
   if (shouldUseSupabase()) {
     return deleteSupabaseResource(resource, idField, id);
   }
+
+  const records = shouldUseAppsScript() || shouldUseSheets()
+    ? ((await listResource(resource)) as unknown as Array<Record<string, unknown>>)
+    : (store[resource] as unknown as Array<Record<string, unknown>>);
+  const index = records.findIndex((item) => item[idField] === id);
+  if (index === -1) return false;
 
   if (shouldUseAppsScript()) {
     try {
