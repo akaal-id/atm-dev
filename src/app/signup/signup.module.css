@@ -15,7 +15,6 @@
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
   background: #ffffff;
-  box-shadow: 0 20px 25px -5px rgb(203 213 225 / 0.7);
 }
 
 .card {
@@ -165,21 +164,13 @@
 .submit,
 .submitLink {
   display: inline-flex;
-  height: 2.75rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  background: #020617;
-  padding: 0 1rem;
-  color: #ffffff;
-  font-size: 0.875rem;
   font-weight: 800;
-  transition: background 150ms ease;
 }
 
-.submit:hover,
-.submitLink:hover {
-  background: #1e293b;
+.submit {
+  width: 100%;
 }
 
 .actions {

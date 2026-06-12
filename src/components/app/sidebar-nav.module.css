@@ -4,51 +4,117 @@
   width: 18rem;
   flex-shrink: 0;
   flex-direction: column;
-  border-right: 1px solid #1f2937;
-  background: #090b1b;
-  position:sticky;
+  border-right: 1px solid #e2e8f0;
+  background: #f8fafc;
+  position: sticky;
   top: 0;
   height: 100dvh;
+  overflow-x: hidden;
   overflow-y: auto;
+  transition: width 200ms ease;
+}
+
+.collapsed {
+  width: 4.5rem;
 }
 
 .brandBlock {
-  border-bottom: 1px solid #1f2937;
-  padding: 1.25rem;
-  background: #090b1b;
+  display: flex;
+  align-items: center;
+  height: var(--shell-header-block-size);
+  min-height: 93px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 1.25rem;
+  background: #f8fafc;
+}
+
+.collapsed .brandBlock {
+  justify-content: center;
+  align-items: center;
+  padding: 0;
 }
 
 .brandLink {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 0.625rem;
 }
 
-.logo {
+.collapsed .brandLink {
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.logoWrap {
   display: flex;
-  width: 1.625rem;
-  height: 1.625rem;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
 }
 
+.collapsed .logoWrap {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.logo {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  filter: brightness(0);
+  transition:
+    width 200ms ease,
+    height 200ms ease;
+}
+
+.collapsed .logo {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.brandText {
+  min-width: 0;
+  overflow: hidden;
+  transition: opacity 150ms ease;
+}
+
+.collapsed .brandText {
+  display: none;
+}
+
 .brandName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.875rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #020617;
 }
 
 .brandSubtext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: #64748b;
   margin-top: -0.25rem;
 }
 
 .nav {
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 1rem 0.75rem;
+}
+
+.collapsed .nav {
+  padding: 1rem 0.5rem;
 }
 
 .navGroup {
@@ -60,19 +126,40 @@
   margin-top: 1.5rem;
 }
 
+.collapsed .adminGroup {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
 .groupLabel {
   padding: 0 0.75rem;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: #64748b;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 150ms ease;
+}
+
+.collapsed .groupLabel {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .adminLinks {
   margin-top: 0.5rem;
   display: grid;
   gap: 0.25rem;
+}
+
+.collapsed .adminLinks {
+  margin-top: 0;
 }
 
 .link {
@@ -84,20 +171,27 @@
   padding: 0 0.75rem;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #94a3b8;
+  color: #64748b;
   transition:
     background 150ms ease,
-    color 150ms ease;
+    color 150ms ease,
+    padding 200ms ease;
+}
+
+.collapsed .link {
+  justify-content: center;
+  gap: 0;
+  padding: 0;
 }
 
 .link:hover {
-  background: #1f2937;
-  color: #ffffff;
+  background: #f1f5f9;
+  color: #020617;
 }
 
 .activePrimary,
 .activePrimary:hover {
-  background: #1f2937;
+  background: #f1f5f9;
   color: #ae5eff;
   font-weight: 700;
 }
@@ -108,47 +202,77 @@
   color: #1d4ed8;
 }
 
+.linkLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity 150ms ease;
+}
+
+.collapsed .linkLabel {
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .icon {
   width: 1rem;
   height: 1rem;
+  flex-shrink: 0;
 }
 
-.profileBlock {
-  border-top: 1px solid #1f2937;
-  padding: 1rem;
-}
-
-.profileCard {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  border-radius: 0.5rem;
-  background: #1f2937;
+.footer {
+  flex-shrink: 0;
+  border-top: 1px solid #e2e8f0;
   padding: 0.75rem;
 }
 
-.profileText {
-  min-width: 0;
+.collapsed .footer {
+  padding: 0.75rem 0.5rem;
 }
 
-.profileName,
-.profileRole {
+.toggleButton {
+  display: flex;
+  width: 100%;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    padding 200ms ease;
+}
+
+.toggleButtonExpanded {
+  justify-content: space-between;
+}
+
+.collapsed .toggleButton {
+  gap: 0;
+  padding: 0;
+}
+
+.toggleLabel {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.profileName {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #ffffff;
+.toggleIcon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
 }
 
-.profileRole {
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  font-weight: 600;
-  color: #94a3b8;
+.toggleButton:hover {
+  background: #f1f5f9;
+  color: #020617;
 }
 
 @media (min-width: 1024px) {

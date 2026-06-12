@@ -110,7 +110,6 @@
   border: 1px solid #e2e8f0;
   background: #ffffff;
   padding: 1.5rem;
-  box-shadow: 0 20px 25px -5px rgb(203 213 225 / 0.7);
 }
 
 .mobileLogo {
@@ -209,19 +208,8 @@
 }
 
 .submit {
-  height: 2.75rem;
   width: 100%;
-  border-radius: 0.5rem;
-  background: #020617;
-  padding: 0 1rem;
-  font-size: 0.875rem;
   font-weight: 700;
-  color: #ffffff;
-  transition: background 150ms ease;
-}
-
-.submit:hover {
-  background: #1e293b;
 }
 
 .demoBox {

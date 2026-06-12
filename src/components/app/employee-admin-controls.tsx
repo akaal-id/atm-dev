@@ -4,6 +4,9 @@ import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { FormSelect } from "@/components/ui/form-select";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import type { EmployeeStatus, RoleKey } from "@/lib/types";
 
 export interface EmployeeAdminUser {
@@ -111,41 +114,41 @@ export function EmployeeAdminControls({
           <input name="position" required className="input" defaultValue={employee.position} />
         </Field>
         <Field label="Department">
-          <select name="department_id" className="input" defaultValue={employee.department_id}>
-            {departments.map((department) => (
-              <option key={department.department_id} value={department.department_id}>
-                {department.department_name}
-              </option>
-            ))}
-          </select>
+          <FormSelect
+            name="department_id"
+            defaultValue={employee.department_id}
+            options={departments.map((department) => ({ value: department.department_id, label: department.department_name }))}
+          />
         </Field>
         <Field label="Role">
-          <select name="role_id" className="input" defaultValue={employee.role_id}>
-            {roles.map((role) => (
-              <option key={role.role_id} value={role.role_id}>
-                {role.role_name}
-              </option>
-            ))}
-          </select>
+          <FormSelect
+            name="role_id"
+            defaultValue={employee.role_id}
+            options={roles.map((role) => ({ value: role.role_id, label: role.role_name }))}
+          />
         </Field>
         <Field label="Employment status">
-          <select name="employment_status" className="input" defaultValue={employee.employment_status}>
-            {statuses.map((status) => (
-              <option key={status}>{status}</option>
-            ))}
-          </select>
+          <FormSelect
+            name="employment_status"
+            defaultValue={employee.employment_status}
+            options={statuses.map((status) => ({ value: status, label: status }))}
+          />
         </Field>
         <Field label="Birthday">
-          <input name="birthday" type="date" className="input" defaultValue={employee.birthday} />
+          <DatePickerField name="birthday" defaultValue={employee.birthday} variant="form" />
         </Field>
         <Field label="Join date">
-          <input name="join_date" type="date" className="input" defaultValue={employee.join_date} />
+          <DatePickerField name="join_date" defaultValue={employee.join_date} variant="form" />
         </Field>
         <Field label="Account status">
-          <select name="is_active" className="input" defaultValue={String(employee.is_active)}>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
+          <FormSelect
+            name="is_active"
+            defaultValue={String(employee.is_active)}
+            options={[
+              { value: "true", label: "Active" },
+              { value: "false", label: "Inactive" },
+            ]}
+          />
         </Field>
         <Field label="Profile photo">
           <input name="profile_photo" type="url" className="input" defaultValue={employee.profile_photo} />
@@ -155,24 +158,19 @@ export function EmployeeAdminControls({
           <textarea name="bio" className="input" rows={4} defaultValue={employee.bio} />
         </Field>
         <div className="flex items-end">
-          <button disabled={saving} className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">
+          <Button type="submit" size="xl" className="w-full" disabled={saving}>
             {saving ? "Saving..." : "Save user"}
-          </button>
+          </Button>
         </div>
       </form>
 
       {message ? <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">{message}</p> : null}
 
       {canRemove ? (
-        <button
-          type="button"
-          onClick={removeUser}
-          disabled={removing}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
-        >
+        <Button type="button" variant="destructiveOutline" size="xl" className="w-full md:w-auto" onClick={removeUser} disabled={removing}>
           <Trash2 className="h-4 w-4" />
           {removing ? "Removing..." : "Remove user account"}
-        </button>
+        </Button>
       ) : (
         <p className="text-sm font-medium text-slate-500">You cannot remove your own account while signed in.</p>
       )}

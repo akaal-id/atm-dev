@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/server/auth";
 import styles from "./login.module.css";
 
@@ -69,7 +70,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <span className={styles.label}>Password</span>
               <input name="password" type="password" required className="input" autoComplete="current-password" />
             </label>
-            <button className={styles.submit}>Sign in</button>
+            <Button type="submit" size="lg" className={styles.submit}>
+              Sign in
+            </Button>
           </form>
 
           <p className={styles.requestText}>

@@ -1,4 +1,5 @@
 .shell {
+  --shell-header-block-size: calc(2rem + 1.5rem + 0.25rem + 1.25rem);
   min-height: 100dvh;
   max-width: 100%;
   overflow-x: clip;
@@ -20,14 +21,14 @@
 .main {
   width: 100%;
   min-width: 0;
-  max-width: 80rem;
+  max-width: 94rem;
   margin: 0 auto;
   padding: 1rem 1rem 1.25rem;
 }
 
 @media (min-width: 640px) {
   .main {
-    padding: 1.5rem;
+    padding: 2rem;
   }
 }
 

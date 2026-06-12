@@ -19,7 +19,6 @@
   width: 100%;
   transform-origin: left center;
   background: linear-gradient(90deg, #0f172a, #2563eb, #22c55e);
-  box-shadow: 0 0 18px rgb(37 99 235 / 0.35);
   transition:
     transform 220ms ease,
     opacity 180ms ease;
@@ -36,7 +35,6 @@
   font-size: 0.6875rem;
   font-weight: 800;
   color: #0f172a;
-  box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.12);
   backdrop-filter: blur(10px);
 }
 

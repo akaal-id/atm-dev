@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/server/auth";
 import styles from "../signup/signup.module.css";
 
@@ -30,7 +31,9 @@ export default async function VerifyPage({ searchParams }: { searchParams: Promi
             <span>Verification key</span>
             <input name="verification_key" required className="input" inputMode="numeric" autoComplete="one-time-code" />
           </label>
-          <button className={styles.submit}>Verify account</button>
+          <Button type="submit" size="lg" className={styles.submit}>
+            Verify account
+          </Button>
         </form>
 
         <p className={styles.footerText}>

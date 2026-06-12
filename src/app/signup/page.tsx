@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/server/auth";
 import { listResource } from "@/lib/server/store";
 
+import { Button } from "@/components/ui/button";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { FormSelect } from "@/components/ui/form-select";
+
 import { PasswordField } from "./password-field";
 import { SignupForm } from "./signup-form";
 import styles from "./signup.module.css";
@@ -82,34 +86,36 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
             <span>
               Department <b className={styles.requiredMark}>*</b>
             </span>
-            <select name="department_id" required className="input" defaultValue="">
-              <option value="" disabled>Select department</option>
-              {departments.map((department) => (
-                <option key={department.department_id} value={department.department_id}>
-                  {department.department_name}
-                </option>
-              ))}
-            </select>
+            <FormSelect
+              name="department_id"
+              required
+              defaultValue=""
+              placeholder="Select department"
+              options={departments.map((department) => ({
+                value: department.department_id,
+                label: department.department_name,
+              }))}
+            />
           </label>
           <label className={styles.field}>
             <span>
               Birth date <b className={styles.requiredMark}>*</b>
             </span>
-            <input name="birthday" type="date" required className="input" />
+            <DatePickerField name="birthday" required variant="form" />
           </label>
           <label className={styles.field}>
             <span>
               Join date <b className={styles.requiredMark}>*</b>
             </span>
-            <input name="join_date" type="date" required className="input" />
+            <DatePickerField name="join_date" required variant="form" />
           </label>
           <label className={styles.fieldWide}>
             <span>Bio</span>
             <textarea name="bio" className="input" rows={4} placeholder="Tell the team a little about your role or background." />
           </label>
-          <button className={styles.submit} type="submit">
+          <Button className={styles.submit} type="submit" size="lg">
             Request account
-          </button>
+          </Button>
         </SignupForm>
 
         <p className={styles.footerText}>

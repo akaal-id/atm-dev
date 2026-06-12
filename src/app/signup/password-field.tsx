@@ -3,6 +3,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import styles from "./signup.module.css";
 
 interface PasswordFieldProps {
@@ -31,14 +32,16 @@ export function PasswordField({ name, label, autoComplete, required }: PasswordF
           className="input"
           autoComplete={autoComplete}
         />
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-sm"
           className={styles.passwordToggle}
           aria-label={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
           onClick={() => setIsVisible((current) => !current)}
         >
           <Icon size={18} aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </label>
   );

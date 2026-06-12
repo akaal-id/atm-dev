@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
+import { Button } from "@/components/ui/button";
 import type { AppNotification } from "@/lib/types";
 import { scheduleRouterRefresh } from "@/lib/safe-router-refresh";
 
@@ -64,8 +65,10 @@ export function MarkAllNotificationsReadButton({ disabled, className }: MarkAllN
   const [isPending, startTransition] = useTransition();
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="sm"
       disabled={disabled || isPending}
       className={className}
       onClick={() => {
@@ -76,6 +79,6 @@ export function MarkAllNotificationsReadButton({ disabled, className }: MarkAllN
       }}
     >
       {isPending ? "Marking..." : "Mark all as read"}
-    </button>
+    </Button>
   );
 }

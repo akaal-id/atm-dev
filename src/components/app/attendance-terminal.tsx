@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import styles from "./attendance-terminal.module.css";
@@ -304,30 +305,30 @@ export function AttendanceTerminal({ className }: AttendanceTerminalProps) {
 
           <div className={cn(styles.actions, state === "none" || state === "paused" || state === "closed" ? styles.actionsSingle : undefined)}>
             {state === "none" ? (
-              <button type="button" className={styles.primaryButton} disabled={isBusy} onClick={() => void submitEvent("clock_in")}>
+              <Button type="button" size="xl" className={styles.button} disabled={isBusy} onClick={() => void submitEvent("clock_in")}>
                 {isBusy ? <Loader2 className={cn("h-4 w-4", styles.spinner)} /> : <LogIn className="h-4 w-4" />}
                 Clock In
-              </button>
+              </Button>
             ) : null}
 
             {state === "working" ? (
               <>
-                <button type="button" className={styles.warningButton} disabled={isBusy} onClick={() => void submitEvent("transit_pause")}>
+                <Button type="button" variant="warning" size="xl" className={styles.button} disabled={isBusy} onClick={() => void submitEvent("transit_pause")}>
                   {isBusy ? <Loader2 className={cn("h-4 w-4", styles.spinner)} /> : <Coffee className="h-4 w-4" />}
                   Pause (Transit/Break)
-                </button>
-                <button type="button" className={styles.dangerButton} disabled={isBusy} onClick={requestClockOut}>
+                </Button>
+                <Button type="button" variant="destructiveOutline" size="xl" className={styles.button} disabled={isBusy} onClick={requestClockOut}>
                   <SquareCheckBig className="h-4 w-4" />
                   Clock Out
-                </button>
+                </Button>
               </>
             ) : null}
 
             {state === "paused" ? (
-              <button type="button" className={styles.primaryButton} disabled={isBusy} onClick={() => void submitEvent("resume")}>
+              <Button type="button" size="xl" className={styles.button} disabled={isBusy} onClick={() => void submitEvent("resume")}>
                 {isBusy ? <Loader2 className={cn("h-4 w-4", styles.spinner)} /> : <Play className="h-4 w-4" />}
                 Resume Work
-              </button>
+              </Button>
             ) : null}
 
             {state === "closed" ? (
@@ -384,9 +385,9 @@ export function AttendanceTerminal({ className }: AttendanceTerminalProps) {
                 </h3>
                 <p className={styles.modalCopy}>Write what was completed today before closing the session.</p>
               </div>
-              <button type="button" className={styles.iconButton} aria-label="Close clock out summary" disabled={isBusy} onClick={() => setClockOutOpen(false)}>
+              <Button type="button" variant="outline" size="icon-sm" aria-label="Close clock out summary" disabled={isBusy} onClick={() => setClockOutOpen(false)}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
             <div className={styles.modalBody}>
               <label className={styles.label} htmlFor="attendance-eod-summary">
@@ -403,13 +404,13 @@ export function AttendanceTerminal({ className }: AttendanceTerminalProps) {
               />
               <p className={styles.characterCount}>{eodSummary.trim().length}/20 characters minimum</p>
               <div className={styles.modalActions}>
-                <button type="button" className={styles.secondaryButton} disabled={isBusy} onClick={() => setClockOutOpen(false)}>
+                <Button type="button" variant="outline" size="xl" className={styles.button} disabled={isBusy} onClick={() => setClockOutOpen(false)}>
                   Cancel
-                </button>
-                <button type="button" className={styles.primaryButton} disabled={isBusy || !eodIsValid} onClick={confirmClockOut}>
+                </Button>
+                <Button type="button" size="xl" className={styles.button} disabled={isBusy || !eodIsValid} onClick={confirmClockOut}>
                   {isBusy ? <Loader2 className={cn("h-4 w-4", styles.spinner)} /> : <MapPin className="h-4 w-4" />}
                   Submit Clock Out
-                </button>
+                </Button>
               </div>
             </div>
           </div>

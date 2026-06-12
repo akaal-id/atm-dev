@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppIcon } from "@/components/app/icons";
+import { Button } from "@/components/ui/button";
 import { APP_VERSION } from "@/lib/app-version";
 import { cn } from "@/lib/utils";
 import styles from "./pwa-version-status.module.css";
@@ -144,10 +145,10 @@ export function PwaVersionStatus() {
       </div>
 
       {updateAvailable ? (
-        <button className={styles.button} type="button" onClick={handleUpdate} disabled={isUpdating}>
+        <Button className={styles.button} type="button" variant="default" size="sm" onClick={handleUpdate} disabled={isUpdating}>
           <AppIcon name="RefreshCw" className={styles.icon} />
           {isUpdating ? "Updating" : "Update"}
-        </button>
+        </Button>
       ) : null}
     </aside>
   );

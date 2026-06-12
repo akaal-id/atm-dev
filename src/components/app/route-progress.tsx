@@ -28,11 +28,16 @@ function isSameOriginNavigation(target: EventTarget | null) {
 export function RouteProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState(100);
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const visibleRef = useRef(visible);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     visibleRef.current = visible;
@@ -124,6 +129,10 @@ export function RouteProgress() {
   }, [finish, pathname, searchParams]);
 
   const scale = Math.max(0, Math.min(100, progress)) / 100;
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className={`${styles.root} ${visible ? styles.visible : styles.hidden}`} aria-live="polite" aria-label={`Page loading ${Math.round(progress)} percent`}>

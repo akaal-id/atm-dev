@@ -11,13 +11,11 @@
   border-radius: 0.5rem;
   background: rgb(255 255 255 / 0.96);
   padding: 0.625rem 0.75rem;
-  box-shadow: 0 16px 32px rgb(15 23 42 / 0.14);
   backdrop-filter: blur(12px);
 }
 
 .statusLatest {
   border-color: #dcfce7;
-  box-shadow: 0 10px 24px rgb(15 23 42 / 0.08);
 }
 
 .statusUpdate {

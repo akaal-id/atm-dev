@@ -1,37 +1,60 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { AppIcon } from "@/components/app/icons";
-import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import type { NavigationItem } from "@/lib/navigation";
-import type { CurrentUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import styles from "./sidebar-nav.module.css";
 
+const STORAGE_KEY = "atm-sidebar-collapsed";
+
 interface SidebarNavProps {
-  user: CurrentUser;
   items: NavigationItem[];
   adminItems: NavigationItem[];
 }
 
-export function SidebarNav({ user, items, adminItems }: SidebarNavProps) {
+export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "true") {
+      setCollapsed(true);
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(STORAGE_KEY, String(collapsed));
+  }, [collapsed, hydrated]);
+
+  function toggleCollapsed() {
+    setCollapsed((current) => !current);
+  }
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={cn(styles.sidebar, collapsed && styles.collapsed)}>
       <div className={styles.brandBlock}>
-        <Link href="/dashboard" className={styles.brandLink}>
-          <img
-            src="/icon/mono-akaal-white.png"
-            alt="Akaal Logo"
-            className={styles.logo}
-            width={24}
-            height={24}
-          />
-    
-          <div>
+        <Link href="/dashboard" className={styles.brandLink} title="Akaal Team Management">
+          <span className={styles.logoWrap}>
+            <img
+              src="/icon/mono-akaal-white.png"
+              alt="Akaal Logo"
+              className={styles.logo}
+              width={32}
+              height={32}
+            />
+          </span>
+
+          <div className={styles.brandText}>
             <p className={styles.brandName}>Akaal Team</p>
             <p className={styles.brandSubtext}>Management</p>
           </div>
@@ -46,10 +69,11 @@ export function SidebarNav({ user, items, adminItems }: SidebarNavProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                title={item.label}
                 className={cn(styles.link, active && styles.activePrimary)}
               >
                 <AppIcon name={item.icon} className={styles.icon} />
-                {item.label}
+                <span className={styles.linkLabel}>{item.label}</span>
               </Link>
             );
           })}
@@ -65,10 +89,11 @@ export function SidebarNav({ user, items, adminItems }: SidebarNavProps) {
                   <Link
                     key={item.href}
                     href={item.href}
+                    title={item.label}
                     className={cn(styles.link, active && styles.activeAdmin)}
                   >
                     <AppIcon name={item.icon} className={styles.icon} />
-                    {item.label}
+                    <span className={styles.linkLabel}>{item.label}</span>
                   </Link>
                 );
               })}
@@ -77,14 +102,24 @@ export function SidebarNav({ user, items, adminItems }: SidebarNavProps) {
         ) : null}
       </nav>
 
-      <div className={styles.profileBlock}>
-        <div className={styles.profileCard}>
-          <Avatar name={user.full_name} image={user.profile_photo} size="sm" />
-          <div className={styles.profileText}>
-            <p className={styles.profileName}>{user.full_name}</p>
-            <p className={styles.profileRole}>{user.role.role_name}</p>
-          </div>
-        </div>
+      <div className={styles.footer}>
+        <Button
+          type="button"
+          variant="ghost"
+          className={cn(styles.toggleButton, !collapsed && styles.toggleButtonExpanded)}
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+        >
+          {collapsed ? (
+            <ChevronRight className={styles.toggleIcon} aria-hidden />
+          ) : (
+            <>
+              <span className={styles.toggleLabel}>Collapse</span>
+              <ChevronLeft className={styles.toggleIcon} aria-hidden />
+            </>
+          )}
+        </Button>
       </div>
     </aside>
   );

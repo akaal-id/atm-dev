@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -16,11 +19,16 @@ export interface TaskBoardUser {
   full_name: string;
 }
 
+function finishedSummaryLabel(count: number) {
+  return count === 1 ? "1 Task Finished" : `${count} Tasks Finished`;
+}
+
 export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Task[]; users: TaskBoardUser[]; canMoveFinished?: boolean }) {
   const router = useRouter();
   const [statusOverrides, setStatusOverrides] = useState<Record<string, TaskStatus>>({});
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [finishedExpanded, setFinishedExpanded] = useState(false);
   const boardTasks = useMemo(
     () => tasks.map((task) => (statusOverrides[task.task_id] ? { ...task, status: statusOverrides[task.task_id] } : task)),
     [statusOverrides, tasks],
@@ -63,11 +71,62 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
     router.refresh();
   };
 
+  const renderTaskCard = (task: Task) => (
+    <article
+      key={task.task_id}
+      draggable
+      onDragStart={(event) => {
+        setDraggingTaskId(task.task_id);
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", task.task_id);
+      }}
+      onDragEnd={() => setDraggingTaskId(null)}
+      className={cn(
+        "cursor-grab rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50 active:cursor-grabbing",
+        pendingTaskId === task.task_id && "opacity-60",
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600">#{task.task_id}</code>
+          <Link href={`/tasks/${task.task_id}`} className="mt-2 block break-words font-semibold text-slate-950 transition hover:text-blue-600">
+            {task.title}
+          </Link>
+        </div>
+        <StatusPill status={task.status} />
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
+        <Badge>Due {formatShortDate(task.due_date)}</Badge>
+      </div>
+      <div className="mt-4">
+        <FilterSelect
+          label="Move to"
+          value={task.status}
+          disabled={pendingTaskId === task.task_id}
+          options={workflowBoardStatuses.map((option) => ({
+            value: option,
+            label: option,
+            disabled: option === "Finished" && !canMoveFinished,
+          }))}
+          onValueChange={(value) => void moveTask(task.task_id, value as TaskStatus)}
+        />
+      </div>
+      <div className="mt-4 flex -space-x-2">
+        {task.assigned_to.map((id) => (
+          <Avatar key={id} name={userName(id)} size="sm" />
+        ))}
+      </div>
+    </article>
+  );
+
   return (
     <div className="-mx-1 flex gap-4 overflow-x-auto overscroll-x-contain px-1 pb-1 snap-x snap-mandatory lg:mx-0 lg:px-0 lg:pb-0">
       {workflowBoardStatuses.map((status) => {
         const laneTasks = grouped[status] ?? [];
         const canDropIntoLane = status !== "Finished" || canMoveFinished;
+        const isFinishedLane = status === "Finished";
+        const showCollapsedFinished = isFinishedLane && !finishedExpanded && laneTasks.length > 0;
 
         return (
           <section
@@ -83,7 +142,7 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
               setDraggingTaskId(null);
             }}
             className={cn(
-              "w-[min(100%,17.5rem)] shrink-0 snap-start rounded-lg border bg-white shadow-sm transition",
+              "w-[min(100%,24rem)] shrink-0 snap-start rounded-lg border bg-white transition",
               draggingTaskId ? "border-blue-200" : "border-slate-200",
             )}
           >
@@ -94,57 +153,34 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
             <div className="min-h-40 space-y-3 p-4">
               {laneTasks.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm font-medium text-slate-500">Drop task here</div>
+              ) : showCollapsedFinished ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setFinishedExpanded(true)}
+                  className="h-auto w-full flex-col gap-2 border-dashed border-emerald-200 bg-emerald-50 px-4 py-6 text-center hover:border-emerald-300 hover:bg-emerald-100"
+                >
+                  <span className="text-sm font-bold text-emerald-800">{finishedSummaryLabel(laneTasks.length)}</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                    Click to expand
+                    <ChevronDown className="size-3.5" />
+                  </span>
+                </Button>
               ) : (
-                laneTasks.map((task) => (
-                  <article
-                    key={task.task_id}
-                    draggable
-                    onDragStart={(event) => {
-                      setDraggingTaskId(task.task_id);
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", task.task_id);
-                    }}
-                    onDragEnd={() => setDraggingTaskId(null)}
-                    className={cn(
-                      "cursor-grab rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50 active:cursor-grabbing",
-                      pendingTaskId === task.task_id && "opacity-60",
-                    )}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600">#{task.task_id}</code>
-                        <Link href={`/tasks/${task.task_id}`} className="mt-2 block break-words font-semibold text-slate-950 transition hover:text-blue-600">
-                          {task.title}
-                        </Link>
-                      </div>
-                      <StatusPill status={task.status} />
-                    </div>
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
-                      <Badge>Due {formatShortDate(task.due_date)}</Badge>
-                    </div>
-                    <label className="mt-4 block text-xs font-semibold text-slate-500">
-                      Move to
-                      <select
-                        value={task.status}
-                        disabled={pendingTaskId === task.task_id}
-                        onChange={(event) => void moveTask(task.task_id, event.target.value as TaskStatus)}
-                        className="mt-1 h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-                      >
-                        {workflowBoardStatuses.map((option) => (
-                          <option key={option} disabled={option === "Finished" && !canMoveFinished}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <div className="mt-4 flex -space-x-2">
-                      {task.assigned_to.map((id) => (
-                        <Avatar key={id} name={userName(id)} size="sm" />
-                      ))}
-                    </div>
-                  </article>
-                ))
+                <>
+                  {isFinishedLane ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setFinishedExpanded(false)}
+                      className="h-auto w-full justify-between border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+                    >
+                      <span>{finishedSummaryLabel(laneTasks.length)}</span>
+                      <ChevronUp className="size-4 shrink-0" />
+                    </Button>
+                  ) : null}
+                  {laneTasks.map((task) => renderTaskCard(task))}
+                </>
               )}
             </div>
           </section>

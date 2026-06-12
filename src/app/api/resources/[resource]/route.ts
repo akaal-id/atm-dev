@@ -5,6 +5,7 @@ import { demoPassword } from "@/lib/data/seed";
 import { cleanEmptyStrings, getRecordId, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
 import { notifyApproversAboutLeaveRequest } from "@/lib/server/leave-requests";
 import { createResource, listResource } from "@/lib/server/store";
+import { logTaskChecklistActivity, logTaskCommentActivity } from "@/lib/server/task-activity";
 import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
 import { setLeaderApprovalRequirement } from "@/lib/task-approval";
 import type { LeaveRequest, User } from "@/lib/types";
@@ -275,8 +276,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
 
   if (resource === "Tasks" && checklistTitles.length > 0) {
     await Promise.all(
-      checklistTitles.map((title) =>
-        createResource("Task_Checklists", {
+      checklistTitles.map(async (title) => {
+        await createResource("Task_Checklists", {
           task_id: entityId,
           title,
           is_completed: false,
@@ -286,17 +287,47 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
           pm_approved_by: "",
           created_at: now,
           updated_at: now,
-        }),
-      ),
+        });
+        await logTaskChecklistActivity({
+          userId: access.user.user_id,
+          userName: access.user.full_name,
+          taskId: entityId,
+          action: "created",
+          title,
+        });
+      }),
     );
   }
 
   if (resource === "Task_Checklists") {
     const taskId = String((record as unknown as Record<string, unknown>).task_id ?? "");
-    if (taskId) await syncTaskWorkflowStatus(taskId);
+    const checklistTitle = String((record as { title?: string }).title ?? payload.title ?? "");
+    if (taskId) {
+      await logTaskChecklistActivity({
+        userId: access.user.user_id,
+        userName: access.user.full_name,
+        taskId,
+        action: "created",
+        title: checklistTitle,
+      });
+      await syncTaskWorkflowStatus(taskId);
+    }
   }
 
-  if (resource !== "Activity_Logs") {
+  if (resource === "Task_Comments") {
+    const taskId = String((record as unknown as Record<string, unknown>).task_id ?? payload.task_id ?? "");
+    const commentText = String((record as { comment?: string }).comment ?? payload.comment ?? "");
+    if (taskId) {
+      await logTaskCommentActivity({
+        userId: access.user.user_id,
+        userName: access.user.full_name,
+        taskId,
+        comment: commentText,
+      });
+    }
+  }
+
+  if (resource !== "Activity_Logs" && resource !== "Task_Checklists" && resource !== "Task_Comments") {
     await createResource("Activity_Logs", {
       user_id: access.user.user_id,
       action: "created",

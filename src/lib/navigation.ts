@@ -33,7 +33,6 @@ export const primaryNavigation: NavigationItem[] = [
   { label: "Announcements", href: "/announcements", icon: "Megaphone", permission: "announcements:view" },
   { label: "Employees", href: "/employees", icon: "Users", permission: "employees:view" },
   { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
-  { label: "Notifications", href: "/notifications", icon: "Bell", permission: "notifications:view" },
 ];
 
 export const adminNavigation: NavigationItem[] = [

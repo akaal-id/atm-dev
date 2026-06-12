@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, CheckSquare, FolderKanban, ListFilter, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, CheckSquare, FolderKanban, ListFilter, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { TaskBoard } from "@/components/app/task-board";
+import { Button } from "@/components/ui/button";
+import { Tabs, type TabItem } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { DateRangePickerField } from "@/components/ui/date-range-picker-field";
+import { FilterSelect } from "@/components/ui/filter-select";
 import { LinkifiedText } from "@/components/ui/linkified-text";
-import { StatusPill } from "@/components/ui/status-pill";
+import { StatusPill, statusTone } from "@/components/ui/status-pill";
 import { activeTasks, completedTasks, jakartaToday } from "@/lib/metrics";
 import { visibleTaskLabels } from "@/lib/task-approval";
 import type { CurrentUser, Project, Task, User } from "@/lib/types";
@@ -21,18 +25,19 @@ type TaskScope = "my" | "team";
 type TaskFilters = {
   query: string;
   projectId: string;
-  dueDate: string;
+  dueDateFrom: string;
+  dueDateTo: string;
   assigneeId: string;
   assignedById: string;
 };
 
 const NO_PROJECT = "__no_project";
 const ALL = "all";
-const viewTabs: Array<{ id: TaskViewMode; label: string }> = [
-  { id: "board", label: "Board" },
-  { id: "list", label: "List" },
-  { id: "calendar", label: "Calendar" },
-  { id: "project", label: "Project" },
+const viewTabs: Array<TabItem & { id: TaskViewMode }> = [
+  { id: "board", label: "Board", icon: <CheckSquare /> },
+  { id: "list", label: "List", icon: <ListFilter /> },
+  { id: "calendar", label: "Calendar", icon: <CalendarDays /> },
+  { id: "project", label: "Project", icon: <FolderKanban /> },
 ];
 
 function userName(users: User[], id: string) {
@@ -61,6 +66,30 @@ function monthTitle(monthKey: string) {
   return new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, month - 1, 1)));
 }
 
+function shiftMonthKey(monthKey: string, delta: number) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1 + delta, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function calendarMonthOptions(tasks: Task[]) {
+  const todayMonth = currentMonthKey();
+  const keys = new Set<string>([todayMonth]);
+
+  for (let delta = -1; delta <= 24; delta += 1) {
+    keys.add(shiftMonthKey(todayMonth, delta));
+  }
+
+  tasks.forEach((task) => {
+    const month = dateKey(task.due_date).slice(0, 7);
+    if (/^\d{4}-\d{2}$/.test(month)) keys.add(month);
+  });
+
+  return Array.from(keys)
+    .sort((left, right) => right.localeCompare(left))
+    .map((value) => ({ value, label: monthTitle(value) }));
+}
+
 function monthCells(monthKey: string) {
   const [year, month] = monthKey.split("-").map(Number);
   const firstDay = new Date(Date.UTC(year, month - 1, 1));
@@ -84,7 +113,11 @@ function filterTasks(tasks: Task[], users: User[], projects: Project[], filters:
       if (taskProject !== filters.projectId) return false;
     }
 
-    if (filters.dueDate && dateKey(task.due_date) !== filters.dueDate) return false;
+    if (filters.dueDateFrom || filters.dueDateTo) {
+      const taskDueDate = dateKey(task.due_date);
+      if (filters.dueDateFrom && taskDueDate < filters.dueDateFrom) return false;
+      if (filters.dueDateTo && taskDueDate > filters.dueDateTo) return false;
+    }
     if (filters.assigneeId !== ALL && !task.assigned_to.includes(filters.assigneeId)) return false;
     if (filters.assignedById !== ALL && task.assigned_by !== filters.assignedById) return false;
 
@@ -109,13 +142,6 @@ function filterTasks(tasks: Task[], users: User[], projects: Project[], filters:
   });
 }
 
-function tabIcon(id: TaskViewMode) {
-  if (id === "list") return <ListFilter className={styles.tabIcon} />;
-  if (id === "calendar") return <CalendarDays className={styles.tabIcon} />;
-  if (id === "project") return <FolderKanban className={styles.tabIcon} />;
-  return <CheckSquare className={styles.tabIcon} />;
-}
-
 function TicketId({ id }: { id: string }) {
   return <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600">#{id}</code>;
 }
@@ -131,6 +157,98 @@ function TaskAssignees({ task, users }: { task: Task; users: User[] }) {
         ))}
       </div>
       <p className={styles.cellText}>{names.length > 0 ? names.join(", ") : "Unassigned"}</p>
+    </div>
+  );
+}
+
+type ListSortKey = "task" | "project" | "date" | "for" | "from" | "status";
+type ListSort = { key: ListSortKey; direction: "asc" | "desc" };
+
+const LIST_SORT_COLUMNS: Array<{ key: ListSortKey; label: string }> = [
+  { key: "task", label: "Task" },
+  { key: "project", label: "Project" },
+  { key: "date", label: "Date" },
+  { key: "for", label: "For" },
+  { key: "from", label: "From" },
+  { key: "status", label: "Status" },
+];
+
+function assigneeLabel(task: Task, users: User[]) {
+  const names = task.assigned_to.map((id) => userName(users, id));
+  return names.length > 0 ? names.join(", ") : "Unassigned";
+}
+
+function sortListTasks(tasks: Task[], users: User[], projects: Project[], sort: ListSort | null) {
+  if (!sort) return tasks;
+
+  const direction = sort.direction === "asc" ? 1 : -1;
+
+  return [...tasks].sort((left, right) => {
+    let comparison = 0;
+
+    switch (sort.key) {
+      case "task":
+        comparison = left.title.localeCompare(right.title, undefined, { sensitivity: "base" });
+        break;
+      case "project":
+        comparison = projectName(projects, left.project_id).localeCompare(projectName(projects, right.project_id), undefined, {
+          sensitivity: "base",
+        });
+        break;
+      case "date":
+        comparison = dateKey(left.due_date).localeCompare(dateKey(right.due_date));
+        break;
+      case "for":
+        comparison = assigneeLabel(left, users).localeCompare(assigneeLabel(right, users), undefined, { sensitivity: "base" });
+        break;
+      case "from":
+        comparison = userName(users, left.assigned_by).localeCompare(userName(users, right.assigned_by), undefined, {
+          sensitivity: "base",
+        });
+        break;
+      case "status":
+        comparison = left.status.localeCompare(right.status, undefined, { sensitivity: "base" });
+        break;
+    }
+
+    return comparison * direction;
+  });
+}
+
+function ListSortIcon({ direction }: { direction?: ListSort["direction"] }) {
+  if (direction === "asc") return <ArrowUp className={styles.listHeaderSortIcon} aria-hidden="true" />;
+  if (direction === "desc") return <ArrowDown className={styles.listHeaderSortIcon} aria-hidden="true" />;
+  return <ArrowUpDown className={styles.listHeaderSortIconMuted} aria-hidden="true" />;
+}
+
+function TaskListHeader({
+  sort,
+  onSort,
+}: {
+  sort: ListSort | null;
+  onSort: (key: ListSortKey) => void;
+}) {
+  return (
+    <div className={styles.listHeaderBar}>
+      <div className={styles.listHeader} role="row">
+        {LIST_SORT_COLUMNS.map((column) => {
+          const isActive = sort?.key === column.key;
+
+          return (
+            <button
+              key={column.key}
+              type="button"
+              role="columnheader"
+              aria-sort={isActive ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
+              onClick={() => onSort(column.key)}
+              className={cn(styles.listHeaderCell, isActive && styles.listHeaderCellActive)}
+            >
+              <span>{column.label}</span>
+              <ListSortIcon direction={isActive ? sort.direction : undefined} />
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -172,7 +290,7 @@ function TaskListRow({ task, users, projects }: { task: Task; users: User[]; pro
         <p className={styles.cellText}>{userName(users, task.assigned_by)}</p>
       </div>
 
-      <div className={styles.cell}>
+      <div className={cn(styles.cell, styles.statusCell)}>
         <p className={styles.cellLabel}>Status</p>
         <StatusPill status={task.status} />
       </div>
@@ -186,14 +304,29 @@ function TaskFiltersPanel({
   projects,
   users,
   scope,
+  currentUser,
 }: {
   filters: TaskFilters;
   setFilters: React.Dispatch<React.SetStateAction<TaskFilters>>;
   projects: Project[];
   users: User[];
   scope: TaskScope;
+  currentUser: CurrentUser;
 }) {
   const activeUsers = users.filter((user) => user.is_active);
+  const projectOptions = [
+    { value: ALL, label: "All projects" },
+    { value: NO_PROJECT, label: "No project" },
+    ...projects.map((project) => ({ value: project.project_id, label: project.project_name })),
+  ];
+  const userOptions = [
+    { value: ALL, label: "Anyone" },
+    ...activeUsers.map((user) => ({ value: user.user_id, label: user.full_name })),
+  ];
+  const assigneeOptions =
+    scope === "my"
+      ? [{ value: currentUser.user_id, label: currentUser.full_name }]
+      : userOptions;
 
   return (
     <div className={styles.filterPanel}>
@@ -208,108 +341,65 @@ function TaskFiltersPanel({
       </label>
 
       <div className={styles.filterGrid}>
-        <label className={styles.filterField}>
-          <span className={styles.filterLabel}>Project</span>
-          <select
-            value={filters.projectId}
-            onChange={(event) => setFilters((current) => ({ ...current, projectId: event.target.value }))}
-            className={styles.filterControl}
-          >
-            <option value={ALL}>All projects</option>
-            <option value={NO_PROJECT}>No project</option>
-            {projects.map((project) => (
-              <option key={project.project_id} value={project.project_id}>
-                {project.project_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FilterSelect
+          label="Project"
+          value={filters.projectId}
+          options={projectOptions}
+          onValueChange={(projectId) => setFilters((current) => ({ ...current, projectId }))}
+        />
 
-        <label className={styles.filterField}>
-          <span className={styles.filterLabel}>Date</span>
-          <input
-            type="date"
-            value={filters.dueDate}
-            onChange={(event) => setFilters((current) => ({ ...current, dueDate: event.target.value }))}
-            className={styles.filterControl}
-          />
-        </label>
+        <DateRangePickerField
+          label="Due date"
+          value={{ from: filters.dueDateFrom, to: filters.dueDateTo }}
+          onChange={({ from, to }) => setFilters((current) => ({ ...current, dueDateFrom: from, dueDateTo: to }))}
+        />
 
-        {scope === "team" ? (
-          <label className={styles.filterField}>
-            <span className={styles.filterLabel}>For assignee</span>
-            <select
-              value={filters.assigneeId}
-              onChange={(event) => setFilters((current) => ({ ...current, assigneeId: event.target.value }))}
-              className={styles.filterControl}
-            >
-              <option value={ALL}>Anyone</option>
-              {activeUsers.map((user) => (
-                <option key={user.user_id} value={user.user_id}>
-                  {user.full_name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
+        <FilterSelect
+          label="For assignee"
+          value={scope === "my" ? currentUser.user_id : filters.assigneeId}
+          options={assigneeOptions}
+          disabled={scope === "my"}
+          onValueChange={(assigneeId) => setFilters((current) => ({ ...current, assigneeId }))}
+        />
 
-        <label className={styles.filterField}>
-          <span className={styles.filterLabel}>From assigner</span>
-          <select
-            value={filters.assignedById}
-            onChange={(event) => setFilters((current) => ({ ...current, assignedById: event.target.value }))}
-            className={styles.filterControl}
-          >
-            <option value={ALL}>Anyone</option>
-            {activeUsers.map((user) => (
-              <option key={user.user_id} value={user.user_id}>
-                {user.full_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <FilterSelect
+          label="From assigner"
+          value={filters.assignedById}
+          options={userOptions}
+          onValueChange={(assignedById) => setFilters((current) => ({ ...current, assignedById }))}
+        />
       </div>
     </div>
   );
 }
 
 function ListView({
-  tasks,
   filteredTasks,
   users,
   projects,
-  filters,
-  setFilters,
-  scope,
 }: {
-  tasks: Task[];
   filteredTasks: Task[];
   users: User[];
   projects: Project[];
-  filters: TaskFilters;
-  setFilters: React.Dispatch<React.SetStateAction<TaskFilters>>;
-  scope: TaskScope;
 }) {
+  const [sort, setSort] = useState<ListSort | null>(null);
+
+  const sortedTasks = useMemo(() => sortListTasks(filteredTasks, users, projects, sort), [filteredTasks, projects, sort, users]);
+
+  const cycleSort = (key: ListSortKey) => {
+    setSort((current) => {
+      if (current?.key !== key) return { key, direction: "asc" };
+      if (current.direction === "asc") return { key, direction: "desc" };
+      return null;
+    });
+  };
+
   return (
     <div className={styles.cardGrid}>
-      <TaskFiltersPanel filters={filters} setFilters={setFilters} projects={projects} users={users} scope={scope} />
-      <div className={styles.summary}>
-        <Badge tone="blue">{filteredTasks.length} shown</Badge>
-        <Badge>{tasks.length} total</Badge>
-        {scope === "my" ? <Badge tone="green">Personalized to you</Badge> : <Badge tone="purple">Team view</Badge>}
-      </div>
+      <TaskListHeader sort={sort} onSort={cycleSort} />
 
-      <div className={styles.listHeader} aria-hidden="true">
-        <span>Task</span>
-        <span>Project</span>
-        <span>Date</span>
-        <span>For</span>
-        <span>From</span>
-        <span>Status</span>
-      </div>
-
-      {filteredTasks.length > 0 ? (
-        filteredTasks.map((task) => <TaskListRow key={task.task_id} task={task} users={users} projects={projects} />)
+      {sortedTasks.length > 0 ? (
+        sortedTasks.map((task) => <TaskListRow key={task.task_id} task={task} users={users} projects={projects} />)
       ) : (
         <div className={styles.empty}>No tasks match this list filter.</div>
       )}
@@ -317,9 +407,19 @@ function ListView({
   );
 }
 
+const calendarTaskToneClass = {
+  neutral: styles.calendarTaskNeutral,
+  blue: styles.calendarTaskBlue,
+  green: styles.calendarTaskGreen,
+  yellow: styles.calendarTaskYellow,
+  red: styles.calendarTaskRed,
+  purple: styles.calendarTaskPurple,
+} as const;
+
 function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
-  const monthKey = currentMonthKey();
+  const [monthKey, setMonthKey] = useState(currentMonthKey);
   const today = jakartaToday();
+  const monthOptions = useMemo(() => calendarMonthOptions(tasks), [tasks]);
   const cells = monthCells(monthKey);
   const monthTasks = tasks
     .filter((task) => dateKey(task.due_date).startsWith(monthKey))
@@ -329,18 +429,19 @@ function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
 
   return (
     <div className={styles.calendarLayout}>
-      <aside className={styles.monthSummary}>
-        <div className={styles.monthCard}>
-          <p className={styles.monthTitle}>{monthTitle(monthKey)}</p>
-          <p className={styles.monthDetail}>Only task due dates are shown here.</p>
+      <div className={styles.monthCard}>
+        <FilterSelect
+          value={monthKey}
+          options={monthOptions}
+          onValueChange={setMonthKey}
+          fullWidth={false}
+          className={styles.monthSelect}
+        />
+        <div className={styles.monthCardBadges}>
+          <Badge tone="blue">{monthTasks.length} tasks</Badge>
+          <Badge tone={urgentCount > 0 ? "red" : "neutral"}>{urgentCount} urgent</Badge>
         </div>
-        <div className={styles.monthCard}>
-          <div className={styles.summary}>
-            <Badge tone="blue">{monthTasks.length} tasks</Badge>
-            <Badge tone={urgentCount > 0 ? "red" : "neutral"}>{urgentCount} urgent</Badge>
-          </div>
-        </div>
-      </aside>
+      </div>
 
       <div className={styles.calendarScroll}>
         <div className={styles.calendar}>
@@ -362,12 +463,21 @@ function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
                     <>
                       <p className={styles.dayNumber}>{Number(date.slice(8, 10))}</p>
                       <div className={styles.dayTasks}>
-                        {dayTasks.slice(0, 4).map((task) => (
-                          <Link key={task.task_id} href={`/tasks/${task.task_id}`} className={styles.calendarTask}>
-                            <span className={styles.calendarTaskTitle}>{task.title}</span>
-                            <span className={styles.calendarTaskMeta}>{task.priority} / {userName(users, task.assigned_by)}</span>
-                          </Link>
-                        ))}
+                        {dayTasks.slice(0, 4).map((task) => {
+                          const tone = statusTone(task.status);
+
+                          return (
+                            <Link
+                              key={task.task_id}
+                              href={`/tasks/${task.task_id}`}
+                              className={cn(styles.calendarTask, calendarTaskToneClass[tone])}
+                              title={task.status}
+                            >
+                              <span className={styles.calendarTaskTitle}>{task.title}</span>
+                              <span className={styles.calendarTaskMeta}>{task.priority} / {userName(users, task.assigned_by)}</span>
+                            </Link>
+                          );
+                        })}
                         {dayTasks.length > 4 ? <p className="text-xs font-bold text-blue-600">+{dayTasks.length - 4} more</p> : null}
                       </div>
                     </>
@@ -384,13 +494,15 @@ function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
 
 function ProjectTaskCard({ task, users }: { task: Task; users: User[] }) {
   return (
-    <Link href={`/tasks/${task.task_id}`} className="block rounded-lg border border-slate-200 p-3 transition hover:border-slate-300 hover:bg-slate-50">
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
+    <Link href={`/tasks/${task.task_id}`} className={cn(styles.projectTaskCard, "block rounded-lg border border-slate-200 p-3 transition hover:border-slate-300 hover:bg-slate-50")}>
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <TicketId id={task.task_id} />
           <p className="mt-2 break-words text-sm font-bold text-slate-950">{task.title}</p>
         </div>
-        <StatusPill status={task.status} />
+        <div className="shrink-0">
+          <StatusPill status={task.status} />
+        </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
@@ -492,56 +604,51 @@ export function TaskWorkspace({
   const [filters, setFilters] = useState<TaskFilters>({
     query: "",
     projectId: ALL,
-    dueDate: "",
+    dueDateFrom: "",
+    dueDateTo: "",
     assigneeId: ALL,
     assignedById: ALL,
   });
   const taskBoardUsers = useMemo(() => users.map((user) => ({ user_id: user.user_id, full_name: user.full_name })), [users]);
-  const filteredListTasks = useMemo(() => filterTasks(tasks, users, projects, filters), [filters, projects, tasks, users]);
+  const filteredTasks = useMemo(() => filterTasks(tasks, users, projects, filters), [filters, projects, tasks, users]);
   const activeCount = activeTasks(tasks).length;
   const doneCount = completedTasks(tasks).length;
+  const showFilters = activeView === "board" || activeView === "list" || activeView === "calendar";
 
   return (
     <div className={styles.workspace}>
       <div className={styles.toolbar}>
-        <div className={styles.tabs} role="tablist" aria-label={`${scope === "my" ? "My" : "Team"} task views`}>
-          {viewTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeView === tab.id}
-              onClick={() => setActiveView(tab.id)}
-              className={cn(styles.tab, activeView === tab.id && styles.tabActive)}
-            >
-              {tabIcon(tab.id)}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          items={viewTabs}
+          value={activeView}
+          onValueChange={(value) => setActiveView(value as TaskViewMode)}
+          aria-label={`${scope === "my" ? "My" : "Team"} task views`}
+        />
         <div className={styles.toolbarActions}>{action}</div>
       </div>
 
       <div className={styles.summary}>
-        <Badge tone="blue">{tasks.length} tasks</Badge>
+        {showFilters ? <Badge tone="blue">{filteredTasks.length} shown</Badge> : null}
+        <Badge tone="blue">{tasks.length} {showFilters ? "total" : "tasks"}</Badge>
         <Badge>{activeCount} active</Badge>
         <Badge tone="green">{doneCount} done</Badge>
         {scope === "my" ? <Badge tone="purple">Assigned to {currentUser.full_name}</Badge> : <Badge tone="purple">All team tasks</Badge>}
       </div>
 
-      {activeView === "board" ? <TaskBoard tasks={tasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} /> : null}
-      {activeView === "list" ? (
-        <ListView
-          tasks={tasks}
-          filteredTasks={filteredListTasks}
-          users={users}
-          projects={projects}
+      {showFilters ? (
+        <TaskFiltersPanel
           filters={filters}
           setFilters={setFilters}
+          projects={projects}
+          users={users}
           scope={scope}
+          currentUser={currentUser}
         />
       ) : null}
-      {activeView === "calendar" ? <CalendarTaskView tasks={tasks} users={users} /> : null}
+
+      {activeView === "board" ? <TaskBoard tasks={filteredTasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} /> : null}
+      {activeView === "list" ? <ListView filteredTasks={filteredTasks} users={users} projects={projects} /> : null}
+      {activeView === "calendar" ? <CalendarTaskView tasks={filteredTasks} users={users} /> : null}
       {activeView === "project" ? <ProjectTaskView tasks={tasks} users={users} projects={projects} /> : null}
     </div>
   );

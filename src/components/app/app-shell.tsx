@@ -6,7 +6,7 @@ import { Topbar } from "@/components/app/topbar";
 import { adminNavigation, bottomNavigation, primaryNavigation } from "@/lib/navigation";
 import { hasPermission } from "@/lib/permissions";
 import { requireUser } from "@/lib/server/auth";
-import { listResourceByField } from "@/lib/server/store";
+import { listResource, listResourceByField } from "@/lib/server/store";
 import styles from "./app-shell.module.css";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -15,18 +15,36 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     limit: 20,
     orderBy: "created_at",
   });
+  const [users, projects] = await Promise.all([listResource("Users"), listResource("Projects")]);
   const visiblePrimary = primaryNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleAdmin = adminNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleBottom = bottomNavigation.filter((item) => hasPermission(user.role_id, item.permission));
+  const canCreateTasks =
+    hasPermission(user.role_id, "tasks:own") ||
+    hasPermission(user.role_id, "tasks:team") ||
+    hasPermission(user.role_id, "tasks:manage");
+  const taskModalUsers = users.map((entry) => ({ user_id: entry.user_id, full_name: entry.full_name, is_active: entry.is_active }));
+  const taskModalProjects = projects.map((project) => ({
+    project_id: project.project_id,
+    project_name: project.project_name,
+    ticket_id_prefix: project.ticket_id_prefix || "",
+  }));
 
   return (
     <div className={styles.shell}>
       <DeviceNotifications />
       <LiveRefresh />
       <div className={styles.layout}>
-        <SidebarNav user={user} items={visiblePrimary} adminItems={visibleAdmin} />
+        <SidebarNav items={visiblePrimary} adminItems={visibleAdmin} />
         <div className={styles.content}>
-          <Topbar user={user} unreadCount={notifications.filter((notification) => !notification.is_read).length} recentNotifications={notifications} />
+          <Topbar
+            user={user}
+            unreadCount={notifications.filter((notification) => !notification.is_read).length}
+            recentNotifications={notifications}
+            canCreateTasks={canCreateTasks}
+            taskModalUsers={taskModalUsers}
+            taskModalProjects={taskModalProjects}
+          />
           <main className={styles.main}>{children}</main>
         </div>
       </div>

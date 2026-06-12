@@ -233,6 +233,18 @@ export async function updateResource<R extends ResourceName>(resource: R, id: st
   return next as unknown as ResourceItem<R>;
 }
 
+export async function deleteResourcesByField<R extends ResourceName>(resource: R, field: string, value: string) {
+  const matches = await listResourceByField(resource, field, value);
+  const results = await Promise.all(
+    matches.map((item) => {
+      const idField = idFields[resource];
+      const recordId = String((item as unknown as Record<string, unknown>)[idField] ?? "");
+      return recordId ? deleteResource(resource, recordId) : Promise.resolve(false);
+    }),
+  );
+  return results.filter(Boolean).length;
+}
+
 export async function deleteResource(resource: ResourceName, id: string) {
   const idField = idFields[resource];
   const records = shouldUseAppsScript() || shouldUseSheets()

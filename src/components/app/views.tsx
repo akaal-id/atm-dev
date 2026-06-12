@@ -23,8 +23,11 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { ActivityFeed } from "@/components/app/activity-feed";
 import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { CreateProjectModal } from "@/components/app/create-project-modal";
+import { TaskUpdatePanel } from "@/components/app/task-update-panel";
+import { WorkflowChecklistItem } from "@/components/app/workflow-checklist-item";
 import { EmployeeAdminControls } from "@/components/app/employee-admin-controls";
 import { AttendanceTerminal } from "@/components/app/attendance-terminal";
 import { MarkAllNotificationsReadButton, NotificationLink } from "@/components/app/notification-actions";
@@ -32,7 +35,11 @@ import { Page } from "@/components/app/page-layout";
 import { TaskWorkspace } from "@/components/app/task-workspace";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Tabs } from "@/components/ui/tabs";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { FormSelect } from "@/components/ui/form-select";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Progress } from "@/components/ui/progress";
@@ -59,7 +66,7 @@ import {
   clampProgress,
 } from "@/lib/metrics";
 import { attendanceStatuses, canApproveTaskAsLeader, employeeStatusOptions, hasPermission, projectStatuses, taskStatuses } from "@/lib/permissions";
-import { taskNeedsLeaderApproval, visibleTaskLabels } from "@/lib/task-approval";
+import { visibleTaskLabels } from "@/lib/task-approval";
 import type {
   ActivityLog,
   Announcement,
@@ -196,18 +203,18 @@ function LeaveApprovalActions({ requestId, canApprove, status }: { requestId: st
       <form action={`/api/admin/leave-requests/${requestId}`} method="post" className="grid gap-2">
         <input type="hidden" name="intent" value="approve" />
         <input name="approval_note" className="input" placeholder="Approval note (optional)" />
-        <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+        <Button type="submit" variant="default" size="xl" className="w-full">
           <CheckCircle2 className="h-4 w-4" />
           Approve
-        </button>
+        </Button>
       </form>
       <form action={`/api/admin/leave-requests/${requestId}`} method="post" className="grid gap-2">
         <input type="hidden" name="intent" value="reject" />
         <input name="approval_note" className="input" placeholder="Reason for rejection" />
-        <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50">
+        <Button type="submit" variant="destructiveOutline" size="xl" className="w-full">
           <XCircle className="h-4 w-4" />
           Reject
-        </button>
+        </Button>
       </form>
     </div>
   );
@@ -255,21 +262,12 @@ function LeaveRequestCard({
 function DataToolbar({ tabs, action }: { tabs: string[]; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-      <div className="flex max-w-full overflow-x-auto rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-        {tabs.map((tab, index) => (
-          <button
-            key={tab}
-            className={cn("h-9 shrink-0 whitespace-nowrap rounded-md px-3 text-sm font-semibold text-slate-500", index === 0 && "bg-slate-950 text-white")}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <Tabs labels={tabs} aria-label="Data view" />
       <div className="flex flex-wrap items-center gap-2 self-start">
-        <button className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300">
+        <Button type="button" variant="outline" size="lg" className="h-10 shrink-0">
           <Filter className="h-4 w-4" />
           Filter
-        </button>
+        </Button>
         {action}
       </div>
     </div>
@@ -287,7 +285,7 @@ function DashboardPinnedUpdates({ data }: { data: AppData }) {
   return (
     <div className="grid gap-2">
       {pinnedAnnouncements.map((announcement) => (
-        <Link key={announcement.announcement_id} href="/announcements" className="flex min-w-0 items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm transition hover:border-blue-300 hover:bg-blue-100">
+        <Link key={announcement.announcement_id} href="/announcements" className="flex min-w-0 items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-100">
           <Badge tone={announcement.category === "Important" ? "yellow" : "blue"}>{announcement.category}</Badge>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-950">{announcement.title}</p>
@@ -497,70 +495,6 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
   );
 }
 
-function ChecklistToggle({
-  checklistId,
-  field,
-  checked,
-  disabled,
-  label,
-}: {
-  checklistId: string;
-  field: "assignee_completed" | "pm_approved";
-  checked: boolean;
-  disabled?: boolean;
-  label: string;
-}) {
-  return (
-    <form action={`/api/resources/Task_Checklists/${checklistId}`} method="post">
-      <input type="hidden" name={field} value={String(!checked)} />
-      <button
-        disabled={disabled}
-        className={cn(
-          "inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition",
-          checked ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
-          disabled && "cursor-not-allowed opacity-50",
-        )}
-      >
-        <span className={cn("grid h-4 w-4 place-items-center rounded border", checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300")}>
-          {checked ? <CheckCircle2 className="h-3 w-3" /> : null}
-        </span>
-        {label}
-      </button>
-    </form>
-  );
-}
-
-function WorkflowChecklistItem({ item, task, data }: { item: TaskChecklist; task: Task; data: AppData }) {
-  const canManageTask = hasPermission(data.currentUser.role_id, "tasks:manage") || hasPermission(data.currentUser.role_id, "tasks:team");
-  const canLeaderApprove = canApproveTaskAsLeader(data.currentUser);
-  const isAssignee = task.assigned_to.includes(data.currentUser.user_id);
-  const assigneeDone = item.assignee_completed || item.is_completed;
-  const needsLeaderApproval = taskNeedsLeaderApproval(task);
-  const itemComplete = assigneeDone && (!needsLeaderApproval || item.pm_approved);
-  const itemStatus = needsLeaderApproval ? (item.pm_approved ? "Ready" : assigneeDone ? "Waiting Approval" : "To Do") : assigneeDone ? "Ready" : "To Do";
-
-  return (
-    <div className="rounded-lg border border-slate-200 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className={cn("break-words text-sm font-semibold", itemComplete ? "text-slate-500 line-through" : "text-slate-950")}>{item.title}</p>
-          <p className="mt-1 text-xs font-medium text-slate-400">
-            Assignee {assigneeDone ? "done" : "open"}
-            {needsLeaderApproval ? <> · Leader {item.pm_approved ? "approved" : "pending"}</> : null}
-          </p>
-        </div>
-        <StatusPill status={itemStatus} />
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <ChecklistToggle checklistId={item.checklist_id} field="assignee_completed" checked={assigneeDone} disabled={!canManageTask && !isAssignee} label="Assignee" />
-        {needsLeaderApproval ? (
-          <ChecklistToggle checklistId={item.checklist_id} field="pm_approved" checked={item.pm_approved} disabled={!canLeaderApprove || !assigneeDone} label="Leader" />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
   const comments = data.comments.filter((comment) => comment.task_id === task.task_id);
   const checklist = data.checklists.filter((item) => item.task_id === task.task_id);
@@ -574,21 +508,20 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
       <div className="min-w-0 space-y-5">
         <Card>
           <CardHeader>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <TicketId id={task.task_id} />
-                <h2 className="break-words text-2xl font-semibold tracking-normal text-slate-950">{task.title}</h2>
-                <LinkifiedText text={task.description} className="mt-2 max-w-3xl text-sm leading-6 text-slate-500" />
-              </div>
-              <StatusPill status={task.status} />
+            <div className="min-w-0">
+              <TicketId id={task.task_id} />
+              <h2 className="break-words text-2xl font-semibold tracking-normal text-slate-950">{task.title}</h2>
+              <LinkifiedText text={task.description} className="mt-2 max-w-3xl text-sm leading-6 text-slate-500" />
             </div>
           </CardHeader>
           <CardBody className="space-y-5">
             <BoardStage status={task.status} dueDate={task.due_date} />
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <InfoTile label="Project" value={project?.project_name ?? "No project"} />
+              <InfoTile label="Date created" value={formatDate(task.created_at)} />
               <InfoTile label="Due date" value={formatDate(task.due_date)} />
               <InfoTile label="Priority" value={task.priority} />
+              
             </div>
           </CardBody>
         </Card>
@@ -599,15 +532,15 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
           </CardHeader>
           <CardBody className="space-y-3">
             {checklist.map((item) => (
-              <WorkflowChecklistItem key={item.checklist_id} item={item} task={task} data={data} />
+              <WorkflowChecklistItem key={item.checklist_id} item={item} task={task} currentUser={data.currentUser} />
             ))}
             <form action="/api/resources/Task_Checklists" method="post" className="flex flex-col gap-2 rounded-lg border border-dashed border-slate-200 p-3 sm:flex-row">
               <input type="hidden" name="task_id" value={task.task_id} />
               <input name="title" required className="input" placeholder="Add subtask" />
-              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+              <Button type="submit" variant="default" size="xl">
                 <Plus className="h-4 w-4" />
                 Add
-              </button>
+              </Button>
             </form>
           </CardBody>
         </Card>
@@ -633,17 +566,34 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
               <input type="hidden" name="task_id" value={task.task_id} />
               <input type="hidden" name="user_id" value={data.currentUser.user_id} />
               <textarea name="comment" required className="min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" placeholder="Add an update or mention a teammate" />
-              <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+              <Button type="submit" variant="default" size="lg" className="h-10">
                 <MessageCircle className="h-4 w-4" />
                 Add comment
-              </button>
+              </Button>
             </form>
           </CardBody>
         </Card>
       </div>
 
       <div className="min-w-0 space-y-5">
-        <TaskUpdateForm task={task} checklist={checklist} users={data.users} currentUser={data.currentUser} />
+        <Card>
+          <CardHeader>
+            <SectionTitle title="Update task" />
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <TaskUpdatePanel
+              task={task}
+              checklist={checklist}
+              currentUser={data.currentUser}
+              users={data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }))}
+              projects={data.projects.map((project) => ({
+                project_id: project.project_id,
+                project_name: project.project_name,
+                ticket_id_prefix: project.ticket_id_prefix,
+              }))}
+            />
+          </CardBody>
+        </Card>
         <Card>
           <CardHeader>
             <SectionTitle title="Assignees" />
@@ -660,62 +610,9 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
             ))}
           </CardBody>
         </Card>
-        <ActivityFeed logs={taskLogs} users={data.users} title="Task activity" emptyLabel="No activity yet." />
+        <ActivityFeed logs={taskLogs} users={data.users} title="Task activity" emptyLabel="No activity yet." initialLimit={5} />
       </div>
     </div>
-  );
-}
-
-function TaskUpdateForm({ task, checklist, users, currentUser }: { task: Task; checklist: TaskChecklist[]; users: User[]; currentUser: CurrentUser }) {
-  const activeUsers = users.filter((user) => user.is_active);
-  const canLeaderApprove = canApproveTaskAsLeader(currentUser);
-  const canSubmitDone = canLeaderApprove || task.assigned_to.includes(currentUser.user_id);
-  const needsLeaderApproval = taskNeedsLeaderApproval(task);
-  const leaderApprovalComplete = !needsLeaderApproval || (checklist.length > 0 ? checklist.every((item) => item.pm_approved) : canLeaderApprove);
-  const doneDisabled = needsLeaderApproval && !leaderApprovalComplete;
-
-  return (
-    <Card>
-      <CardHeader>
-        <SectionTitle title="Update task" />
-      </CardHeader>
-      <CardBody className="space-y-4">
-        {canSubmitDone && task.status !== "Finished" ? (
-          <form action={`/api/tasks/${task.task_id}/done`} method="post">
-            <button
-              disabled={doneDisabled}
-              className={cn(
-                "inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-white transition",
-                doneDisabled ? "cursor-not-allowed bg-slate-300 text-slate-500" : "bg-emerald-600 hover:bg-emerald-700",
-              )}
-            >
-              <CheckCircle2 className="h-4 w-4" />
-              Submit Done
-            </button>
-            {doneDisabled ? <p className="mt-2 text-xs font-semibold text-amber-600">Leader approval is required before this task can be finished.</p> : null}
-          </form>
-        ) : null}
-        <form action={`/api/resources/Tasks/${task.task_id}`} method="post" className="space-y-4">
-          <Field label="Reassign">
-            <div className="grid max-h-56 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
-              {activeUsers.map((user) => (
-                <label
-                  key={user.user_id}
-                  className={cn(
-                    "flex min-w-0 items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm",
-                    task.assigned_to.includes(user.user_id) && "border-blue-200 bg-blue-50 text-blue-700",
-                  )}
-                >
-                  <input name="assigned_to" type="checkbox" value={user.user_id} defaultChecked={task.assigned_to.includes(user.user_id)} className="h-4 w-4 accent-slate-950" />
-                  <span className="truncate">{user.full_name}</span>
-                </label>
-              ))}
-            </div>
-          </Field>
-          <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Save assignees</button>
-        </form>
-      </CardBody>
-    </Card>
   );
 }
 
@@ -769,16 +666,30 @@ export function ProjectsView(data: AppData) {
                     <Field label="Project name"><input name="project_name" required className="input" defaultValue={project.project_name} /></Field>
                     <Field label="Ticket ID code"><input name="ticket_id_prefix" required className="input" defaultValue={project.ticket_id_prefix} maxLength={5} /></Field>
                     <Field label="Owner">
-                      <select name="owner_user_id" className="input" defaultValue={project.owner_user_id}>
-                        {activeProjectUsers.map((user) => <option key={user.user_id} value={user.user_id}>{user.full_name}</option>)}
-                      </select>
+                      <FormSelect
+                        name="owner_user_id"
+                        defaultValue={project.owner_user_id}
+                        options={activeProjectUsers.map((user) => ({ value: user.user_id, label: user.full_name }))}
+                      />
                     </Field>
-                    <Field label="Status"><select name="status" className="input" defaultValue={project.status}>{projectStatuses.map((status) => <option key={status}>{status}</option>)}</select></Field>
+                    <Field label="Status">
+                      <FormSelect
+                        name="status"
+                        defaultValue={project.status}
+                        options={projectStatuses.map((status) => ({ value: status, label: status }))}
+                      />
+                    </Field>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Field label="Priority"><select name="priority" className="input" defaultValue={project.priority}>{["Low", "Medium", "High", "Urgent"].map((priority) => <option key={priority}>{priority}</option>)}</select></Field>
+                      <Field label="Priority">
+                        <FormSelect
+                          name="priority"
+                          defaultValue={project.priority}
+                          options={["Low", "Medium", "High", "Urgent"].map((priority) => ({ value: priority, label: priority }))}
+                        />
+                      </Field>
                       <Field label="Progress"><input name="progress" type="number" min="0" max="100" className="input" defaultValue={project.progress} /></Field>
                     </div>
-                    <Field label="Deadline"><input name="deadline" type="date" required className="input" defaultValue={project.deadline} /></Field>
+                    <Field label="Deadline"><DatePickerField name="deadline" required defaultValue={project.deadline} variant="form" /></Field>
                     <Field label="Members">
                       <div className="grid max-h-44 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 sm:grid-cols-2">
                         {activeProjectUsers.map((user) => (
@@ -793,15 +704,15 @@ export function ProjectsView(data: AppData) {
                     <Field label="Description"><textarea name="description" required className="input min-h-24 resize-y" defaultValue={project.description} /></Field>
                     <Field label="Notes"><textarea name="notes" className="input min-h-24 resize-y" defaultValue={project.notes} /></Field>
                     <div className="flex flex-wrap gap-2">
-                      <button className="h-11 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">Save project</button>
+                      <Button type="submit" variant="default" size="xl">Save project</Button>
                     </div>
                   </form>
                   <form action={`/api/resources/Projects/${project.project_id}`} method="post" className="mt-2">
                     <input type="hidden" name="_method" value="delete" />
-                    <button className="inline-flex h-11 items-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50">
+                    <Button type="submit" variant="destructiveOutline" size="xl">
                       <Trash2 className="h-4 w-4" />
                       Remove project
-                    </button>
+                    </Button>
                   </form>
                 </details>
               ) : null}
@@ -1078,7 +989,7 @@ export function AttendanceView(data: AppData & { canApproveLeave: boolean }) {
 
         <Card>
           <CardHeader>
-            <SectionTitle title="Attendance history" action={<button className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600"><Download className="h-4 w-4" /> Export</button>} />
+            <SectionTitle title="Attendance history" action={<Button type="button" variant="link" size="sm"><Download className="h-4 w-4" /> Export</Button>} />
           </CardHeader>
           <CardBody className="overflow-x-auto">
             <DataTable
@@ -1118,22 +1029,22 @@ export function LeaveRequestView(data: AppData & { canApproveLeave: boolean }) {
           <form action="/api/resources/Leave_Requests" method="post" encType="multipart/form-data" className="space-y-4">
             <input type="hidden" name="user_id" value={data.currentUser.user_id} />
             <Field label="Type">
-              <select name="request_type" className="input">
-                {["Izin", "Sick", "Cuti", "WFH", "Half Day"].map((type) => (
-                  <option key={type}>{type}</option>
-                ))}
-              </select>
+              <FormSelect
+                name="request_type"
+                defaultValue="Izin"
+                options={["Izin", "Sick", "Cuti", "WFH", "Half Day"].map((type) => ({ value: type, label: type }))}
+              />
             </Field>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Start"><input name="start_date" type="date" required className="input" /></Field>
-              <Field label="End"><input name="end_date" type="date" required className="input" /></Field>
+              <Field label="Start"><DatePickerField name="start_date" required variant="form" /></Field>
+              <Field label="End"><DatePickerField name="end_date" required variant="form" /></Field>
             </div>
             <Field label="Reason"><textarea name="reason" required className="input min-h-28 resize-y" /></Field>
             <Field label="Attachment">
               <input name="attachment_url" type="url" className="input" placeholder="https://" />
               <input name="attachment_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="input" />
             </Field>
-            <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Submit request</button>
+            <Button type="submit" variant="default" size="xl" className="w-full">Submit request</Button>
           </form>
         </CardBody>
       </Card>
@@ -1198,10 +1109,19 @@ export function AnnouncementsView(data: AppData & { canManage: boolean }) {
             <form action="/api/resources/Announcements" method="post" className="space-y-4">
               <input type="hidden" name="created_by" value={data.currentUser.user_id} />
               <Field label="Title"><input name="title" required className="input" /></Field>
-              <Field label="Category"><select name="category" className="input">{["General", "HR", "Task", "Event", "Birthday", "Important", "Policy", "Reminder"].map((category) => <option key={category}>{category}</option>)}</select></Field>
+              <Field label="Category">
+                <FormSelect
+                  name="category"
+                  defaultValue="General"
+                  options={["General", "HR", "Task", "Event", "Birthday", "Important", "Policy", "Reminder"].map((category) => ({
+                    value: category,
+                    label: category,
+                  }))}
+                />
+              </Field>
               <Field label="Body"><textarea name="body" required className="input min-h-28" /></Field>
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700"><input name="is_pinned" type="checkbox" className="h-4 w-4 accent-slate-950" /> Pin important announcement</label>
-              <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Publish</button>
+              <Button type="submit" variant="default" size="xl" className="w-full">Publish</Button>
             </form>
           ) : (
             <div className="space-y-3">
@@ -1230,7 +1150,7 @@ export function EmployeesView(data: AppData) {
       </div>
       <Card>
         <CardHeader>
-          <SectionTitle title="Employee directory" action={<Link href="/invite" className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white"><Plus className="h-4 w-4" /> Invite</Link>} />
+          <SectionTitle title="Employee directory" action={<Link href="/invite" className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-10")}><Plus className="h-4 w-4" /> Invite</Link>} />
         </CardHeader>
         <CardBody className="overflow-x-auto">
           <DataTable
@@ -1382,13 +1302,12 @@ export function LeaderboardView(data: AppData) {
             <form action="/api/leaderboard/score" method="post" className="grid gap-3 rounded-lg border border-slate-200 p-4">
               <input type="hidden" name="mode" value="adjust" />
               <Field label="User">
-                <select name="user_id" required className="input">
-                  {editableUsers.map((user) => (
-                    <option key={user.user_id} value={user.user_id}>
-                      {user.full_name}
-                    </option>
-                  ))}
-                </select>
+                <FormSelect
+                  name="user_id"
+                  required
+                  defaultValue={editableUsers[0]?.user_id ?? ""}
+                  options={editableUsers.map((user) => ({ value: user.user_id, label: user.full_name }))}
+                />
               </Field>
               <Field label="Adjust points">
                 <input name="points" required type="number" className="input" placeholder="25 or -10" />
@@ -1396,19 +1315,21 @@ export function LeaderboardView(data: AppData) {
               <Field label="Reason">
                 <input name="reason" required className="input" placeholder="Manual correction or bonus" />
               </Field>
-              <button className="h-11 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">Apply adjustment</button>
+              <Button type="submit" variant="default" size="xl">Apply adjustment</Button>
             </form>
 
             <form action="/api/leaderboard/score" method="post" className="grid gap-3 rounded-lg border border-slate-200 p-4">
               <input type="hidden" name="mode" value="set_total" />
               <Field label="User">
-                <select name="user_id" required className="input">
-                  {editableUsers.map((user) => (
-                    <option key={user.user_id} value={user.user_id}>
-                      {user.full_name} - current {scoreForUser(data.points, user.user_id)}
-                    </option>
-                  ))}
-                </select>
+                <FormSelect
+                  name="user_id"
+                  required
+                  defaultValue={editableUsers[0]?.user_id ?? ""}
+                  options={editableUsers.map((user) => ({
+                    value: user.user_id,
+                    label: `${user.full_name} - current ${scoreForUser(data.points, user.user_id)}`,
+                  }))}
+                />
               </Field>
               <Field label="Set total score">
                 <input name="target_score" required type="number" min="0" className="input" placeholder="100" />
@@ -1416,7 +1337,7 @@ export function LeaderboardView(data: AppData) {
               <Field label="Reason">
                 <input name="reason" required className="input" placeholder="Score correction" />
               </Field>
-              <button className="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700">Set score</button>
+              <Button type="submit" variant="default" size="xl">Set score</Button>
             </form>
           </CardBody>
         </Card>
@@ -1477,7 +1398,7 @@ export function NotificationsView(data: AppData) {
               {unreadCount > 0 ? <Badge tone="yellow">{unreadCount} unread</Badge> : <Badge tone="green">All read</Badge>}
               <MarkAllNotificationsReadButton
                 disabled={unreadCount === 0}
-                className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
           }
@@ -1494,7 +1415,7 @@ export function NotificationsView(data: AppData) {
               href={notification.related_link || "/dashboard"}
               className={cn("flex gap-3 rounded-lg border p-4 transition hover:bg-slate-50", notification.is_read ? "border-slate-200" : "border-blue-200 bg-blue-50")}
             >
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm">
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-white text-blue-600">
                 <Bell className="h-4 w-4" />
                 {!notification.is_read ? <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-white" aria-hidden="true" /> : null}
               </div>
@@ -1554,18 +1475,18 @@ export function AdminView(data: AppData) {
                 <div className="grid gap-2 sm:grid-cols-2 lg:min-w-80">
                   <form action={`/api/admin/account-requests/${user.user_id}`} method="post">
                     <input type="hidden" name="intent" value="approve" />
-                    <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+                    <Button type="submit" variant="default" size="xl" className="w-full">
                       <CheckCircle2 className="h-4 w-4" />
                       Allow
-                    </button>
+                    </Button>
                   </form>
                   <form action={`/api/admin/account-requests/${user.user_id}`} method="post" className="grid gap-2">
                     <input type="hidden" name="intent" value="reject" />
                     <input name="rejection_reason" className="input" placeholder="Reason" />
-                    <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50">
+                    <Button type="submit" variant="destructiveOutline" size="xl" className="w-full">
                       <XCircle className="h-4 w-4" />
                       Disallow
-                    </button>
+                    </Button>
                   </form>
                 </div>
               </div>
@@ -1587,28 +1508,6 @@ export function AdminView(data: AppData) {
         </Card>
       </div>
     </Page>
-  );
-}
-
-function ActivityFeed({ logs, users, title = "Recent activity", emptyLabel = "No activity yet." }: { logs: ActivityLog[]; users: User[]; title?: string; emptyLabel?: string }) {
-  return (
-    <Card>
-      <CardHeader>
-        <SectionTitle title={title} />
-      </CardHeader>
-      <CardBody className="space-y-3">
-        {logs.length === 0 ? <EmptyState label={emptyLabel} /> : null}
-        {logs.map((log) => (
-          <div key={log.log_id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
-            <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
-            <div className="min-w-0">
-              <p className="break-words text-sm font-semibold text-slate-950">{log.description}</p>
-              <p className="mt-1 text-xs text-slate-500">{userName(users, log.user_id)} - {formatDate(log.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
-            </div>
-          </div>
-        ))}
-      </CardBody>
-    </Card>
   );
 }
 
@@ -1636,9 +1535,9 @@ export function SettingsView(data: AppData) {
           <InfoTile label="Supabase secret" value={supabaseSecretLabel()} />
           {process.env.ATM_DATA_MODE !== "supabase" ? (
             <form action="/api/admin/migrate-supabase" method="post">
-              <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+              <Button type="submit" variant="default" size="xl" className="w-full">
                 Migrate current data to Supabase
-              </button>
+              </Button>
             </form>
           ) : null}
         </CardBody>
@@ -1662,21 +1561,22 @@ export function DepartmentsManagerView(data: AppData) {
               <input name="department_name" required className="input" placeholder="Creative Team" />
             </Field>
             <Field label="Leader">
-              <select name="leader_user_id" className="input" defaultValue="">
-                <option value="">No leader assigned</option>
-                {data.users
-                  .filter((user) => user.is_active)
-                  .map((user) => (
-                    <option key={user.user_id} value={user.user_id}>
-                      {user.full_name}
-                    </option>
-                  ))}
-              </select>
+              <FormSelect
+                name="leader_user_id"
+                defaultValue=""
+                placeholder="No leader assigned"
+                options={[
+                  { value: "", label: "No leader assigned" },
+                  ...data.users
+                    .filter((user) => user.is_active)
+                    .map((user) => ({ value: user.user_id, label: user.full_name })),
+                ]}
+              />
             </Field>
-            <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+            <Button type="submit" variant="default" size="xl" className="w-full">
               <Plus className="h-4 w-4" />
               Add department
-            </button>
+            </Button>
           </form>
         </CardBody>
       </Card>
@@ -1715,30 +1615,31 @@ export function DepartmentsManagerView(data: AppData) {
                         <input name="department_name" required className="input" defaultValue={department.department_name} />
                       </Field>
                       <Field label="Leader">
-                        <select name="leader_user_id" className="input" defaultValue={department.leader_user_id}>
-                          <option value="">No leader assigned</option>
-                          {data.users
-                            .filter((user) => user.is_active)
-                            .map((user) => (
-                              <option key={user.user_id} value={user.user_id}>
-                                {user.full_name}
-                              </option>
-                            ))}
-                        </select>
+                        <FormSelect
+                          name="leader_user_id"
+                          defaultValue={department.leader_user_id}
+                          placeholder="No leader assigned"
+                          options={[
+                            { value: "", label: "No leader assigned" },
+                            ...data.users
+                              .filter((user) => user.is_active)
+                              .map((user) => ({ value: user.user_id, label: user.full_name })),
+                          ]}
+                        />
                       </Field>
                       <div className="flex items-end gap-2">
-                        <button className="h-11 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800">
+                        <Button type="submit" variant="default" size="xl">
                           Save
-                        </button>
+                        </Button>
                       </div>
                     </form>
 
                     <form action={`/api/resources/Departments/${department.department_id}`} method="post" className="lg:col-start-3">
                       <input type="hidden" name="_method" value="delete" />
-                      <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 lg:w-auto">
+                      <Button type="submit" variant="destructiveOutline" size="xl" className="w-full lg:w-auto">
                         <Trash2 className="h-4 w-4" />
                         Remove
-                      </button>
+                      </Button>
                     </form>
                   </div>
                 </div>
@@ -1856,16 +1757,37 @@ export function InviteView(data: AppData) {
             <Field label="Phone"><input name="phone" className="input" /></Field>
             <Field label="Position"><input name="position" required className="input" /></Field>
             <Field label="Bio"><textarea name="bio" className="input" rows={4} /></Field>
-            <Field label="Department"><select name="department_id" className="input">{data.departments.map((department) => <option key={department.department_id} value={department.department_id}>{department.department_name}</option>)}</select></Field>
+            <Field label="Department">
+              <FormSelect
+                name="department_id"
+                defaultValue={data.departments[0]?.department_id ?? ""}
+                options={data.departments.map((department) => ({
+                  value: department.department_id,
+                  label: department.department_name,
+                }))}
+              />
+            </Field>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Role"><select name="role_id" className="input">{data.roles.map((role) => <option key={role.role_id} value={role.role_id}>{role.role_name}</option>)}</select></Field>
-              <Field label="Status"><select name="employment_status" className="input">{employeeStatusOptions.map((status) => <option key={status}>{status}</option>)}</select></Field>
+              <Field label="Role">
+                <FormSelect
+                  name="role_id"
+                  defaultValue={data.roles[0]?.role_id ?? ""}
+                  options={data.roles.map((role) => ({ value: role.role_id, label: role.role_name }))}
+                />
+              </Field>
+              <Field label="Status">
+                <FormSelect
+                  name="employment_status"
+                  defaultValue={employeeStatusOptions[0]}
+                  options={employeeStatusOptions.map((status) => ({ value: status, label: status }))}
+                />
+              </Field>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Birthday"><input name="birthday" type="date" className="input" /></Field>
-              <Field label="Join date"><input name="join_date" type="date" className="input" /></Field>
+              <Field label="Birthday"><DatePickerField name="birthday" variant="form" /></Field>
+              <Field label="Join date"><DatePickerField name="join_date" variant="form" /></Field>
             </div>
-            <button className="h-11 w-full rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white">Create invite</button>
+            <Button type="submit" variant="default" size="xl" className="w-full">Create invite</Button>
           </form>
         </CardBody>
       </Card>
