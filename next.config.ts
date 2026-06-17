@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
+const lanDevOrigins =
+  process.env.ALLOWED_DEV_ORIGINS?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) ?? [];
+
 const nextConfig: NextConfig = {
+  // Allow other devices on the LAN to load client bundles (e.g. chat input) in dev.
+  allowedDevOrigins: ["192.168.1.167", ...lanDevOrigins],
+  serverExternalPackages: ["googleapis"],
   turbopack: {
     root: process.cwd(),
   },

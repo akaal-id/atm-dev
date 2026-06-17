@@ -14,7 +14,8 @@ export type IconName =
   | "Settings"
   | "KeyRound"
   | "Sparkles"
-  | "UserPlus";
+  | "UserPlus"
+  | "MessageCircle";
 
 export interface NavigationItem {
   label: string;
@@ -33,6 +34,7 @@ export const primaryNavigation: NavigationItem[] = [
   { label: "Announcements", href: "/announcements", icon: "Megaphone", permission: "announcements:view" },
   { label: "Employees", href: "/employees", icon: "Users", permission: "employees:view" },
   { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
+  { label: "Messages", href: "/chat", icon: "MessageCircle", permission: "dashboard:view" },
 ];
 
 export const adminNavigation: NavigationItem[] = [
@@ -107,6 +109,11 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     title: "Notifications",
     eyebrow: "Realtime feed",
     description: "Mentions, assignments, approvals, reminders, and activity history.",
+  },
+  "/chat": {
+    title: "Messages",
+    eyebrow: "Team chat",
+    description: "Direct messages, group rooms, file sharing, link previews, and task calls.",
   },
   "/admin": {
     title: "Admin dashboard",

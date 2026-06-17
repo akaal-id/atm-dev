@@ -11,6 +11,9 @@ import styles from "./bottom-nav.module.css";
 export function BottomNav({ items }: { items: NavigationItem[] }) {
   const pathname = usePathname();
 
+  // Full-height chat manages its own footer; hide the tab bar so the input stays reachable.
+  if (pathname.startsWith("/chat")) return null;
+
   return (
     <nav className={styles.nav}>
       <div className={styles.grid}>
