@@ -4,7 +4,6 @@ import { GeistMono } from "geist/font/mono";
 import { Suspense } from "react";
 
 import { PwaRegister } from "@/components/app/pwa-register";
-import { PwaVersionStatus } from "@/components/app/pwa-version-status";
 import { RouteProgress } from "@/components/app/route-progress";
 import "./globals.css";
 
@@ -51,7 +50,6 @@ export default function RootLayout({
         </Suspense>
         <PwaRegister />
         {children}
-        <PwaVersionStatus />
       </body>
     </html>
   );

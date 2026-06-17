@@ -45,7 +45,14 @@ export function ChatLayout({
   }, [rooms, query]);
 
   return (
-    <div className="flex h-[calc(100dvh-9rem)] min-h-[480px] min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white md:h-[calc(100dvh-7rem)]">
+    <div
+      className={cn(
+        "flex min-h-0 min-w-0 overflow-hidden bg-white",
+        activeRoomId
+          ? "h-full"
+          : "h-full md:rounded-xl md:border md:border-slate-200 md:h-[calc(100dvh-7rem)]",
+      )}
+    >
       {/* Sidebar */}
       <aside
         className={cn(
@@ -113,8 +120,8 @@ export function ChatLayout({
       </aside>
 
       {/* Main window */}
-      <main className={cn("flex min-h-0 min-w-0 flex-1 flex-col", activeRoomId ? "flex" : "hidden md:flex")}>
-        <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
+      <main className={cn("flex min-h-0 min-w-0 flex-1 flex-col", activeRoomId ? "flex h-full" : "hidden md:flex")}>
+        <div className="flex h-full min-h-0 w-full flex-1 flex-col">{children}</div>
       </main>
 
       <NewChatDialog open={newChatOpen} onClose={() => setNewChatOpen(false)} directory={directory} />

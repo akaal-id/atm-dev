@@ -79,7 +79,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
 
   return (
     <>
-      <div className="border-t border-slate-200 bg-white p-3">
+      <div className="bg-white p-3">
         <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white focus-within:border-blue-400">
           <button
             type="button"

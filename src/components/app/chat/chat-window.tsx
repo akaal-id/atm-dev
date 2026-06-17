@@ -156,9 +156,9 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-slate-50">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-slate-50">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
         <Link href="/chat" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Link>
@@ -180,7 +180,7 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
       </header>
 
       {/* Messages */}
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-y-contain px-3 py-4">
         {optimisticMessages.map((message, index) => {
           const prev = optimisticMessages[index - 1];
           const isOwn = message.sender_id === currentUser.user_id;
@@ -192,7 +192,9 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
         ) : null}
       </div>
 
-      <ChatInput onSend={handleSend} />
+      <div className="mt-auto shrink-0 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom,0px)]">
+        <ChatInput onSend={handleSend} />
+      </div>
 
       <MembersDialog
         open={membersOpen}

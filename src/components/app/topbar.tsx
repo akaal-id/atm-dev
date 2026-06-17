@@ -8,7 +8,7 @@ import { NotificationLink } from "@/components/app/notification-actions";
 import { AppIcon } from "@/components/app/icons";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { pageCopy } from "@/lib/navigation";
+import { isChatRoomPath, pageCopy } from "@/lib/navigation";
 import type { AppNotification, CurrentUser } from "@/lib/types";
 import styles from "./topbar.module.css";
 
@@ -32,6 +32,8 @@ function getCopy(pathname: string) {
 
 export function Topbar({ user, unreadCount, recentNotifications, canCreateTasks, taskModalUsers, taskModalProjects }: TopbarProps) {
   const pathname = usePathname();
+  if (isChatRoomPath(pathname)) return null;
+
   const copy = getCopy(pathname);
   const previewNotifications = [...recentNotifications]
     .sort((left, right) => Number(left.is_read) - Number(right.is_read) || new Date(right.created_at).getTime() - new Date(left.created_at).getTime())

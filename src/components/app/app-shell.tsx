@@ -3,10 +3,12 @@ import { DeviceNotifications } from "@/components/app/device-notifications";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { Topbar } from "@/components/app/topbar";
-import { adminNavigation, bottomNavigation, primaryNavigation } from "@/lib/navigation";
+import { adminNavigation, getBottomNavigation, primaryNavigation } from "@/lib/navigation";
 import { hasPermission } from "@/lib/permissions";
 import { requireUser } from "@/lib/server/auth";
 import { listResource, listResourceByField } from "@/lib/server/store";
+import { ContentArea } from "@/components/app/content-area";
+import { MainContent } from "@/components/app/main-content";
 import styles from "./app-shell.module.css";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -18,7 +20,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   const [users, projects] = await Promise.all([listResource("Users"), listResource("Projects")]);
   const visiblePrimary = primaryNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleAdmin = adminNavigation.filter((item) => hasPermission(user.role_id, item.permission));
-  const visibleBottom = bottomNavigation.filter((item) => hasPermission(user.role_id, item.permission));
+  const visibleBottom = getBottomNavigation(user.role_id, user.employment_status).filter((item) =>
+    hasPermission(user.role_id, item.permission),
+  );
   const canCreateTasks =
     hasPermission(user.role_id, "tasks:own") ||
     hasPermission(user.role_id, "tasks:team") ||
@@ -36,7 +40,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       <LiveRefresh />
       <div className={styles.layout}>
         <SidebarNav items={visiblePrimary} adminItems={visibleAdmin} />
-        <div className={styles.content}>
+        <ContentArea>
           <Topbar
             user={user}
             unreadCount={notifications.filter((notification) => !notification.is_read).length}
@@ -45,8 +49,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             taskModalUsers={taskModalUsers}
             taskModalProjects={taskModalProjects}
           />
-          <main className={styles.main}>{children}</main>
-        </div>
+          <MainContent>{children}</MainContent>
+        </ContentArea>
       </div>
       <BottomNav items={visibleBottom} />
     </div>

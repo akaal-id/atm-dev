@@ -1,4 +1,4 @@
-import type { Permission } from "@/lib/types";
+import type { EmployeeStatus, Permission, RoleKey } from "@/lib/types";
 
 export type IconName =
   | "LayoutDashboard"
@@ -46,13 +46,27 @@ export const adminNavigation: NavigationItem[] = [
   { label: "Invite User", href: "/invite", icon: "UserPlus", permission: "employees:manage" },
 ];
 
-export const bottomNavigation: NavigationItem[] = [
-  primaryNavigation[0],
-  primaryNavigation[1],
-  primaryNavigation[4],
-  primaryNavigation[5],
-  primaryNavigation[8],
-];
+export function isChatRoomPath(pathname: string) {
+  return /^\/chat\/[^/]+$/.test(pathname);
+}
+
+export function usesTeamTaskNav(roleId: RoleKey, employmentStatus: EmployeeStatus | string) {
+  return roleId === "super_admin" || roleId === "admin" || employmentStatus === "Manager";
+}
+
+export function getBottomNavigation(roleId: RoleKey, employmentStatus: EmployeeStatus | string): NavigationItem[] {
+  const taskItem: NavigationItem = usesTeamTaskNav(roleId, employmentStatus)
+    ? { label: "Team Task", href: "/tasks/team", icon: "Users", permission: "dashboard:view" }
+    : { label: "My Task", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" };
+
+  return [
+    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
+    taskItem,
+    { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
+    { label: "Messages", href: "/chat", icon: "MessageCircle", permission: "dashboard:view" },
+    { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
+  ];
+}
 
 export const pageCopy: Record<string, { title: string; eyebrow: string; description: string }> = {
   "/dashboard": {
