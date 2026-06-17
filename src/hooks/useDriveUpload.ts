@@ -123,21 +123,25 @@ export function useDriveUpload() {
 
     try {
       setStatus("preparing");
-      const { uploadUrl } = await generateResumableUrl({
+      const prepare = await generateResumableUrl({
         fileName: file.name,
         mimeType: fileMime,
         size: file.size,
       });
+      if (!prepare.ok) throw new Error(prepare.error);
 
       if (controller.signal.aborted) throw new Error("Upload cancelled.");
 
       setStatus("uploading");
-      const { fileId } = await putFileViaXhr(uploadUrl, file, setProgress, controller.signal);
+      const { fileId } = await putFileViaXhr(prepare.data.uploadUrl, file, setProgress, controller.signal);
 
       if (controller.signal.aborted) throw new Error("Upload cancelled.");
 
       setStatus("finalizing");
-      const { webViewLink, webContentLink } = await finalizeFilePermission(fileId);
+      const finalize = await finalizeFilePermission(fileId);
+      if (!finalize.ok) throw new Error(finalize.error);
+
+      const { webViewLink, webContentLink } = finalize.data;
 
       setProgress(100);
       setStatus("done");

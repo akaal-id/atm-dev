@@ -22,7 +22,11 @@ interface SessionPayload {
 }
 
 function getSessionSecret() {
-  return new TextEncoder().encode(process.env.AUTH_SECRET ?? "replace-this-with-a-long-random-auth-secret-before-production");
+  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    return new TextEncoder().encode("replace-this-with-a-long-random-auth-secret-before-production");
+  }
+  return new TextEncoder().encode(secret);
 }
 
 export async function createSessionToken(payload: SessionPayload) {
