@@ -57,6 +57,53 @@ export interface GenerateResumableUrlInput {
   fileName: string;
   mimeType: string;
   size: number;
+  parentId?: string;
+}
+
+// Creates a subfolder under the configured Drive root and returns its id.
+// Used when uploading a whole folder so every file lands inside one shared folder.
+export async function createDriveFolder(name: string): Promise<DriveActionResult<{ folderId: string }>> {
+  const me = await getCurrentUser();
+  if (!me) return { ok: false, error: "You must be signed in to upload files." };
+
+  const configError = driveConfigError();
+  if (configError) return { ok: false, error: configError };
+
+  const folderName = name.trim() || "Untitled folder";
+
+  try {
+    const token = await getAccessToken();
+    const rootFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID!;
+    const currentOrigin = await requestOrigin();
+
+    const res = await fetch("https://www.googleapis.com/drive/v3/files?fields=id", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json; charset=UTF-8",
+        Origin: currentOrigin,
+      },
+      body: JSON.stringify({
+        name: folderName,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [rootFolderId],
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error("Drive folder create failed:", res.status, detail);
+      return { ok: false, error: `Drive folder creation failed (${res.status}). Check server logs.` };
+    }
+
+    const data = await res.json();
+    if (!data.id) return { ok: false, error: "Drive did not return a folder id." };
+    return { ok: true, data: { folderId: String(data.id) } };
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "Failed to create folder.";
+    console.error("createDriveFolder error:", cause);
+    return { ok: false, error: message };
+  }
 }
 
 export async function generateResumableUrl(
@@ -75,7 +122,7 @@ export async function generateResumableUrl(
 
   try {
     const token = await getAccessToken();
-    const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID!;
+    const folderId = input.parentId?.trim() || process.env.GOOGLE_DRIVE_FOLDER_ID!;
     const mimeType = input.mimeType || "application/octet-stream";
     const currentOrigin = await requestOrigin();
 

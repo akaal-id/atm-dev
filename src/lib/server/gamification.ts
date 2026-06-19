@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createResource, listResource } from "@/lib/server/store";
+import { isTaskOverdue } from "@/lib/metrics";
 import type { Attendance, Task } from "@/lib/types";
 
 const completedTaskStatuses = new Set(["Finished", "Done", "Approved", "Completed"]);
@@ -8,6 +9,7 @@ const completedTaskStatuses = new Set(["Finished", "Done", "Approved", "Complete
 const fallbackRules = {
   completeTask: 50,
   punctualAttendance: 10,
+  overdueTask: -20,
 };
 
 async function gamificationRules() {
@@ -21,6 +23,7 @@ async function gamificationRules() {
     return {
       completeTask: Number(parsed.completeTask ?? fallbackRules.completeTask),
       punctualAttendance: Number(parsed.punctualAttendance ?? fallbackRules.punctualAttendance),
+      overdueTask: Number(parsed.overdueTask ?? fallbackRules.overdueTask),
     };
   } catch {
     return fallbackRules;
@@ -124,6 +127,23 @@ export async function syncLeaderboardPoints() {
         });
       });
     });
+
+  // Deduct points once per assignee when a task slips past its due date.
+  if (rules.overdueTask !== 0) {
+    tasks
+      .filter((task) => isTaskOverdue(task))
+      .forEach((task) => {
+        task.assigned_to.forEach((userId) => {
+          awardMissing({
+            userId,
+            sourceType: "task_overdue",
+            sourceId: task.task_id,
+            points: rules.overdueTask,
+            reason: `Overdue task: ${task.title}`,
+          });
+        });
+      });
+  }
 
   attendance
     .filter((record) => record.status === "Present")

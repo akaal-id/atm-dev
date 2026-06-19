@@ -209,6 +209,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     payload.is_completed = payload.assignee_completed;
   }
 
+  if (resource === "Project_Files") {
+    const taskId = String(payload.task_id ?? "");
+    const tasks = await listResource("Tasks");
+    const linkedTask = tasks.find((candidate) => candidate.task_id === taskId);
+    payload.project_id = linkedTask?.project_id ?? String(payload.project_id ?? "");
+    payload.owner_user_id = access.user.user_id;
+    payload.title = String(payload.title ?? "").trim() || linkedTask?.title || payload.file_name || "Project file";
+    payload.file_name ??= "";
+    payload.file_mime ??= "";
+  }
+
   if (resource === "Departments") {
     payload.department_id ||= await uniqueDepartmentId(String(payload.department_name ?? ""));
     payload.leader_user_id ??= "";

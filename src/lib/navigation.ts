@@ -89,6 +89,11 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     eyebrow: "Progress tracking",
     description: "Owners, timelines, milestones, notes, and delivery health.",
   },
+  "/project-files": {
+    title: "Project Files",
+    eyebrow: "Shared resources",
+    description: "Files uploaded from tasks, grouped with their ticket, owner, and link.",
+  },
   "/calendar": {
     title: "Calendar",
     eyebrow: "Live activity",

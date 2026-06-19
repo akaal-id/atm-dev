@@ -45,6 +45,18 @@ export const appDatabaseSchema = {
     "completed_at",
   ],
   Task_Comments: ["comment_id", "task_id", "user_id", "comment", "mentions", "created_at", "updated_at"],
+  Project_Files: [
+    "file_id",
+    "task_id",
+    "project_id",
+    "title",
+    "owner_user_id",
+    "file_url",
+    "file_name",
+    "file_mime",
+    "created_at",
+    "updated_at",
+  ],
   Task_Checklists: [
     "checklist_id",
     "task_id",

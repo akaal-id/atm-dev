@@ -11,6 +11,7 @@ export const appDataResources = [
   "Tasks",
   "Task_Comments",
   "Task_Checklists",
+  "Project_Files",
   "Projects",
   "Attendance",
   "Leave_Requests",
@@ -35,6 +36,7 @@ function createEmptyAppData(currentUser: AppData["currentUser"]): AppData {
     tasks: [],
     comments: [],
     checklists: [],
+    projectFiles: [],
     projects: [],
     attendance: [],
     leaveRequests: [],
@@ -74,6 +76,9 @@ export async function getAppData(resources: readonly AppDataResource[] = appData
         break;
       case "Task_Checklists":
         data.checklists = records as AppData["checklists"];
+        break;
+      case "Project_Files":
+        data.projectFiles = records as AppData["projectFiles"];
         break;
       case "Projects":
         data.projects = records as AppData["projects"];

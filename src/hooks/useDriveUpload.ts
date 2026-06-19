@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 // Hapus MAX_CLIENT_UPLOAD_BYTES dari import ini
-import { finalizeFilePermission, generateResumableUrl } from "@/lib/server/drive-upload";
+import { createDriveFolder, finalizeFilePermission, generateResumableUrl } from "@/lib/server/drive-upload";
 
 // Deklarasikan variabelnya secara lokal di sini untuk Frontend
 const MAX_CLIENT_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
@@ -16,6 +16,14 @@ export interface DriveUploadResult {
   fileName: string;
   fileMime: string;
 }
+
+export interface DriveFolderUploadResult {
+  webViewLink: string;
+  folderName: string;
+  fileCount: number;
+}
+
+export const DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder";
 
 function formatMaxSize() {
   return `${Math.floor(MAX_CLIENT_UPLOAD_BYTES / (1024 * 1024 * 1024))}GB`;
@@ -160,7 +168,86 @@ export function useDriveUpload() {
     }
   }, []);
 
+  const uploadFolder = useCallback(async (files: File[], folderName: string): Promise<DriveFolderUploadResult> => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setProgress(0);
+    setError(null);
+
+    const validFiles = files.filter((file) => file.size > 0);
+    if (validFiles.length === 0) {
+      const message = "The selected folder has no files to upload.";
+      setStatus("error");
+      setError(message);
+      throw new Error(message);
+    }
+
+    const oversized = validFiles.find((file) => file.size > MAX_CLIENT_UPLOAD_BYTES);
+    if (oversized) {
+      const message = `"${oversized.name}" is too large (max ${formatMaxSize()}).`;
+      setStatus("error");
+      setError(message);
+      throw new Error(message);
+    }
+
+    const total = validFiles.length;
+
+    try {
+      setStatus("preparing");
+      const folder = await createDriveFolder(folderName);
+      if (!folder.ok) throw new Error(folder.error);
+      const { folderId } = folder.data;
+
+      if (controller.signal.aborted) throw new Error("Upload cancelled.");
+
+      setStatus("uploading");
+      for (let index = 0; index < total; index += 1) {
+        const file = validFiles[index];
+        const prepare = await generateResumableUrl({
+          fileName: file.name,
+          mimeType: file.type || "application/octet-stream",
+          size: file.size,
+          parentId: folderId,
+        });
+        if (!prepare.ok) throw new Error(prepare.error);
+
+        if (controller.signal.aborted) throw new Error("Upload cancelled.");
+
+        await putFileViaXhr(
+          prepare.data.uploadUrl,
+          file,
+          // Map this file's progress onto the aggregate (completed files + current fraction).
+          (filePercent) => setProgress(Math.min(100, Math.round(((index + filePercent / 100) / total) * 100))),
+          controller.signal,
+        );
+
+        if (controller.signal.aborted) throw new Error("Upload cancelled.");
+        setProgress(Math.round(((index + 1) / total) * 100));
+      }
+
+      setStatus("finalizing");
+      const finalize = await finalizeFilePermission(folderId);
+      if (!finalize.ok) throw new Error(finalize.error);
+
+      setProgress(100);
+      setStatus("done");
+
+      return { webViewLink: finalize.data.webViewLink, folderName, fileCount: total };
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "Folder upload failed. Please try again.";
+      setStatus("error");
+      setError(message);
+      throw cause instanceof Error ? cause : new Error(message);
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+    }
+  }, []);
+
   const isUploading = status === "preparing" || status === "uploading" || status === "finalizing";
 
-  return { upload, cancel, reset, progress, status, error, isUploading };
+  return { upload, uploadFolder, cancel, reset, progress, status, error, isUploading };
 }

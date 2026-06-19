@@ -11,6 +11,7 @@ export const supabaseTables: Record<SupabaseResourceName, string> = {
   Tasks: "tasks",
   Task_Comments: "task_comments",
   Task_Checklists: "task_checklists",
+  Project_Files: "project_files",
   Projects: "projects",
   Attendance: "attendance",
   Leave_Requests: "leave_requests",
@@ -36,6 +37,10 @@ const optionalSupabaseFields: Partial<Record<SupabaseResourceName, string[]>> = 
   Tasks: ["need_leader_approval"],
 };
 
+// Resources whose Supabase table may not exist yet (newly introduced). A missing
+// table degrades to an empty list instead of crashing the page that reads it.
+const optionalSupabaseResources = new Set<SupabaseResourceName>(["Project_Files"]);
+
 class SupabaseStoreError extends Error {
   constructor(
     message: string,
@@ -60,6 +65,12 @@ function stripOptionalFields(resource: SupabaseResourceName, record: Record<stri
   });
 
   return changed ? next : record;
+}
+
+function isMissingTableError(error: unknown) {
+  if (!(error instanceof SupabaseStoreError) || error.status !== 404) return false;
+  const preview = error.preview?.toLowerCase() ?? "";
+  return preview.includes("pgrst205") || preview.includes("could not find the table") || preview.includes("does not exist");
 }
 
 function canRetryWithoutOptionalFields(resource: SupabaseResourceName, error: unknown, record: Record<string, unknown>) {
@@ -145,9 +156,14 @@ export async function testSupabaseConnection() {
 
 export async function readSupabaseResource(resource: SupabaseResourceName) {
   const table = tableFor(resource);
-  return requestSupabase<Record<string, unknown>[]>(
-    `/rest/v1/${table}?select=*&order=created_at.desc.nullslast`,
-  );
+  try {
+    return await requestSupabase<Record<string, unknown>[]>(
+      `/rest/v1/${table}?select=*&order=created_at.desc.nullslast`,
+    );
+  } catch (error) {
+    if (optionalSupabaseResources.has(resource) && isMissingTableError(error)) return [];
+    throw error;
+  }
 }
 
 export async function readSupabaseResourceWhere(resource: SupabaseResourceName, options: SupabaseReadOptions) {
@@ -166,7 +182,12 @@ export async function readSupabaseResourceWhere(resource: SupabaseResourceName, 
     params.set("limit", String(options.limit));
   }
 
-  return requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${params.toString()}`);
+  try {
+    return await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${params.toString()}`);
+  } catch (error) {
+    if (optionalSupabaseResources.has(resource) && isMissingTableError(error)) return [];
+    throw error;
+  }
 }
 
 export async function insertSupabaseResource(resource: SupabaseResourceName, record: Record<string, unknown>) {

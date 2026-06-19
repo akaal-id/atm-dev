@@ -4,6 +4,8 @@ const JAKARTA_TIMEZONE = "Asia/Jakarta";
 
 const COMPLETED_TASK_STATUSES = new Set(["Finished", "Done", "Approved", "Completed"]);
 const ACTIVE_TASK_STATUSES_EXCLUDED = new Set(["Finished", "Done", "Cancelled", "Approved", "Completed"]);
+// Statuses that are "done" or otherwise no longer accountable to a deadline.
+const NON_OVERDUE_STATUSES = new Set(["Finished", "Done", "Approved", "Completed", "Cancelled"]);
 const ABSENT_ATTENDANCE_STATUSES = new Set(["Absent", "Rejected"]);
 
 export function jakartaToday() {
@@ -65,6 +67,22 @@ export function visibleTasksForUser(tasks: Task[], userId: string) {
 
 export function activeTasks(tasks: Task[]) {
   return tasks.filter((task) => !ACTIVE_TASK_STATUSES_EXCLUDED.has(task.status));
+}
+
+/** A task is overdue when its due date has passed and it isn't yet finished or cancelled. */
+export function isTaskOverdue(task: Pick<Task, "status" | "due_date">, today: string = jakartaToday()) {
+  if (!task.due_date) return false;
+  if (NON_OVERDUE_STATUSES.has(task.status)) return false;
+  return task.due_date.slice(0, 10) < today;
+}
+
+/** The status shown on the board/pills — "Overdue" takes precedence over the stored stage. */
+export function effectiveTaskStatus(task: Pick<Task, "status" | "due_date">, today: string = jakartaToday()): Task["status"] {
+  return isTaskOverdue(task, today) ? "Overdue" : task.status;
+}
+
+export function overdueTasks(tasks: Task[], today: string = jakartaToday()) {
+  return tasks.filter((task) => isTaskOverdue(task, today));
 }
 
 export function completedTasks(tasks: Task[]) {

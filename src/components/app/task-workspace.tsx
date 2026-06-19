@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, CheckSquare, FolderKanban, ListFilter, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, CheckSquare, FolderKanban, FolderOpen, ListFilter, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { TaskBoard } from "@/components/app/task-board";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -570,6 +570,16 @@ function ProjectTaskView({ tasks, users, projects }: { tasks: Task[]; users: Use
                 <p className={styles.statValue}>{formatShortDate(projectTasks[0]?.due_date ?? "")}</p>
               </div>
             </div>
+
+            {project ? (
+              <Link
+                href={`/project-files?project=${project.project_id}`}
+                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10 w-full")}
+              >
+                <FolderOpen className="h-4 w-4" />
+                Project Files
+              </Link>
+            ) : null}
 
             <div className={styles.projectTasks}>
               {projectTasks.map((task) => (

@@ -1,7 +1,12 @@
 import type { Task, TaskChecklist, TaskStatus } from "@/lib/types";
 import { taskNeedsLeaderApproval } from "@/lib/task-approval";
 
+// Statuses a user can manually move a task into via the board "Move to" control.
 export const workflowBoardStatuses = ["To Do", "In Progress", "Waiting Approval", "Ready", "Finished"] as const;
+
+// Lanes rendered on the board. "Overdue" is a derived attention lane (computed from the
+// due date, never set manually), so it is shown but not offered as a move target.
+export const boardLaneStatuses = ["To Do", "In Progress", "Waiting Approval", "Ready", "Overdue", "Finished"] as const;
 
 export function progressForWorkflowStatus(status: TaskStatus) {
   if (status === "Finished" || status === "Done" || status === "Approved") return 100;

@@ -11,9 +11,12 @@ import {
   Clock3,
   Crown,
   Download,
+  ExternalLink,
   Filter,
+  FolderOpen,
   Gauge,
   MessageCircle,
+  Paperclip,
   Plus,
   ShieldCheck,
   Sparkles,
@@ -27,6 +30,8 @@ import { ActivityFeed } from "@/components/app/activity-feed";
 import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { CreateProjectModal } from "@/components/app/create-project-modal";
 import { TaskUpdatePanel } from "@/components/app/task-update-panel";
+import { ProjectFileForm } from "@/components/app/project-file-form";
+import { DRIVE_FOLDER_MIME } from "@/hooks/useDriveUpload";
 import { WorkflowChecklistItem } from "@/components/app/workflow-checklist-item";
 import { EmployeeAdminControls } from "@/components/app/employee-admin-controls";
 import { AttendanceTerminal } from "@/components/app/attendance-terminal";
@@ -79,6 +84,7 @@ import type {
   LeaveRequest,
   AppNotification,
   Project,
+  ProjectFile,
   Role,
   Setting,
   Task,
@@ -97,6 +103,7 @@ export type AppData = {
   tasks: Task[];
   comments: TaskComment[];
   checklists: TaskChecklist[];
+  projectFiles: ProjectFile[];
   projects: Project[];
   attendance: Attendance[];
   leaveRequests: LeaveRequest[];
@@ -498,6 +505,9 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
 export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
   const comments = data.comments.filter((comment) => comment.task_id === task.task_id);
   const checklist = data.checklists.filter((item) => item.task_id === task.task_id);
+  const projectFiles = data.projectFiles
+    .filter((file) => file.task_id === task.task_id)
+    .sort((left, right) => right.created_at.localeCompare(left.created_at));
   const project = data.projects.find((candidate) => candidate.project_id === task.project_id);
   const taskLogs = data.activityLogs
     .filter((log) => log.entity_type === "Tasks" && log.entity_id === task.task_id)
@@ -596,6 +606,49 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
         </Card>
         <Card>
           <CardHeader>
+            <SectionTitle
+              title="Project File"
+              action={
+                <Link
+                  href={`/project-files?project=${task.project_id}`}
+                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-9")}
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  View all
+                </Link>
+              }
+            />
+          </CardHeader>
+          <CardBody className="space-y-3">
+            <ProjectFileForm taskId={task.task_id} />
+            {projectFiles.length === 0 ? (
+              <p className="text-sm text-slate-500">No files uploaded for this task yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {projectFiles.map((file) => (
+                  <li key={file.file_id}>
+                    <a
+                      href={file.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm transition hover:border-blue-300 hover:bg-blue-50"
+                    >
+                      {file.file_mime === DRIVE_FOLDER_MIME ? (
+                        <FolderOpen className="h-4 w-4 shrink-0 text-blue-500" />
+                      ) : (
+                        <Paperclip className="h-4 w-4 shrink-0 text-slate-400" />
+                      )}
+                      <span className="min-w-0 flex-1 truncate font-semibold text-slate-800">{file.title || file.file_name}</span>
+                      <ExternalLink className="h-4 w-4 shrink-0 text-slate-400" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
             <SectionTitle title="Assignees" />
           </CardHeader>
           <CardBody className="space-y-3">
@@ -622,6 +675,60 @@ function InfoTile({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 break-words text-sm font-semibold text-slate-950">{value}</p>
     </div>
+  );
+}
+
+export function ProjectFilesView({ data, projectId }: { data: AppData; projectId?: string }) {
+  const project = projectId ? data.projects.find((candidate) => candidate.project_id === projectId) : undefined;
+  const files = data.projectFiles
+    .filter((file) => !projectId || file.project_id === projectId)
+    .sort((left, right) => right.created_at.localeCompare(left.created_at));
+
+  return (
+    <Page>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold tracking-normal text-slate-950">
+            {project ? `${project.project_name} — Project Files` : "All Project Files"}
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">{files.length} file{files.length === 1 ? "" : "s"}</p>
+        </div>
+        <Link href="/projects" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10")}>
+          <FolderOpen className="h-4 w-4" />
+          Projects
+        </Link>
+      </div>
+
+      {files.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center text-sm font-medium text-slate-500">
+          No project files uploaded yet. Upload one from a task&apos;s “Project File” panel.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {files.map((file) => (
+            <a
+              key={file.file_id}
+              href={file.file_url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-blue-300 hover:bg-blue-50"
+            >
+              {file.file_mime === DRIVE_FOLDER_MIME ? (
+                <FolderOpen className="hidden h-5 w-5 shrink-0 text-blue-500 sm:block" />
+              ) : (
+                <Paperclip className="hidden h-5 w-5 shrink-0 text-slate-400 sm:block" />
+              )}
+              <div className="min-w-0 flex-1">
+                <TicketId id={file.task_id} />
+                <p className="mt-1 truncate font-semibold text-slate-950">{file.title || file.file_name}</p>
+                <p className="mt-0.5 truncate text-sm text-slate-500">Owner: {userName(data.users, file.owner_user_id)}</p>
+              </div>
+              <ExternalLink className="h-4 w-4 shrink-0 text-slate-400" />
+            </a>
+          ))}
+        </div>
+      )}
+    </Page>
   );
 }
 
@@ -659,6 +766,13 @@ export function ProjectsView(data: AppData) {
                 </div>
                 <Badge tone={project.priority === "Urgent" ? "red" : project.priority === "High" ? "yellow" : "neutral"}>{project.priority}</Badge>
               </div>
+              <Link
+                href={`/project-files?project=${project.project_id}`}
+                className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10 w-full")}
+              >
+                <FolderOpen className="h-4 w-4" />
+                Project Files
+              </Link>
               {canManageProjects ? (
                 <details className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                   <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit project</summary>
@@ -1714,10 +1828,10 @@ export function GamificationSettingsView(data: AppData) {
       <Card>
         <CardHeader><SectionTitle title="Point rules" /></CardHeader>
         <CardBody className="space-y-3">
-          {["Completing tasks", "Before deadline", "Helpful comments", "Good attendance", "Late task deduction", "Rejected task deduction"].map((rule, index) => (
+          {["Completing tasks", "Before deadline", "Helpful comments", "Good attendance", "Late task deduction", "Rejected task deduction", "Overdue task deduction"].map((rule, index) => (
             <div key={rule} className="flex items-center justify-between rounded-lg border border-slate-200 p-3">
               <span className="text-sm font-semibold text-slate-700">{rule}</span>
-              <Badge tone={index > 3 ? "red" : "green"}>{index > 3 ? "-" : "+"}{[50, 25, 10, 15, 20, 30][index]}</Badge>
+              <Badge tone={index > 3 ? "red" : "green"}>{index > 3 ? "-" : "+"}{[50, 25, 10, 15, 20, 30, 20][index]}</Badge>
             </div>
           ))}
         </CardBody>

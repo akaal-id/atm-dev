@@ -34,6 +34,7 @@ export type TaskStatus =
   | "Approved"
   | "Done"
   | "Late"
+  | "Overdue"
   | "Cancelled";
 
 export type ProjectStatus =
@@ -164,6 +165,19 @@ export interface TaskChecklist {
   assignee_completed_by: string;
   pm_approved: boolean;
   pm_approved_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectFile {
+  file_id: string;
+  task_id: string;
+  project_id: string;
+  title: string;
+  owner_user_id: string;
+  file_url: string;
+  file_name: string;
+  file_mime: string;
   created_at: string;
   updated_at: string;
 }

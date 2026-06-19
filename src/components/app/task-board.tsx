@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/components/ui/status-pill";
 import type { Task, TaskStatus } from "@/lib/types";
 import { cn, formatShortDate, groupBy } from "@/lib/utils";
-import { workflowBoardStatuses } from "@/lib/workflow";
+import { effectiveTaskStatus } from "@/lib/metrics";
+import { boardLaneStatuses, workflowBoardStatuses } from "@/lib/workflow";
 
 export interface TaskBoardUser {
   user_id: string;
@@ -33,7 +34,8 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
     () => tasks.map((task) => (statusOverrides[task.task_id] ? { ...task, status: statusOverrides[task.task_id] } : task)),
     [statusOverrides, tasks],
   );
-  const grouped = useMemo(() => groupBy(boardTasks, (task) => task.status), [boardTasks]);
+  // Group by the effective status so overdue tasks surface in the Overdue lane automatically.
+  const grouped = useMemo(() => groupBy(boardTasks, (task) => effectiveTaskStatus(task)), [boardTasks]);
 
   const userName = (id: string) => users.find((user) => user.user_id === id)?.full_name ?? "Unassigned";
 
@@ -93,7 +95,7 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
             {task.title}
           </Link>
         </div>
-        <StatusPill status={task.status} />
+        <StatusPill status={effectiveTaskStatus(task)} />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
@@ -122,9 +124,11 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
 
   return (
     <div className="-mx-1 flex gap-4 overflow-x-auto overscroll-x-contain px-1 pb-1 snap-x snap-mandatory lg:mx-0 lg:px-0 lg:pb-0">
-      {workflowBoardStatuses.map((status) => {
+      {boardLaneStatuses.map((status) => {
         const laneTasks = grouped[status] ?? [];
-        const canDropIntoLane = status !== "Finished" || canMoveFinished;
+        // Overdue is derived from the due date and cannot be set by hand.
+        const isOverdueLane = status === "Overdue";
+        const canDropIntoLane = !isOverdueLane && (status !== "Finished" || canMoveFinished);
         const isFinishedLane = status === "Finished";
         const showCollapsedFinished = isFinishedLane && !finishedExpanded && laneTasks.length > 0;
 
@@ -152,7 +156,9 @@ export function TaskBoard({ tasks, users, canMoveFinished = false }: { tasks: Ta
             </div>
             <div className="min-h-40 space-y-3 p-4">
               {laneTasks.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm font-medium text-slate-500">Drop task here</div>
+                <div className="rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm font-medium text-slate-500">
+                  {isOverdueLane ? "Nothing past due" : "Drop task here"}
+                </div>
               ) : showCollapsedFinished ? (
                 <Button
                   type="button"

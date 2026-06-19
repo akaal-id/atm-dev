@@ -10,6 +10,7 @@ import type {
   AppNotification,
   Permission,
   Project,
+  ProjectFile,
   Role,
   Setting,
   Task,
@@ -486,6 +487,8 @@ export const tasks: Task[] = [
   },
 ];
 
+export const projectFiles: ProjectFile[] = [];
+
 export const taskComments: TaskComment[] = [
   {
     comment_id: "cmt_001",
@@ -953,7 +956,7 @@ export const settings: Setting[] = [
   {
     setting_id: "set_points",
     setting_key: "gamification_rules",
-    setting_value: JSON.stringify({ completeTask: 50, punctualAttendance: 10, earlyTask: 25, helpfulComment: 10, lateTask: -20, rejectedTask: -30 }),
+    setting_value: JSON.stringify({ completeTask: 50, punctualAttendance: 10, earlyTask: 25, helpfulComment: 10, lateTask: -20, rejectedTask: -30, overdueTask: -20 }),
     setting_type: "json",
     updated_by: "usr_nadia",
     updated_at: "2026-05-21T08:10:00.000Z",
@@ -967,6 +970,7 @@ export const seedResources = {
   Tasks: tasks,
   Task_Comments: taskComments,
   Task_Checklists: taskChecklists,
+  Project_Files: projectFiles,
   Projects: projects,
   Attendance: attendance,
   Leave_Requests: leaveRequests,
