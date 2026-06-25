@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { DateRangePickerField } from "@/components/ui/date-range-picker-field";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { LinkifiedText } from "@/components/ui/linkified-text";
-import { StatusPill, statusTone } from "@/components/ui/status-pill";
+import { StatusPill, TaskStatusPill, statusTone } from "@/components/ui/status-pill";
 import { activeTasks, completedTasks, jakartaToday } from "@/lib/metrics";
 import { visibleTaskLabels } from "@/lib/task-approval";
 import type { CurrentUser, Project, Task, User } from "@/lib/types";
@@ -292,7 +292,7 @@ function TaskListRow({ task, users, projects }: { task: Task; users: User[]; pro
 
       <div className={cn(styles.cell, styles.statusCell)}>
         <p className={styles.cellLabel}>Status</p>
-        <StatusPill status={task.status} />
+        <TaskStatusPill status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />
       </div>
     </article>
   );
@@ -501,7 +501,7 @@ function ProjectTaskCard({ task, users }: { task: Task; users: User[] }) {
           <p className="mt-2 break-words text-sm font-bold text-slate-950">{task.title}</p>
         </div>
         <div className="shrink-0">
-          <StatusPill status={task.status} />
+          <TaskStatusPill status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">

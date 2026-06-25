@@ -34,7 +34,7 @@ export interface SupabaseReadOptions {
 
 const optionalSupabaseFields: Partial<Record<SupabaseResourceName, string[]>> = {
   Attendance: ["active_minutes", "location_count"],
-  Tasks: ["need_leader_approval"],
+  Tasks: ["need_leader_approval", "handed_off_at", "report"],
 };
 
 // Resources whose Supabase table may not exist yet (newly introduced). A missing

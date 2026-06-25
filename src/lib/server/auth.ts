@@ -111,14 +111,14 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Cur
   };
 });
 
-export async function requireUser() {
+export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  return user;
+  return user as CurrentUser;
 }
 
-export async function requirePermission(permission: Permission) {
+export async function requirePermission(permission: Permission): Promise<CurrentUser> {
   const user = await requireUser();
   if (!hasPermission(user.role_id, permission)) redirect("/dashboard");
-  return user;
+  return user as CurrentUser;
 }

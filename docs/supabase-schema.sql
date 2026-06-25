@@ -81,7 +81,8 @@ create table if not exists public.tasks (
   need_leader_approval boolean not null default false,
   created_at text not null default '',
   updated_at text not null default '',
-  completed_at text not null default ''
+  completed_at text not null default '',
+  handed_off_at text not null default ''
 );
 
 create table if not exists public.task_comments (

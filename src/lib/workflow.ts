@@ -4,9 +4,9 @@ import { taskNeedsLeaderApproval } from "@/lib/task-approval";
 // Statuses a user can manually move a task into via the board "Move to" control.
 export const workflowBoardStatuses = ["To Do", "In Progress", "Waiting Approval", "Ready", "Finished"] as const;
 
-// Lanes rendered on the board. "Overdue" is a derived attention lane (computed from the
-// due date, never set manually), so it is shown but not offered as a move target.
-export const boardLaneStatuses = ["To Do", "In Progress", "Waiting Approval", "Ready", "Overdue", "Finished"] as const;
+// Lanes rendered on the board. Overdue is NOT a lane — overdue tasks stay in their real
+// workflow column and carry an extra "Overdue" tag on the card (see TaskStatusPill).
+export const boardLaneStatuses = ["To Do", "In Progress", "Waiting Approval", "Ready", "Finished"] as const;
 
 export function progressForWorkflowStatus(status: TaskStatus) {
   if (status === "Finished" || status === "Done" || status === "Approved") return 100;

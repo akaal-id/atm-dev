@@ -2,7 +2,7 @@
 
 import { Check, CheckCircle2, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { TaskConfirmModal } from "@/components/app/task-confirm-modal";
 import { Button } from "@/components/ui/button";
@@ -13,42 +13,38 @@ import type { CurrentUser, Task, TaskChecklist } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function ChecklistToggle({
-  checklistId,
-  field,
   checked,
   disabled,
   label,
+  onClick,
 }: {
-  checklistId: string;
-  field: "assignee_completed" | "pm_approved";
   checked: boolean;
   disabled?: boolean;
   label: string;
+  onClick: () => void;
 }) {
   return (
-    <form action={`/api/resources/Task_Checklists/${checklistId}`} method="post">
-      <input type="hidden" name={field} value={String(!checked)} />
-      <Button
-        type="submit"
-        size="lg"
-        variant="outline"
-        disabled={disabled}
+    <Button
+      type="button"
+      size="lg"
+      variant="outline"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "h-10 font-semibold",
+        checked ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50" : "text-slate-600",
+      )}
+    >
+      <span
         className={cn(
-          "h-10 font-semibold",
-          checked ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50" : "text-slate-600",
+          "grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors",
+          checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 bg-white",
         )}
       >
-        <span
-          className={cn(
-            "grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors",
-            checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 bg-white",
-          )}
-        >
-          {checked ? <Check className="size-2.5 stroke-[3]" aria-hidden="true" /> : null}
-        </span>
-        {label}
-      </Button>
-    </form>
+        {checked ? <Check className="size-2.5 stroke-[3]" aria-hidden="true" /> : null}
+      </span>
+      {label}
+    </Button>
   );
 }
 
@@ -70,15 +66,26 @@ export function WorkflowChecklistItem({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
+  // Local state for checkboxes to prevent page reloads
+  const [localAssigneeDone, setLocalAssigneeDone] = useState(item.assignee_completed || item.is_completed);
+  const [localPmApproved, setLocalPmApproved] = useState(item.pm_approved);
+
+  useEffect(() => {
+    setLocalAssigneeDone(item.assignee_completed || item.is_completed);
+    setLocalPmApproved(item.pm_approved);
+  }, [item]);
+
   const canManageTask = hasPermission(currentUser.role_id, "tasks:manage") || hasPermission(currentUser.role_id, "tasks:team");
   const canLeaderApprove = canApproveTaskAsLeader(currentUser);
   const isAssignee = task.assigned_to.includes(currentUser.user_id);
   const canEditItem = canManageTask || isAssignee;
-  const assigneeDone = item.assignee_completed || item.is_completed;
   const needsLeaderApproval = taskNeedsLeaderApproval(task);
-  const itemComplete = assigneeDone && (!needsLeaderApproval || item.pm_approved);
+
+  const assigneeDone = localAssigneeDone;
+  const pmApproved = localPmApproved;
+  const itemComplete = assigneeDone && (!needsLeaderApproval || pmApproved);
   const itemStatus = needsLeaderApproval
-    ? item.pm_approved
+    ? pmApproved
       ? "Ready"
       : assigneeDone
         ? "Waiting Approval"
@@ -86,6 +93,54 @@ export function WorkflowChecklistItem({
     : assigneeDone
       ? "Ready"
       : "To Do";
+
+  const handleToggleAssignee = async () => {
+    if (saving || deleting) return;
+    const nextVal = !assigneeDone;
+    setLocalAssigneeDone(nextVal);
+    try {
+      const formData = new FormData();
+      formData.set("assignee_completed", String(nextVal));
+      const response = await fetch(`/api/resources/Task_Checklists/${item.checklist_id}`, {
+        method: "POST",
+        headers: { accept: "application/json" },
+        body: formData,
+      });
+      if (!response.ok) throw new Error();
+      router.refresh();
+    } catch (e) {
+      setLocalAssigneeDone(!nextVal);
+    }
+  };
+
+  const handleToggleLeader = async () => {
+    if (saving || deleting) return;
+    const nextVal = !pmApproved;
+    setLocalPmApproved(nextVal);
+    const originalAssigneeDone = assigneeDone;
+    if (nextVal && !assigneeDone) {
+      setLocalAssigneeDone(true);
+    }
+    try {
+      const formData = new FormData();
+      formData.set("pm_approved", String(nextVal));
+      if (nextVal && !assigneeDone) {
+        formData.set("assignee_completed", "true");
+      }
+      const response = await fetch(`/api/resources/Task_Checklists/${item.checklist_id}`, {
+        method: "POST",
+        headers: { accept: "application/json" },
+        body: formData,
+      });
+      if (!response.ok) throw new Error();
+      router.refresh();
+    } catch (e) {
+      setLocalPmApproved(!nextVal);
+      if (nextVal && !originalAssigneeDone) {
+        setLocalAssigneeDone(false);
+      }
+    }
+  };
 
   const requestSave = () => {
     const nextTitle = title.trim();
@@ -170,7 +225,7 @@ export function WorkflowChecklistItem({
           )}
           <p className="mt-1 text-xs font-medium text-slate-400">
             Assignee {assigneeDone ? "done" : "open"}
-            {needsLeaderApproval ? <> · Leader {item.pm_approved ? "approved" : "pending"}</> : null}
+            {needsLeaderApproval ? <> · Leader {pmApproved ? "approved" : "pending"}</> : null}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -212,9 +267,9 @@ export function WorkflowChecklistItem({
       </div>
       {error ? <p className="mt-2 text-xs font-semibold text-red-600">{error}</p> : null}
       <div className="mt-4 flex flex-wrap gap-2">
-        <ChecklistToggle checklistId={item.checklist_id} field="assignee_completed" checked={assigneeDone} disabled={!canEditItem} label="Assignee" />
+        <ChecklistToggle checked={assigneeDone} disabled={!canEditItem} label="Assignee" onClick={handleToggleAssignee} />
         {needsLeaderApproval ? (
-          <ChecklistToggle checklistId={item.checklist_id} field="pm_approved" checked={item.pm_approved} disabled={!canLeaderApprove || !assigneeDone} label="Leader" />
+          <ChecklistToggle checked={pmApproved} disabled={!canLeaderApprove || !assigneeDone} label="Leader" onClick={handleToggleLeader} />
         ) : null}
       </div>
 

@@ -101,11 +101,17 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
     patch.status = nextStatus;
     patch.progress = progressForWorkflowStatus(nextStatus);
     patch.completed_at = nextStatus === "Finished" ? new Date().toISOString() : "";
+    // Stamp the first hand-off (Waiting Approval / Ready) and keep it sticky afterwards.
+    const isHandoffStage = nextStatus === "Waiting Approval" || nextStatus === "Ready";
+    patch.handed_off_at = isHandoffStage
+      ? existingTask?.handed_off_at || new Date().toISOString()
+      : existingTask?.handed_off_at || "";
   }
 
   if (resource === "Tasks" && patch.status === undefined) {
     delete patch.progress;
     delete patch.completed_at;
+    delete patch.handed_off_at;
   }
 
   if (resource === "Projects" && patch.ticket_id_prefix !== undefined) {

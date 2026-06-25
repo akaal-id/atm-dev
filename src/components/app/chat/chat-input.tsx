@@ -29,7 +29,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
       attributes: {
         class: "chat-prose min-h-[40px] max-h-40 overflow-y-auto px-3 py-2 text-sm outline-none [&_p]:m-0",
       },
-      handleKeyDown: (_view, event) => {
+      handleKeyDown: (_view: any, event: any) => {
         // Enter sends, Shift+Enter inserts a newline.
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
@@ -39,7 +39,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
         return false;
       },
     },
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: any }) => {
       // Slash command: typing "/task" opens the picker and clears the input.
       if (editor.getText().trim() === "/task") {
         editor.commands.clearContent();

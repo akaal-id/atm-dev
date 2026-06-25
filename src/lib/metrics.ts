@@ -69,15 +69,20 @@ export function activeTasks(tasks: Task[]) {
   return tasks.filter((task) => !ACTIVE_TASK_STATUSES_EXCLUDED.has(task.status));
 }
 
-/** A task is overdue when its due date has passed and it isn't yet finished or cancelled. */
-export function isTaskOverdue(task: Pick<Task, "status" | "due_date">, today: string = jakartaToday()) {
+/**
+ * A task is overdue when its due date has passed and it isn't yet finished or cancelled —
+ * UNLESS the worker handed it off (reached Waiting Approval / Ready) on or before the due
+ * date, in which case any later delay is the approver's, not the worker's, so it never counts.
+ */
+export function isTaskOverdue(task: Pick<Task, "status" | "due_date" | "handed_off_at">, today: string = jakartaToday()) {
   if (!task.due_date) return false;
   if (NON_OVERDUE_STATUSES.has(task.status)) return false;
+  if (task.handed_off_at && task.handed_off_at.slice(0, 10) <= task.due_date.slice(0, 10)) return false;
   return task.due_date.slice(0, 10) < today;
 }
 
 /** The status shown on the board/pills — "Overdue" takes precedence over the stored stage. */
-export function effectiveTaskStatus(task: Pick<Task, "status" | "due_date">, today: string = jakartaToday()): Task["status"] {
+export function effectiveTaskStatus(task: Pick<Task, "status" | "due_date" | "handed_off_at">, today: string = jakartaToday()): Task["status"] {
   return isTaskOverdue(task, today) ? "Overdue" : task.status;
 }
 

@@ -18,6 +18,7 @@ import {
   MessageCircle,
   Paperclip,
   Plus,
+  Save,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -48,7 +49,7 @@ import { FormSelect } from "@/components/ui/form-select";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Progress } from "@/components/ui/progress";
-import { StatusPill, statusTone } from "@/components/ui/status-pill";
+import { StatusPill, TaskStatusPill, statusTone } from "@/components/ui/status-pill";
 import {
   activeTasks,
   activeUsers,
@@ -190,13 +191,13 @@ function TicketId({ id }: { id: string }) {
   return <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600">#{id}</code>;
 }
 
-function BoardStage({ status, dueDate }: { status: Task["status"]; dueDate?: string }) {
+function BoardStage({ status, dueDate, handedOffAt }: { status: Task["status"]; dueDate?: string; handedOffAt?: string }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
       <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Board stage</span>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {dueDate ? <span className="text-xs font-medium text-slate-500">Due {formatShortDate(dueDate)}</span> : null}
-        <StatusPill status={status} />
+        <TaskStatusPill status={status} dueDate={dueDate} handedOffAt={handedOffAt} />
       </div>
     </div>
   );
@@ -361,7 +362,7 @@ export function DashboardView(data: AppData) {
                   </div>
                   <StatusPill status={task.status} />
                 </div>
-                <div className="mt-4"><BoardStage status={task.status} dueDate={task.due_date} /></div>
+                <div className="mt-4"><BoardStage status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} /></div>
               </article>
             ))}
           </CardBody>
@@ -492,7 +493,7 @@ function TaskCard({ task, users, compact = false }: { task: Task; users: User[];
           <Badge key={label}>{label}</Badge>
         ))}
       </div>
-      <div className="mt-4"><BoardStage status={task.status} dueDate={task.due_date} /></div>
+      <div className="mt-4"><BoardStage status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} /></div>
       <div className="mt-4 flex -space-x-2">
         {task.assigned_to.map((id) => (
           <Avatar key={id} name={userName(users, id)} size="sm" />
@@ -525,7 +526,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
             </div>
           </CardHeader>
           <CardBody className="space-y-5">
-            <BoardStage status={task.status} dueDate={task.due_date} />
+            <BoardStage status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <InfoTile label="Project" value={project?.project_name ?? "No project"} />
               <InfoTile label="Date created" value={formatDate(task.created_at)} />
@@ -550,6 +551,26 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
               <Button type="submit" variant="default" size="xl">
                 <Plus className="h-4 w-4" />
                 Add
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <SectionTitle title="Completion report" />
+          </CardHeader>
+          <CardBody>
+            <form action={`/api/resources/Tasks/${task.task_id}`} method="post" className="space-y-3">
+              <textarea
+                name="report"
+                className="min-h-24 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                placeholder="Write completion report details here..."
+                defaultValue={task.report || ""}
+              />
+              <Button type="submit" variant="default" size="lg" className="h-10">
+                <Save className="h-4 w-4" />
+                Save report
               </Button>
             </form>
           </CardBody>

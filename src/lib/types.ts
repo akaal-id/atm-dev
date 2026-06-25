@@ -141,9 +141,13 @@ export interface Task {
   progress: number;
   labels: string[];
   need_leader_approval?: boolean;
+  report?: string;
   created_at: string;
   updated_at: string;
   completed_at?: string;
+  // Set when the worker first hands off (status reaches Waiting Approval / Ready). Used to
+  // decide overdue fairly: a task handed off on or before its due date never counts as overdue.
+  handed_off_at?: string;
 }
 
 export interface TaskComment {

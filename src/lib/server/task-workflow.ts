@@ -12,8 +12,16 @@ export async function syncTaskWorkflowStatus(taskId: string) {
   const nextStatus = deriveWorkflowStatus(task, checklists);
   const nextProgress = progressForWorkflowStatus(nextStatus);
   const nextCompletedAt = nextStatus === "Finished" ? task.completed_at || new Date().toISOString() : task.completed_at || "";
+  // Stamp the first time the worker hands off (Waiting Approval / Ready); keep it sticky after.
+  const isHandoffStage = nextStatus === "Waiting Approval" || nextStatus === "Ready";
+  const nextHandedOffAt = isHandoffStage ? task.handed_off_at || new Date().toISOString() : task.handed_off_at || "";
 
-  if (task.status === nextStatus && task.progress === nextProgress && (task.completed_at || "") === nextCompletedAt) {
+  if (
+    task.status === nextStatus &&
+    task.progress === nextProgress &&
+    (task.completed_at || "") === nextCompletedAt &&
+    (task.handed_off_at || "") === nextHandedOffAt
+  ) {
     return task;
   }
 
@@ -21,5 +29,6 @@ export async function syncTaskWorkflowStatus(taskId: string) {
     status: nextStatus,
     progress: nextProgress,
     completed_at: nextCompletedAt,
+    handed_off_at: nextHandedOffAt,
   });
 }

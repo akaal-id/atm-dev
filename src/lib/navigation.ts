@@ -28,6 +28,7 @@ export const primaryNavigation: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
   { label: "My Tasks", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" },
   { label: "Team Tasks", href: "/tasks/team", icon: "Users", permission: "dashboard:view" },
+  { label: "Approvals", href: "/admin/approval", icon: "CheckSquare", permission: "admin:view" },
   { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "dashboard:view" },
   { label: "Calendar", href: "/calendar", icon: "CalendarDays", permission: "dashboard:view" },
   { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
@@ -138,6 +139,11 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     title: "Admin dashboard",
     eyebrow: "System control",
     description: "Users, settings, task health, attendance, activities, and connected data sources.",
+  },
+  "/admin/approval": {
+    title: "Task approvals",
+    eyebrow: "System approvals",
+    description: "Verify subtasks, review task reports, and authorize tasks for completion.",
   },
   "/admin/settings": {
     title: "CMS settings",

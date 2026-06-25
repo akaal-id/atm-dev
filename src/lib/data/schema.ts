@@ -43,6 +43,8 @@ export const appDatabaseSchema = {
     "created_at",
     "updated_at",
     "completed_at",
+    "handed_off_at",
+    "report",
   ],
   Task_Comments: ["comment_id", "task_id", "user_id", "comment", "mentions", "created_at", "updated_at"],
   Project_Files: [
