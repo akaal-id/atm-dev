@@ -1,8 +1,8 @@
-import { MessageCircle } from "lucide-react";
+import { Mail, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-import { akaalHub, leaderInitials, whatsappUrl } from "@/lib/data/akaal-hub";
+import { akaalHub, whatsappUrl } from "@/lib/data/akaal-hub";
 import styles from "@/app/hub.module.css";
 
 export function HubPage() {
@@ -62,44 +62,43 @@ export function HubPage() {
         </header>
 
         <div className={`${styles.leaders} ${styles.reveal} ${styles.revealDelay1}`}>
-          {leaders.map((leader) => {
-            const firstName = leader.name.split(" ")[0];
-            return (
-              <article key={leader.whatsapp} className={styles.leaderCard}>
-                <div className={styles.leaderTop}>
-                  <div className={styles.avatar} aria-hidden="true">
-                    {leaderInitials(leader.name)}
-                  </div>
-                  <div className={styles.leaderMeta}>
-                    <p className={styles.leaderRole}>{leader.role}</p>
-                    <h2 className={styles.leaderName}>{leader.name}</h2>
-                  </div>
+          {leaders.map((leader) => (
+            <article key={leader.whatsapp} className={styles.bizCard}>
+              <div className={styles.bizCardStripe}>
+                <Image
+                  src={brand.logoLightSrc}
+                  alt=""
+                  width={320}
+                  height={320}
+                  className={styles.bizCardLogoBg}
+                  aria-hidden
+                />
+              </div>
+
+              <div className={styles.bizCardBody}>
+                <div className={styles.bizCardHeader}>
+                  <h2 className={styles.bizCardName}>{leader.name}</h2>
+                  <span className={styles.bizCardRolePill}>{leader.roleTitle}</span>
                 </div>
-                <a
-                  href={whatsappUrl(leader.whatsapp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.whatsappBtn}
-                >
-                  <MessageCircle className={styles.btnIcon} aria-hidden />
-                  Message {firstName}
-                  <svg
-                    className={styles.btnArrow}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
+
+                <div className={styles.bizCardContacts}>
+                  <a href={`mailto:${leader.email}`} className={styles.bizCardContact}>
+                    <span>{leader.email}</span>
+                    <Mail className={styles.bizCardContactIcon} aria-hidden />
+                  </a>
+                  <a
+                    href={whatsappUrl(leader.whatsapp)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.bizCardContact}
                   >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
-                  </svg>
-                </a>
-              </article>
-            );
-          })}
+                    <span>{leader.phoneDisplay}</span>
+                    <MessageCircle className={styles.bizCardContactIcon} aria-hidden />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
 
         {socials.length > 0 ? (
