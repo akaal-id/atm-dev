@@ -15,14 +15,23 @@ export type IconName =
   | "KeyRound"
   | "Sparkles"
   | "UserPlus"
-  | "MessageCircle";
+  | "MessageCircle"
+  | "Mail";
 
 export interface NavigationItem {
   label: string;
   href: string;
   icon: IconName;
   permission: Permission;
+  children?: NavigationItem[];
 }
+
+export const emailBlastNavigation: NavigationItem[] = [
+  { label: "Compose", href: "/email-blast", icon: "Mail", permission: "dashboard:view" },
+  { label: "History", href: "/email-blast/history", icon: "Mail", permission: "dashboard:view" },
+  { label: "Contacts", href: "/email-blast/contacts", icon: "Users", permission: "dashboard:view" },
+  { label: "Settings", href: "/email-blast/settings", icon: "Settings", permission: "dashboard:view" },
+];
 
 export const primaryNavigation: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
@@ -33,6 +42,13 @@ export const primaryNavigation: NavigationItem[] = [
   { label: "Calendar", href: "/calendar", icon: "CalendarDays", permission: "dashboard:view" },
   { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
   { label: "Announcements", href: "/announcements", icon: "Megaphone", permission: "announcements:view" },
+  {
+    label: "Email Blast",
+    href: "/email-blast",
+    icon: "Mail",
+    permission: "dashboard:view",
+    children: emailBlastNavigation,
+  },
   { label: "Employees", href: "/employees", icon: "Users", permission: "employees:view" },
   { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
   { label: "Messages", href: "/chat", icon: "MessageCircle", permission: "dashboard:view" },
@@ -114,6 +130,31 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     title: "Announcements",
     eyebrow: "Company feed",
     description: "Pinned updates, scheduled notices, comments, and read tracking.",
+  },
+  "/email-blast": {
+    title: "Email blast",
+    eyebrow: "Marketing & sales",
+    description: "Compose subject and body, attach files, pick recipients, and send mass email.",
+  },
+  "/email-blast/history": {
+    title: "Send history",
+    eyebrow: "Email blast",
+    description: "Review past blasts, recipient counts, attachments, and delivery status.",
+  },
+  "/email-blast/contacts": {
+    title: "Contact groups",
+    eyebrow: "Email blast",
+    description: "Save reusable recipient lists and pick a group when composing a blast.",
+  },
+  "/email-blast/contacts/[id]": {
+    title: "Group detail",
+    eyebrow: "Email blast",
+    description: "Add or remove contacts for this group, then use it when composing a blast.",
+  },
+  "/email-blast/settings": {
+    title: "Account settings",
+    eyebrow: "Email blast",
+    description: "Review your sender identity and blast preferences from the dashboard account.",
   },
   "/employees": {
     title: "Employees",

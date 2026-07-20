@@ -18,7 +18,16 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     orderBy: "created_at",
   });
   const [users, projects] = await Promise.all([listResource("Users"), listResource("Projects")]);
-  const visiblePrimary = primaryNavigation.filter((item) => hasPermission(user.role_id, item.permission));
+  const visiblePrimary = primaryNavigation
+    .filter((item) => hasPermission(user.role_id, item.permission))
+    .map((item) =>
+      item.children
+        ? {
+            ...item,
+            children: item.children.filter((child) => hasPermission(user.role_id, child.permission)),
+          }
+        : item,
+    );
   const visibleAdmin = adminNavigation.filter((item) => hasPermission(user.role_id, item.permission));
   const visibleBottom = getBottomNavigation(user.role_id, user.employment_status).filter((item) =>
     hasPermission(user.role_id, item.permission),

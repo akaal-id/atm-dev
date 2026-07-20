@@ -26,6 +26,15 @@ function getCopy(pathname: string) {
   if (exact) return exact;
   if (pathname.startsWith("/tasks/")) return { title: "Task detail", description: "Checklist, comments, status history, and activity log." };
   if (pathname.startsWith("/employees/")) return { title: "Employee profile", description: "Profile, attendance, task history, birthday, and performance score." };
+  if (pathname.startsWith("/email-blast/history/")) {
+    return { title: "Blast detail", description: "Email content, recipients, and delivery status for this send." };
+  }
+  if (pathname.startsWith("/email-blast/contacts/") && pathname !== "/email-blast/contacts") {
+    return pageCopy["/email-blast/contacts/[id]"] || {
+      title: "Group detail",
+      description: "Add or remove contacts for this group, then use it when composing a blast.",
+    };
+  }
   if (pathname.startsWith("/chat")) return pageCopy["/chat"];
   return pageCopy["/dashboard"];
 }

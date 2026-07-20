@@ -61,12 +61,18 @@ function uploadHeaders(contentType = "application/json") {
 
 function uploadConfigForField(fieldName: string) {
   const isProfilePhoto = fieldName.includes("profile_photo");
+  const isEmailBlast = fieldName.includes("email_blast") || fieldName.includes("blast_attachment");
 
   return {
-    folder: isProfilePhoto ? "profile-photos" : "attachments",
+    folder: isProfilePhoto ? "profile-photos" : isEmailBlast ? "email-blast" : "attachments",
     maxBytes: isProfilePhoto ? 5 * 1024 * 1024 : 10 * 1024 * 1024,
     allowedMimeTypes: isProfilePhoto ? imageMimeTypes : attachmentMimeTypes,
+    bucket: isEmailBlast ? emailBlastBucketName() : bucketName(),
   };
+}
+
+function emailBlastBucketName() {
+  return process.env.SUPABASE_EMAIL_BLAST_BUCKET || "email-blast-attachments";
 }
 
 const extensionByFileName: Record<string, string> = {
@@ -95,46 +101,47 @@ function resolveMimeType(file: File, allowedMimeTypes: string[]) {
   return file.type;
 }
 
-let bucketPromise: Promise<void> | null = null;
+let bucketPromises = new Map<string, Promise<void>>();
 
-async function ensureUploadBucket() {
-  if (!bucketPromise) {
-    bucketPromise = (async () => {
-      const baseUrl = supabaseUrl();
-      const bucket = bucketName();
-      const check = await fetch(`${baseUrl}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
-        cache: "no-store",
-        headers: uploadHeaders(),
-      });
+async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = attachmentMimeTypes) {
+  const existing = bucketPromises.get(bucket);
+  if (existing) return existing;
 
-      if (check.ok) return;
-
-      if (check.status !== 404) {
-        throw new UploadError(`Could not verify Supabase Storage bucket. Status ${check.status}.`);
-      }
-
-      const create = await fetch(`${baseUrl}/storage/v1/bucket`, {
-        method: "POST",
-        headers: uploadHeaders(),
-        body: JSON.stringify({
-          id: bucket,
-          name: bucket,
-          public: true,
-          file_size_limit: 10 * 1024 * 1024,
-          allowed_mime_types: attachmentMimeTypes,
-        }),
-      });
-
-      if (!create.ok && create.status !== 409) {
-        throw new UploadError(`Could not create Supabase Storage bucket. Status ${create.status}.`);
-      }
-    })().catch((error) => {
-      bucketPromise = null;
-      throw error;
+  const promise = (async () => {
+    const baseUrl = supabaseUrl();
+    const check = await fetch(`${baseUrl}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
+      cache: "no-store",
+      headers: uploadHeaders(),
     });
-  }
 
-  return bucketPromise;
+    if (check.ok) return;
+
+    if (check.status !== 404) {
+      throw new UploadError(`Could not verify Supabase Storage bucket. Status ${check.status}.`);
+    }
+
+    const create = await fetch(`${baseUrl}/storage/v1/bucket`, {
+      method: "POST",
+      headers: uploadHeaders(),
+      body: JSON.stringify({
+        id: bucket,
+        name: bucket,
+        public: true,
+        file_size_limit: 10 * 1024 * 1024,
+        allowed_mime_types: allowedMimeTypes,
+      }),
+    });
+
+    if (!create.ok && create.status !== 409) {
+      throw new UploadError(`Could not create Supabase Storage bucket. Status ${create.status}.`);
+    }
+  })().catch((error) => {
+    bucketPromises.delete(bucket);
+    throw error;
+  });
+
+  bucketPromises.set(bucket, promise);
+  return promise;
 }
 
 export async function uploadFormFile(file: File, fieldName: string) {
@@ -146,13 +153,13 @@ export async function uploadFormFile(file: File, fieldName: string) {
   }
   const contentType = resolveMimeType(file, config.allowedMimeTypes);
   if (!contentType || !config.allowedMimeTypes.includes(contentType)) {
-    throw new UploadError("Unsupported file type. Upload a JPG, PNG, WebP, GIF, or HEIC image.");
+    throw new UploadError("Unsupported file type. Upload a JPG, PNG, WebP, GIF, PDF, or Word document.");
   }
 
-  await ensureUploadBucket();
+  await ensureUploadBucket(config.bucket, config.allowedMimeTypes);
 
   const baseUrl = supabaseUrl();
-  const bucket = bucketName();
+  const bucket = config.bucket;
   const path = `${config.folder}/${new Date().toISOString().slice(0, 10)}/${makeId("upl")}.${fileExtension(file)}`;
   const response = await fetch(`${baseUrl}/storage/v1/object/${bucket}/${path}`, {
     method: "POST",
@@ -170,4 +177,9 @@ export async function uploadFormFile(file: File, fieldName: string) {
   }
 
   return `${baseUrl}/storage/v1/object/public/${bucket}/${path}`;
+}
+
+/** Upload an email-blast attachment into the dedicated public bucket. */
+export async function uploadEmailBlastAttachment(file: File) {
+  return uploadFormFile(file, "email_blast_attachment");
 }

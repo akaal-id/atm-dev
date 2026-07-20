@@ -122,6 +122,73 @@
   gap: 0.25rem;
 }
 
+.navTree {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.groupTrigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.chevron {
+  margin-left: auto;
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: transform 150ms ease;
+}
+
+.collapsed .chevron {
+  display: none;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.subLinks {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.125rem 0 0.25rem 0.5rem;
+  margin-left: 0.75rem;
+  border-left: 1px solid #e2e8f0;
+}
+
+.collapsed .subLinks {
+  display: none;
+}
+
+.subLink {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  border-radius: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.subLink:hover {
+  background: #f1f5f9;
+  color: #020617;
+}
+
+.subLinkLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .adminGroup {
   margin-top: 1.5rem;
 }

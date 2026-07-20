@@ -29,7 +29,10 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <div className={styles.logo}>ATM</div>
         <p className={styles.eyebrow}>Request access</p>
         <h1 className={styles.title}>Create your Akaal Team Management account</h1>
-        <p className={styles.text}>After you submit this request, an admin can approve it and email you a verification key.</p>
+        <p className={styles.text}>
+          Email Blast memakai akun dashboard yang sama. Ajukan akses di sini; admin akan menyetujui dan mengirim verification key.
+          Tidak ada pendaftaran terpisah untuk modul blast.
+        </p>
 
         {params.error === "exists" ? <div className={styles.error}>An active account already exists for this email.</div> : null}
         {params.error === "missing" ? <div className={styles.error}>Please fill in all required fields before submitting.</div> : null}

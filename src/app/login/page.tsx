@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
+import { LoginForm } from "@/components/app/login-form";
+import { safeNextPath } from "@/lib/auth-routes";
 import { getCurrentUser } from "@/lib/server/auth";
 import styles from "./login.module.css";
 
@@ -10,8 +11,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const appleEnabled = Boolean(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET);
+  const nextPath = safeNextPath(params.next);
 
-  if (user) redirect(params.next || "/dashboard");
+  if (user) redirect(nextPath);
 
   return (
     <main className={styles.page}>
@@ -47,7 +49,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className={styles.formIntro}>
             <p className={styles.formEyebrow}>Secure sign in</p>
             <h1 className={styles.formTitle}>Welcome back</h1>
-            <p className={styles.formText}>Use a Google-auth identity in production or the seeded admin login for local setup.</p>
+            <p className={styles.formText}>
+              {nextPath.startsWith("/email-blast")
+                ? "Sign in to open Email Blast. Use your dashboard account — no separate registration."
+                : "Use a Google-auth identity in production or the seeded admin login for local setup."}
+            </p>
           </div>
 
           {params.verified ? <div className={styles.success}>Account verified. You can sign in now.</div> : null}
@@ -60,20 +66,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
           ) : null}
 
-          <form action="/api/auth/login" method="post" className={styles.form}>
-            <input type="hidden" name="next" value={params.next ?? "/dashboard"} />
-            <label className={styles.field}>
-              <span className={styles.label}>Email</span>
-              <input name="email" type="email" defaultValue="" required className="input" autoComplete="email" />
-            </label>
-            <label className={styles.field}>
-              <span className={styles.label}>Password</span>
-              <input name="password" type="password" required className="input" autoComplete="current-password" />
-            </label>
-            <Button type="submit" size="lg" className={styles.submit}>
-              Sign in
-            </Button>
-          </form>
+          <LoginForm nextPath={nextPath} />
 
           <p className={styles.requestText}>
             No account yet? <Link href="/signup">Request access</Link> or <Link href="/verify">enter a verification key</Link>.

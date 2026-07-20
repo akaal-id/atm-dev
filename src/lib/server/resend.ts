@@ -6,6 +6,7 @@ interface ResendResult {
   ok: boolean;
   skipped?: boolean;
   error?: string;
+  id?: string;
 }
 
 interface TransactionalEmail {
@@ -56,7 +57,98 @@ export async function sendEmail({ to, subject, html, text, from }: Transactional
     return { ok: false, error: body.slice(0, 500) };
   }
 
-  return { ok: true };
+  const payload = (await response.json().catch(() => null)) as { id?: string } | null;
+  return { ok: true, id: payload?.id };
+}
+
+export type BlastRecipientResult = {
+  email: string;
+  status: "sent" | "failed" | "skipped";
+  error?: string;
+  resendId?: string;
+};
+
+export type BlastEmailInput = {
+  recipients: string[];
+  subject: string;
+  body: string;
+  from?: string;
+  attachmentUrl?: string;
+  attachmentUrls?: string[];
+};
+
+function resolveAttachmentUrls(attachmentUrl?: string, attachmentUrls?: string[]) {
+  const urls = [
+    ...(attachmentUrls || []),
+    ...(attachmentUrl ? [attachmentUrl] : []),
+  ]
+    .map((url) => url.trim())
+    .filter(Boolean);
+  return [...new Set(urls)];
+}
+
+function bodyToHtml(body: string, attachmentUrls: string[] = []) {
+  const htmlBody = escapeHtml(body).replaceAll("\n", "<br />");
+  const attachmentBlock =
+    attachmentUrls.length > 0
+      ? `<p style="margin:20px 0 0">${attachmentUrls
+          .map(
+            (url, index) =>
+              `<a href="${escapeHtml(url)}" style="color:#2563eb;font-weight:700">Lihat lampiran${
+                attachmentUrls.length > 1 ? ` ${index + 1}` : ""
+              }</a>`,
+          )
+          .join("<br />")}</p>`
+      : "";
+  return `
+    <div style="font-family:Plus Jakarta Sans, sans-serif;line-height:1.6;color:#0f172a">
+      <p style="margin:0 0 16px">${htmlBody}</p>
+      ${attachmentBlock}
+      <p style="margin:24px 0 0;font-size:12px;color:#94a3b8">Dikirim via Akaal Email Blast</p>
+    </div>
+  `;
+}
+
+/** Send one email per recipient via existing Resend config; aggregates per-address status. */
+export async function sendBlastEmail({
+  recipients,
+  subject,
+  body,
+  from,
+  attachmentUrl,
+  attachmentUrls,
+}: BlastEmailInput): Promise<{ ok: boolean; skipped?: boolean; results: BlastRecipientResult[] }> {
+  const uniqueRecipients = [...new Set(recipients.map((email) => email.trim().toLowerCase()).filter(Boolean))];
+  const urls = resolveAttachmentUrls(attachmentUrl, attachmentUrls);
+  const html = bodyToHtml(body, urls);
+  const text = urls.length > 0 ? `${body}\n\nLampiran:\n${urls.join("\n")}` : body;
+
+  if (!isResendConfigured()) {
+    return {
+      ok: true,
+      skipped: true,
+      results: uniqueRecipients.map((email) => ({ email, status: "skipped" as const })),
+    };
+  }
+
+  const results: BlastRecipientResult[] = [];
+  for (const email of uniqueRecipients) {
+    const result = await sendEmail({ to: email, subject, html, text, from });
+    if (result.ok) {
+      results.push({
+        email,
+        status: result.skipped ? "skipped" : "sent",
+        resendId: result.id,
+      });
+    } else {
+      results.push({ email, status: "failed", error: result.error });
+    }
+  }
+
+  return {
+    ok: results.every((item) => item.status !== "failed"),
+    results,
+  };
 }
 
 export async function sendNotificationEmail(notification: AppNotification, user?: User): Promise<ResendResult> {
