@@ -52,20 +52,20 @@ export function TaskPickerDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
-      <div className="flex max-h-[80dvh] w-full flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl sm:max-w-lg sm:rounded-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <ListTodo className="h-4 w-4 text-blue-600" /> Attach a task
+    <div className="fixed inset-0 z-50 grid place-items-end bg-neutral-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
+      <div className="flex max-h-[80dvh] w-full flex-col overflow-hidden rounded-t-[2px] bg-card shadow-2xl sm:max-w-lg sm:rounded-[2px]">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="flex items-center gap-2 text-sm font-normal text-foreground">
+            <ListTodo className="h-4 w-4 text-primary" /> Attach a task
           </h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className="rounded-[2px] p-1 text-muted-foreground hover:bg-muted" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="border-b border-slate-100 p-3">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5">
-            <Search className="h-4 w-4 text-slate-400" />
+        <div className="border-b border-border p-3">
+          <div className="flex items-center gap-2 rounded-[2px] border border-border px-2.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
             <input
               autoFocus
               value={query}
@@ -78,9 +78,9 @@ export function TaskPickerDialog({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-2">
           {loading ? (
-            <p className="p-4 text-center text-sm text-slate-400">Loading tasks…</p>
+            <p className="p-4 text-center text-sm text-muted-foreground">Loading tasks…</p>
           ) : filtered.length === 0 ? (
-            <p className="p-4 text-center text-sm text-slate-400">No tasks found.</p>
+            <p className="p-4 text-center text-sm text-muted-foreground">No tasks found.</p>
           ) : (
             filtered.map((task) => (
               <button
@@ -90,15 +90,15 @@ export function TaskPickerDialog({
                   onSelect(task);
                   onClose();
                 }}
-                className="flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition hover:bg-slate-50"
+                className="flex w-full flex-col items-start gap-0.5 rounded-[2px] px-3 py-2 text-left transition hover:bg-surface-inset"
               >
                 <span className="flex w-full items-center gap-2">
-                  <span className="line-clamp-1 text-sm font-medium text-slate-900">{task.title || task.task_id}</span>
-                  <span className="ml-auto shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                  <span className="line-clamp-1 text-sm font-normal text-foreground">{task.title || task.task_id}</span>
+                  <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-normal text-muted-foreground">
                     {task.status}
                   </span>
                 </span>
-                {task.task_id ? <span className="text-[11px] text-slate-400">{task.task_id}</span> : null}
+                {task.task_id ? <span className="text-[11px] text-muted-foreground">{task.task_id}</span> : null}
               </button>
             ))
           )}

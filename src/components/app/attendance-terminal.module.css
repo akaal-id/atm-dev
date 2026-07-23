@@ -18,24 +18,26 @@
 
 .eyebrow {
   margin: 0;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .title {
   margin: 0.25rem 0 0;
-  color: #020617;
+  color: var(--foreground);
   font-size: 1.25rem;
-  font-weight: 800;
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
   margin: 0.35rem 0 0;
   max-width: 34rem;
-  color: #475569;
+  color: var(--muted-foreground);
   font-size: 0.875rem;
   line-height: 1.5;
 }
@@ -47,25 +49,29 @@
 }
 
 .metric {
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-inset);
   padding: 0.8rem;
 }
 
 .metricLabel {
   margin: 0;
-  color: #64748b;
-  font-size: 0.72rem;
-  font-weight: 800;
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .metricValue {
   margin: 0.3rem 0 0;
-  color: #0f172a;
+  color: var(--foreground);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
 .placeLink {
@@ -73,14 +79,13 @@
   max-width: 100%;
   align-items: center;
   gap: 0.3rem;
-  color: #2563eb;
+  color: var(--primary);
   line-height: 1.35;
   overflow-wrap: anywhere;
   text-decoration: none;
 }
 
 .placeLink:hover {
-  color: #1d4ed8;
   text-decoration: underline;
   text-underline-offset: 0.18rem;
 }
@@ -97,11 +102,11 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: 400;
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -121,24 +126,25 @@
 
 .primaryButton {
   composes: button;
-  background: #020617;
-  color: #ffffff;
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: var(--primary-subtle);
+  color: var(--primary);
 }
 
 .primaryButton:not(:disabled):hover {
-  background: #1e293b;
+  background: color-mix(in srgb, var(--primary) 14%, white);
 }
 
 .secondaryButton {
   composes: button;
-  border-color: #cbd5e1;
-  background: #ffffff;
-  color: #0f172a;
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--foreground);
 }
 
 .secondaryButton:not(:disabled):hover {
-  border-color: #94a3b8;
-  background: #f8fafc;
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  background: var(--surface-inset);
 }
 
 .warningButton {
@@ -169,25 +175,25 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   border: 1px solid #a7f3d0;
   background: #ecfdf5;
   color: #047857;
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .message {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  background: var(--primary-subtle);
   padding: 0.75rem;
-  color: #1d4ed8;
+  color: var(--primary);
   font-size: 0.83rem;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .error {
@@ -203,9 +209,9 @@
 
 .timelineTitle {
   margin: 0;
-  color: #0f172a;
+  color: var(--foreground);
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .timelineList {
@@ -225,30 +231,31 @@
   height: 0.5rem;
   width: 0.5rem;
   border-radius: 999px;
-  background: #2563eb;
+  background: var(--primary);
 }
 
 .eventTitle {
   margin: 0;
-  color: #0f172a;
+  color: var(--foreground);
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .eventMeta {
   margin: 0.15rem 0 0;
-  color: #64748b;
+  color: var(--muted-foreground);
   font-size: 0.76rem;
   line-height: 1.35;
 }
 
 .empty {
-  border-radius: 0.5rem;
-  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius);
+  border: 1px dashed color-mix(in srgb, var(--foreground) 12%, transparent);
+  background: var(--surface-inset);
   padding: 0.9rem;
-  color: #64748b;
+  color: var(--muted-foreground);
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .modalBackdrop {
@@ -258,16 +265,16 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgb(15 23 42 / 0.54);
+  background: color-mix(in srgb, var(--foreground) 54%, transparent);
   padding: 1rem;
 }
 
 .modal {
   width: min(100%, 32rem);
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  box-shadow: 0 24px 80px rgb(15 23 42 / 0.26);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--foreground) 18%, transparent);
 }
 
 .modalHeader {
@@ -275,20 +282,20 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
   padding: 1rem;
 }
 
 .modalTitle {
   margin: 0;
-  color: #020617;
+  color: var(--foreground);
   font-size: 1rem;
-  font-weight: 900;
+  font-weight: 400;
 }
 
 .modalCopy {
   margin: 0.35rem 0 0;
-  color: #64748b;
+  color: var(--muted-foreground);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -299,10 +306,10 @@
   width: 2.25rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #475569;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted-foreground);
 }
 
 .modalBody {
@@ -312,9 +319,9 @@
 }
 
 .label {
-  color: #0f172a;
+  color: var(--foreground);
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .required {
@@ -329,9 +336,9 @@
 
 .characterCount {
   margin: 0;
-  color: #64748b;
+  color: var(--muted-foreground);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .modalActions {

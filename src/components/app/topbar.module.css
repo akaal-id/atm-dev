@@ -4,45 +4,77 @@
   z-index: 20;
   display: flex;
   align-items: center;
+  height: var(--shell-header-block-size);
   min-height: var(--shell-header-block-size);
-  border-bottom: 1px solid #e2e8f0;
-  background: rgb(248 250 252 / 0.95);
-  padding: 1rem 1rem;
-  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  padding: 0 1rem;
 }
 
 .inner {
   display: flex;
   width: 100%;
   min-width: 0;
+  height: 100%;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.copy {
+.breadcrumbs {
   min-width: 0;
+  flex: 1;
 }
 
-.title {
+.breadcrumbList {
+  display: flex;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+
+.breadcrumbItem {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.breadcrumbSep {
+  flex-shrink: 0;
+  margin-right: 0.375rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.breadcrumbLink {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #020617;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 150ms ease;
 }
 
-.description {
-  display: none;
-  font-size: 0.75rem;
-  color: #1f2937;
-  background: #e2e8f0;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  margin-top: 0.25rem;
-  margin-left: -0.5rem;
+.breadcrumbLink:hover {
+  color: var(--primary);
+}
+
+.breadcrumbCurrent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--foreground);
 }
 
 .actions {
@@ -55,7 +87,7 @@
 .createTask {
   height: 2.5rem;
   padding: 0 0.75rem;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .icon {
@@ -70,18 +102,20 @@
   height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #334155;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   transition:
     border-color 150ms ease,
-    color 150ms ease;
+    color 150ms ease,
+    background 150ms ease;
 }
 
 .notificationButton:hover {
-  border-color: #cbd5e1;
-  color: #020617;
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
 }
 
 .count {
@@ -94,13 +128,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: #2563eb;
+  background: var(--primary);
   padding: 0 0.25rem;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.625rem;
-  font-weight: 800;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: #ffffff;
+  color: var(--primary-foreground);
 }
 
 .details {
@@ -115,9 +149,9 @@
   list-style: none;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
   padding: 0 0.5rem;
 }
 
@@ -125,7 +159,7 @@
   display: none;
   width: 1rem;
   height: 1rem;
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .menu {
@@ -134,29 +168,30 @@
   margin-top: 0.5rem;
   width: 16rem;
   overflow: hidden;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .userInfo {
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
   padding: 1rem;
 }
 
 .userName {
-  font-weight: 700;
-  color: #020617;
+  font-weight: 400;
+  color: var(--foreground);
 }
 
 .userRole {
   margin-top: 0.125rem;
-  font-family: var(--font-mono);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 400;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--muted-foreground);
 }
 
 .notificationList {
@@ -166,47 +201,47 @@
 
 .notificationItem {
   display: block;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--border);
   padding: 1rem;
   transition: background 150ms ease;
 }
 
 .notificationItemUnread {
-  background: #eff6ff;
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
 }
 
 .notificationItem:hover {
-  background: #f8fafc;
+  background: var(--surface-inset);
 }
 
 .notificationItemUnread:hover {
-  background: #dbeafe;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .notificationEmpty {
   padding: 1rem;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--muted-foreground);
 }
 
 .notificationFooter {
   display: block;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #2563eb;
+  font-weight: 400;
+  color: var(--primary);
   transition: background 150ms ease;
 }
 
 .notificationFooter:hover {
-  background: #f8fafc;
+  background: var(--surface-inset);
 }
 
 .notificationTitle {
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #020617;
+  font-weight: 400;
+  color: var(--foreground);
 }
 
 .notificationText {
@@ -216,11 +251,11 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--muted-foreground);
 }
 
 .logoutForm {
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border);
   padding: 0.5rem;
 }
 
@@ -230,19 +265,19 @@
   height: 2.5rem;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   padding: 0 0.75rem;
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #475569;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
   transition:
     background 150ms ease,
     color 150ms ease;
 }
 
 .logoutButton:hover {
-  background: #f8fafc;
-  color: #020617;
+  background: var(--surface-inset);
+  color: var(--foreground);
 }
 
 @media (min-width: 640px) {
@@ -257,12 +292,6 @@
 
   .chevron {
     display: block;
-  }
-}
-
-@media (min-width: 768px) {
-  .description {
-    display: flex;
   }
 }
 

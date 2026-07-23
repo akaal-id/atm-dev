@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
@@ -45,10 +45,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+    <label className="grid gap-2 text-sm font-normal text-foreground">
       <span>{label}</span>
       {children}
-      {error ? <span className="text-xs font-medium text-red-600">{error}</span> : null}
+      {error ? <span className="text-xs font-normal text-red-600">{error}</span> : null}
     </label>
   );
 }
@@ -162,12 +162,12 @@ export function EmailBlastComposeView() {
           />
         </CardHeader>
         <CardBody className="space-y-5">
-          <p className="text-sm leading-6 text-slate-600">
+          <p className="text-sm leading-6 text-muted-foreground">
             Tulis subjek dan isi pesan, lampirkan dokumen jika perlu, lalu pilih penerima sebelum mengirim blast.
           </p>
 
           <div className="grid min-w-0 gap-4">
-            <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+            <div className="space-y-4 rounded-[2px] border border-border bg-card p-4">
               <Field label="Subject" error={touched.subject ? errors.subject : undefined}>
                 <input
                   name="subject"
@@ -216,7 +216,7 @@ export function EmailBlastComposeView() {
             <div onBlurCapture={() => setTouched((current) => ({ ...current, recipients: true }))}>
               <EmailBlastRecipientsField recipients={recipients} onChange={setRecipients} />
               {touched.recipients && errors.recipients ? (
-                <p className="mt-2 text-xs font-medium text-red-600">{errors.recipients}</p>
+                <p className="mt-2 text-xs font-normal text-red-600">{errors.recipients}</p>
               ) : null}
             </div>
 

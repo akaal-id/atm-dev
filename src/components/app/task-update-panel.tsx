@@ -92,7 +92,7 @@ export function TaskUpdatePanel({
         </div>
       ) : null}
 
-      {error ? <p className="text-xs font-semibold text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs font-normal text-red-600">{error}</p> : null}
 
       {canSubmitDone && task.status !== "Finished" ? (
         <form action={`/api/tasks/${task.task_id}/done`} method="post">
@@ -101,7 +101,7 @@ export function TaskUpdatePanel({
             Submit Done
           </Button>
           {doneDisabled ? (
-            <p className="mt-2 text-xs font-semibold text-amber-600">Leader approval is required before this task can be finished.</p>
+            <p className="mt-2 text-xs font-normal text-amber-600">Leader approval is required before this task can be finished.</p>
           ) : null}
         </form>
       ) : null}

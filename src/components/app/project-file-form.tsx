@@ -93,7 +93,7 @@ export function ProjectFileForm({ taskId }: { taskId: string }) {
   const busy = isUploading || saving;
 
   return (
-    <div className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3">
+    <div className="space-y-3 rounded-[2px] border border-dashed border-border p-3">
       <input
         className="input"
         placeholder="File / folder label (optional)"
@@ -115,36 +115,36 @@ export function ProjectFileForm({ taskId }: { taskId: string }) {
 
       {isUploading ? (
         <div className="space-y-1" role="status" aria-live="polite">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {status === "preparing" ? "Preparing upload…" : status === "finalizing" ? "Finalizing…" : `Uploading… ${progress}%`}
             </span>
             <button
               type="button"
               onClick={cancel}
-              className="inline-flex items-center gap-1 text-slate-500 transition hover:text-red-600"
+              className="inline-flex items-center gap-1 text-muted-foreground transition hover:text-red-600"
               aria-label="Cancel upload"
             >
               <X className="h-3.5 w-3.5" />
               Cancel
             </button>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-blue-600 transition-[width] duration-150"
+              className="h-full rounded-full bg-primary transition-[width] duration-150"
               style={{ width: `${status === "uploading" ? progress : status === "finalizing" ? 100 : 8}%` }}
             />
           </div>
         </div>
       ) : (
-        <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Paperclip className="h-3.5 w-3.5" />
           A folder uploads as one Drive folder containing every file inside it.
         </p>
       )}
 
       {(formError || (error && !isUploading)) ? (
-        <p className="text-xs font-semibold text-red-600" role="alert">
+        <p className="text-xs font-normal text-red-600" role="alert">
           {formError || error}
         </p>
       ) : null}

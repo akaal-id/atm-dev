@@ -66,11 +66,11 @@ export function EmailBlastRecipientsField({ recipients, onChange }: EmailBlastRe
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+    <div className="space-y-3 rounded-[2px] border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-700">Recipients</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">
+          <p className="text-sm font-normal text-foreground">Recipients</p>
+          <p className="mt-0.5 text-xs font-normal text-muted-foreground">
             Ketik atau tempel banyak email (pisahkan dengan koma, spasi, atau Enter).
           </p>
         </div>
@@ -100,10 +100,10 @@ export function EmailBlastRecipientsField({ recipients, onChange }: EmailBlastRe
         </Button>
       </div>
 
-      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm font-normal text-red-600">{error}</p> : null}
 
       {recipients.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-center text-sm font-medium text-slate-500">
+        <div className="rounded-[2px] border border-dashed border-border bg-surface-inset/80 px-4 py-5 text-center text-sm font-normal text-muted-foreground">
           Belum ada penerima. Tambahkan email untuk blast.
         </div>
       ) : (
@@ -111,9 +111,9 @@ export function EmailBlastRecipientsField({ recipients, onChange }: EmailBlastRe
           {recipients.map((email) => (
             <li
               key={email}
-              className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-2.5 pr-1"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-[2px] border border-border bg-surface-inset py-1.5 pl-2.5 pr-1"
             >
-              <span className="truncate text-sm font-medium text-slate-800">{email}</span>
+              <span className="truncate text-sm font-normal text-neutral-800">{email}</span>
               <Button
                 type="button"
                 variant="ghost"

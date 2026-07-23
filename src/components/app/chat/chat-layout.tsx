@@ -47,34 +47,34 @@ export function ChatLayout({
   return (
     <div
       className={cn(
-        "flex min-h-0 min-w-0 overflow-hidden bg-white",
+        "flex min-h-0 min-w-0 overflow-hidden bg-card",
         activeRoomId
           ? "h-full"
-          : "h-full md:rounded-xl md:border md:border-slate-200 md:h-[calc(100dvh-7rem)]",
+          : "h-full md:rounded-[2px] md:border md:border-border md:h-[calc(100dvh-7rem)]",
       )}
     >
       {/* Sidebar */}
       <aside
         className={cn(
-          "w-full shrink-0 flex-col border-r border-slate-200 md:flex md:w-80",
+          "w-full shrink-0 flex-col border-r border-border md:flex md:w-80",
           activeRoomId ? "hidden md:flex" : "flex",
         )}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h1 className="text-base font-semibold text-slate-900">Messages</h1>
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h1 className="text-base font-normal text-foreground">Messages</h1>
           <button
             type="button"
             onClick={() => setNewChatOpen(true)}
-            className="grid h-9 w-9 place-items-center rounded-lg text-blue-600 transition hover:bg-blue-50"
+            className="grid h-9 w-9 place-items-center rounded-[2px] text-primary transition hover:bg-primary-subtle"
             aria-label="New chat"
           >
             <MessageSquarePlus className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="border-b border-slate-100 p-2.5">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5">
-            <Search className="h-4 w-4 text-slate-400" />
+        <div className="border-b border-border p-2.5">
+          <div className="flex items-center gap-2 rounded-[2px] border border-border px-2.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -86,19 +86,19 @@ export function ChatLayout({
 
         <nav className="min-h-0 flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="p-6 text-center text-sm text-slate-400">No conversations yet.</p>
+            <p className="p-6 text-center text-sm text-muted-foreground">No conversations yet.</p>
           ) : (
             filtered.map((room) => (
               <Link
                 key={room.room_id}
                 href={`/chat/${room.room_id}`}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 transition hover:bg-slate-50",
-                  activeRoomId === room.room_id && "bg-blue-50",
+                  "flex items-center gap-3 px-3 py-2.5 transition hover:bg-surface-inset",
+                  activeRoomId === room.room_id && "bg-primary-subtle",
                 )}
               >
                 {room.type === "group" && !room.displayAvatar ? (
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-500">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
                     <Users className="h-5 w-5" />
                   </span>
                 ) : (
@@ -106,10 +106,10 @@ export function ChatLayout({
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-slate-900">{room.displayName}</p>
-                    <span className="ml-auto shrink-0 text-[10px] text-slate-400">{timeAgo(room.last_message_at)}</span>
+                    <p className="truncate text-sm font-normal text-foreground">{room.displayName}</p>
+                    <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{timeAgo(room.last_message_at)}</span>
                   </div>
-                  <p className="truncate text-xs text-slate-400">
+                  <p className="truncate text-xs text-muted-foreground">
                     {room.type === "group" ? `${room.memberCount} members` : "Direct message"}
                   </p>
                 </div>
@@ -172,29 +172,29 @@ function NewChatDialog({ open, onClose, directory }: { open: boolean; onClose: (
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
-      <div className="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl sm:max-w-md sm:rounded-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">New conversation</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">
+    <div className="fixed inset-0 z-50 grid place-items-end bg-neutral-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
+      <div className="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-[2px] bg-card shadow-2xl sm:max-w-md sm:rounded-[2px]">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-normal text-foreground">New conversation</h2>
+          <button type="button" onClick={onClose} className="rounded-[2px] p-1 text-muted-foreground hover:bg-muted" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {isGroup ? (
-          <div className="border-b border-slate-100 p-3">
+          <div className="border-b border-border p-3">
             <input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Group name"
-              className="h-9 w-full rounded-lg border border-slate-200 px-2.5 text-sm outline-none focus:border-blue-400"
+              className="h-9 w-full rounded-[2px] border border-border px-2.5 text-sm outline-none focus:border-primary"
             />
           </div>
         ) : null}
 
-        <div className="border-b border-slate-100 p-3">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5">
-            <Search className="h-4 w-4 text-slate-400" />
+        <div className="border-b border-border p-3">
+          <div className="flex items-center gap-2 rounded-[2px] border border-border px-2.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -211,16 +211,16 @@ function NewChatDialog({ open, onClose, directory }: { open: boolean; onClose: (
               type="button"
               onClick={() => toggle(u.user_id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-50",
-                selected.has(u.user_id) && "bg-blue-50",
+                "flex w-full items-center gap-3 rounded-[2px] px-2 py-2 text-left transition hover:bg-surface-inset",
+                selected.has(u.user_id) && "bg-primary-subtle",
               )}
             >
               <Avatar name={u.full_name} image={u.profile_photo} size="sm" />
-              <span className="truncate text-sm text-slate-900">{u.full_name}</span>
+              <span className="truncate text-sm text-foreground">{u.full_name}</span>
               <span
                 className={cn(
                   "ml-auto grid h-5 w-5 place-items-center rounded-full border",
-                  selected.has(u.user_id) ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300",
+                  selected.has(u.user_id) ? "border-primary bg-primary text-white" : "border-border",
                 )}
               >
                 {selected.has(u.user_id) ? "✓" : ""}
@@ -229,12 +229,12 @@ function NewChatDialog({ open, onClose, directory }: { open: boolean; onClose: (
           ))}
         </div>
 
-        <div className="border-t border-slate-200 p-3">
+        <div className="border-t border-border p-3">
           <button
             type="button"
             onClick={start}
             disabled={selected.size === 0 || pending}
-            className="h-10 w-full rounded-lg bg-blue-600 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+            className="h-10 w-full rounded-[2px] bg-primary text-sm font-normal text-white transition hover:bg-primary disabled:opacity-50"
           >
             {pending ? "Creating…" : isGroup ? `Create group (${selected.size})` : "Start chat"}
           </button>

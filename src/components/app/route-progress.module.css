@@ -11,14 +11,19 @@
   height: 0.25rem;
   width: 100%;
   overflow: hidden;
-  background: rgb(226 232 240 / 0.8);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .bar {
   height: 100%;
   width: 100%;
   transform-origin: left center;
-  background: linear-gradient(90deg, #0f172a, #2563eb, #22c55e);
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    color-mix(in srgb, var(--primary) 70%, white),
+    var(--primary)
+  );
   transition:
     transform 220ms ease,
     opacity 180ms ease;
@@ -28,13 +33,13 @@
   position: absolute;
   top: 0.5rem;
   right: 0.75rem;
-  border-radius: 9999px;
-  border: 1px solid #e2e8f0;
-  background: rgb(255 255 255 / 0.94);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
   padding: 0.25rem 0.5rem;
   font-size: 0.6875rem;
-  font-weight: 800;
-  color: #0f172a;
+  font-weight: 400;
+  color: var(--foreground);
   backdrop-filter: blur(10px);
 }
 

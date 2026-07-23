@@ -10,7 +10,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
@@ -70,16 +70,16 @@ export function EmailBlastResendKeyForm({
         />
       </CardHeader>
       <CardBody className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
-          Email Blast memakai <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">RESEND_API_KEY</code>{" "}
+        <p className="text-sm leading-6 text-muted-foreground">
+          Email Blast memakai <code className="rounded bg-muted px-1.5 py-0.5 text-xs">RESEND_API_KEY</code>{" "}
           dari environment server ATM — sama dengan notifikasi & onboarding. Tidak perlu input key di UI.
         </p>
 
         <div
           className={
             data?.configured
-              ? "flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700"
-              : "flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600"
+              ? "flex items-start gap-2 rounded-[2px] border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-normal text-emerald-700"
+              : "flex items-start gap-2 rounded-[2px] border border-border bg-surface-inset px-3 py-2.5 text-sm font-normal text-muted-foreground"
           }
           role="status"
         >

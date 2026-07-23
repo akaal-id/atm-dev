@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Suspense } from "react";
 
@@ -7,12 +7,7 @@ import { PwaRegister } from "@/components/app/pwa-register";
 import { RouteProgress } from "@/components/app/route-progress";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  display: "swap",
-});
-
+const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
@@ -43,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${plusJakartaSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className={`${plusJakartaSans.className} min-h-full`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className={`${geistSans.className} min-h-full`}>
         <Suspense fallback={null}>
           <RouteProgress />
         </Suspense>

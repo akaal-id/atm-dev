@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );

@@ -56,7 +56,7 @@ export function EmailBlastDetailLoader({ id }: { id: string }) {
 
   if (blast === undefined) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600">
+      <div className="rounded-[2px] border border-border bg-card p-6 text-sm text-muted-foreground">
         Memuat detail blast…
       </div>
     );
@@ -64,9 +64,9 @@ export function EmailBlastDetailLoader({ id }: { id: string }) {
 
   if (!blast) {
     return (
-      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-6">
-        <p className="text-sm font-semibold text-slate-950">Blast tidak ditemukan</p>
-        <p className="text-sm text-slate-600">Data blast mungkin sudah dihapus atau ID tidak valid.</p>
+      <div className="space-y-3 rounded-[2px] border border-border bg-card p-6">
+        <p className="text-sm font-normal text-foreground">Blast tidak ditemukan</p>
+        <p className="text-sm text-muted-foreground">Data blast mungkin sudah dihapus atau ID tidak valid.</p>
         <Link href="/email-blast/history" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10")}>
           Kembali ke history
         </Link>

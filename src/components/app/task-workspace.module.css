@@ -9,6 +9,14 @@
   min-width: 0;
   flex-direction: column;
   gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    135deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--primary) 4%, var(--card)) 100%
+  );
+  padding: 0.875rem;
 }
 
 .toolbarActions {
@@ -21,9 +29,13 @@
   display: grid;
   gap: 0.75rem;
   min-width: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(
+    135deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--primary) 4%, var(--card)) 100%
+  );
   padding: 0.875rem;
 }
 
@@ -38,20 +50,20 @@
   top: 50%;
   width: 1rem;
   height: 1rem;
-  color: #94a3b8;
+  color: var(--muted-foreground);
   transform: translateY(-50%);
 }
 
 .searchInput {
   width: 100%;
   height: 2.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
   padding: 0 0.875rem 0 2.5rem;
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: 400;
+  color: var(--foreground);
   outline: none;
   transition:
     border-color 150ms ease,
@@ -59,13 +71,13 @@
 }
 
 .searchInput::placeholder {
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .searchInput:focus,
 .filterControl:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 4px rgb(219 234 254);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
 }
 
 .filterGrid {
@@ -82,21 +94,21 @@
 
 .filterLabel {
   font-size: 0.75rem;
-  font-weight: 800;
-  color: #475569;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 .filterControl {
   width: 100%;
   height: 2.5rem;
   min-width: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
   padding: 0 0.75rem;
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: 400;
+  color: var(--foreground);
   outline: none;
   transition:
     border-color 150ms ease,
@@ -140,14 +152,14 @@
   justify-content: flex-start;
   gap: 0.35rem;
   border: 1px solid transparent;
-  border-radius: 0.375rem;
+  border-radius: var(--radius);
   background: transparent;
   padding: 0 0.75rem;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--muted-foreground);
   cursor: pointer;
   transition:
     background 150ms ease,
@@ -156,8 +168,8 @@
 }
 
 .listHeaderCell:hover {
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--surface-inset);
+  color: var(--foreground);
 }
 
 .listHeaderCell:focus-visible {
@@ -181,7 +193,7 @@
   width: 0.875rem;
   height: 0.875rem;
   flex-shrink: 0;
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .listHeaderCellActive .listHeaderSortIconMuted {
@@ -189,9 +201,9 @@
 }
 
 .listRow {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
   padding: 0.875rem;
 }
 
@@ -205,13 +217,13 @@
   overflow-wrap: anywhere;
   font-size: 0.9375rem;
   line-height: 1.35;
-  font-weight: 800;
-  color: #020617;
+  font-weight: 400;
+  color: var(--foreground);
   transition: color 150ms ease;
 }
 
 .taskTitle:hover {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 .taskDescription {
@@ -223,14 +235,14 @@
   overflow-wrap: anywhere;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: #64748b;
+  color: var(--muted-foreground);
 }
 
 .cell {
   display: grid;
   gap: 0.125rem;
   min-width: 0;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--border);
   padding-top: 0.75rem;
 }
 
@@ -241,10 +253,10 @@
 .cellLabel {
   margin-bottom: 0.25rem;
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .cellText {
@@ -252,8 +264,8 @@
   text-overflow: ellipsis;
   overflow-wrap: anywhere;
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #334155;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
 
 .avatarLine {
@@ -302,9 +314,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
   padding: 1rem;
 }
 
@@ -340,33 +352,33 @@
   padding-bottom: 0.5rem;
   text-align: center;
   font-size: 0.6875rem;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: var(--muted-foreground);
 }
 
 .dayCell {
   min-height: 8.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
   padding: 0.5rem;
 }
 
 .dayCellMuted {
-  background: #f8fafc;
+  background: var(--surface-inset);
 }
 
 .dayCellToday {
-  border-color: #93c5fd;
-  background: #eff6ff;
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  background: var(--primary-subtle);
 }
 
 .dayNumber {
   font-size: 0.75rem;
-  font-weight: 800;
-  color: #64748b;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 .dayTasks {
@@ -379,7 +391,7 @@
   display: block;
   min-width: 0;
   border: 1px solid transparent;
-  border-radius: 0.375rem;
+  border-radius: var(--radius);
   padding: 0.375rem 0.5rem;
   transition:
     background 150ms ease,
@@ -387,21 +399,21 @@
 }
 
 .calendarTaskNeutral {
-  border-color: #e2e8f0;
-  background: #ffffff;
+  border-color: var(--border);
+  background: var(--card);
 }
 
 .calendarTaskNeutral:hover {
-  background: #f8fafc;
+  background: var(--surface-inset);
 }
 
 .calendarTaskBlue {
-  border-color: #bfdbfe;
-  background: #eff6ff;
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+  background: var(--primary-subtle);
 }
 
 .calendarTaskBlue:hover {
-  background: #dbeafe;
+  background: color-mix(in srgb, var(--primary) 14%, white);
 }
 
 .calendarTaskGreen {
@@ -432,12 +444,12 @@
 }
 
 .calendarTaskPurple {
-  border-color: #ddd6fe;
-  background: #f5f3ff;
+  border-color: color-mix(in srgb, var(--primary) 25%, transparent);
+  background: var(--primary-subtle);
 }
 
 .calendarTaskPurple:hover {
-  background: #ede9fe;
+  background: color-mix(in srgb, var(--primary) 14%, white);
 }
 
 .calendarTaskTitle,
@@ -450,15 +462,15 @@
 
 .calendarTaskTitle {
   font-size: 0.75rem;
-  font-weight: 800;
-  color: #020617;
+  font-weight: 400;
+  color: var(--foreground);
 }
 
 .calendarTaskMeta {
   margin-top: 0.125rem;
   font-size: 0.6875rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 .projectGrid {
@@ -470,9 +482,9 @@
 .projectCard {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
   padding: 1rem;
 }
 
@@ -489,15 +501,15 @@
   margin-top: 0.5rem;
   overflow-wrap: anywhere;
   font-size: 1rem;
-  font-weight: 800;
-  color: #020617;
+  font-weight: 400;
+  color: var(--foreground);
 }
 
 .projectMeta {
   margin-top: 0.25rem;
   font-size: 0.8125rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 .projectStats {
@@ -508,23 +520,23 @@
 }
 
 .statTile {
-  border-radius: 0.5rem;
-  background: #f8fafc;
+  border-radius: var(--radius);
+  background: var(--surface-inset);
   padding: 0.75rem;
 }
 
 .statLabel {
   font-size: 0.6875rem;
-  font-weight: 800;
-  color: #64748b;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 .statValue {
   margin-top: 0.125rem;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 1rem;
-  font-weight: 900;
-  color: #020617;
+  font-weight: 400;
+  color: var(--foreground);
 }
 
 .projectTasks {
@@ -542,12 +554,12 @@
 
 .empty {
   border: 1px dashed #cbd5e1;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
   padding: 1.5rem;
   text-align: center;
   font-size: 0.875rem;
-  font-weight: 700;
-  color: #64748b;
+  font-weight: 400;
+  color: var(--muted-foreground);
 }
 
 @media (min-width: 640px) {
@@ -574,8 +586,8 @@
   .cell {
     min-height: 4rem;
     border-top: 0;
-    border-radius: 0.5rem;
-    background: #f8fafc;
+    border-radius: var(--radius);
+    background: var(--surface-inset);
     padding: 0.75rem;
   }
 }
@@ -614,9 +626,9 @@
 
   .listHeaderBar {
     display: block;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
     padding: 0.25rem;
   }
 

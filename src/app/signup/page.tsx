@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -26,7 +27,14 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   return (
     <main className={styles.page}>
       <section className={styles.card}>
-        <div className={styles.logo}>ATM</div>
+        <Image
+          src="/icon/mono-akaal-white.png"
+          alt="Akaal"
+          width={36}
+          height={36}
+          className={styles.logoMark}
+          priority
+        />
         <p className={styles.eyebrow}>Request access</p>
         <h1 className={styles.title}>Create your Akaal Team Management account</h1>
         <p className={styles.text}>

@@ -38,7 +38,7 @@ function renderLinkedText(value: string) {
 
     if (href) {
       nodes.push(
-        <a key={`link-${index}`} href={href} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 underline-offset-2 hover:underline">
+        <a key={`link-${index}`} href={href} target="_blank" rel="noreferrer" className="font-normal text-primary underline-offset-2 hover:underline">
           {cleanUrl}
         </a>,
       );

@@ -75,13 +75,13 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-3 rounded-[2px] border border-border bg-surface-inset/80 p-3">
       <div className="flex items-center gap-2">
-        <UserPlus className="h-4 w-4 text-slate-500" />
-        <p className="text-sm font-semibold text-slate-700">Tambah kontak</p>
+        <UserPlus className="h-4 w-4 text-muted-foreground" />
+        <p className="text-sm font-normal text-foreground">Tambah kontak</p>
       </div>
 
-      <label className="grid gap-1.5 text-xs font-semibold text-slate-600">
+      <label className="grid gap-1.5 text-xs font-normal text-muted-foreground">
         Nama (opsional)
         <input
           type="text"
@@ -91,14 +91,14 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
             if (error) setError("");
             if (success) setSuccess("");
           }}
-          className="input h-10 text-sm font-medium"
+          className="input h-10 text-sm font-normal"
           placeholder="Nama lengkap"
           autoComplete="name"
           disabled={busy}
         />
       </label>
 
-      <label className="grid gap-1.5 text-xs font-semibold text-slate-600">
+      <label className="grid gap-1.5 text-xs font-normal text-muted-foreground">
         Email
         <input
           type="text"
@@ -108,7 +108,7 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
             if (error) setError("");
             if (success) setSuccess("");
           }}
-          className="input h-10 text-sm font-medium"
+          className="input h-10 text-sm font-normal"
           placeholder="email@contoh.com atau beberapa email dipisah koma"
           autoComplete="email"
           disabled={busy}
@@ -116,8 +116,8 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
         />
       </label>
 
-      {error ? <p className="text-xs font-medium text-red-600">{error}</p> : null}
-      {success ? <p className="text-xs font-medium text-emerald-700">{success}</p> : null}
+      {error ? <p className="text-xs font-normal text-red-600">{error}</p> : null}
+      {success ? <p className="text-xs font-normal text-emerald-700">{success}</p> : null}
 
       <Button type="submit" variant="default" size="lg" className="h-10 w-full" disabled={busy}>
         <Plus className="h-4 w-4" />

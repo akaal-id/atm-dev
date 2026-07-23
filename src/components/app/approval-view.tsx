@@ -234,7 +234,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
     <Page>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2">
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto rounded-xl bg-slate-100/80 p-1 dark:bg-slate-800/50">
+        <div className="flex items-center gap-1 overflow-x-auto rounded-[2px] bg-muted p-1">
           {statusTabs.map((tab) => {
             const isActive = selectedStatus === tab;
             const count =
@@ -247,19 +247,19 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                 key={tab}
                 onClick={() => setSelectedStatus(tab)}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all outline-none",
+                  "flex items-center gap-2 rounded-[2px] px-3 py-1.5 text-xs font-normal whitespace-nowrap transition-all outline-none",
                   isActive
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {tab}
                 <span
                   className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-normal tabular-nums",
                     isActive
-                      ? "bg-slate-100 text-slate-700 dark:bg-slate-600 dark:text-slate-200"
-                      : "bg-slate-200/60 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      ? "bg-muted text-foreground"
+                      : "bg-muted/60 text-muted-foreground"
                   )}
                 >
                   {count}
@@ -271,11 +271,11 @@ export function ApprovalView({ data }: ApprovalViewProps) {
 
         {/* Project Select Filter */}
         <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-slate-400 shrink-0" />
+          <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-purple-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-[2px] border border-border bg-card px-3 py-1.5 text-xs font-normal text-foreground outline-none focus:border-primary"
           >
             {projectOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -288,12 +288,12 @@ export function ApprovalView({ data }: ApprovalViewProps) {
 
       {/* Single Column Grid of Wide Task Cards */}
       {filteredTasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 p-12 text-center dark:border-slate-800">
-          <CheckSquare className="h-10 w-10 text-slate-300 dark:text-slate-700" />
-          <h3 className="mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <div className="flex flex-col items-center justify-center rounded-[2px] border-2 border-dashed border-border p-12 text-center">
+          <CheckSquare className="h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-4 text-sm font-normal text-foreground">
             No tasks found
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             There are no approval candidate tasks matching the filters.
           </p>
         </div>
@@ -318,7 +318,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
             return (
               <article
                 key={task.task_id}
-                className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/10 dark:hover:bg-slate-900/20"
+                className="rounded-[2px] border border-border bg-card p-5 sm:p-6 transition hover:border-border hover:bg-muted/50"
               >
                 {/* Main Card Columns */}
                 <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-6 items-start xl:items-center">
@@ -326,7 +326,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                   {/* Task details column */}
                   <div className="min-w-0 sm:col-span-2 xl:col-span-2">
                     <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                      <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-450">
+                      <code className="rounded-[2px] bg-muted px-1.5 py-0.5 font-mono text-xs font-normal text-muted-foreground">
                         #{task.task_id}
                       </code>
                       <Badge
@@ -343,36 +343,36 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                     </div>
                     <Link
                       href={`/tasks/${task.task_id}`}
-                      className="break-words font-extrabold text-[15px] leading-tight text-slate-950 hover:text-blue-600 dark:text-slate-100 transition"
+                      className="break-words font-normal text-[15px] leading-tight text-foreground hover:text-primary transition"
                     >
                       {task.title}
                     </Link>
                     {task.description && (
-                      <p className="mt-1 line-clamp-1 text-[13px] text-slate-500 leading-normal">
+                      <p className="mt-1 line-clamp-1 text-[13px] text-muted-foreground leading-normal">
                         {task.description}
                       </p>
                     )}
                   </div>
 
                   {/* Project Cell */}
-                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0 dark:border-slate-850">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Project</span>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
+                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-border pt-2 sm:pt-0">
+                    <span className="text-[11px] font-normal uppercase tracking-wider text-muted-foreground">Project</span>
+                    <span className="text-sm font-normal text-foreground truncate">
                       {project?.project_name ?? "No Project"}
                     </span>
                   </div>
 
                   {/* Date Cell */}
-                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0 dark:border-slate-850">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Date</span>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-border pt-2 sm:pt-0">
+                    <span className="text-[11px] font-normal uppercase tracking-wider text-muted-foreground">Date</span>
+                    <span className="text-sm font-normal text-foreground">
                       {task.due_date ? formatShortDate(task.due_date) : "-"}
                     </span>
                   </div>
 
                   {/* Assignees Cell */}
-                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0 dark:border-slate-850">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Assignees</span>
+                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-border pt-2 sm:pt-0">
+                    <span className="text-[11px] font-normal uppercase tracking-wider text-muted-foreground">Assignees</span>
                     <div className="flex -space-x-1.5 overflow-hidden">
                       {task.assigned_to.map((id) => (
                         <Avatar
@@ -385,8 +385,8 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                   </div>
 
                   {/* Status Cell */}
-                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0 items-start dark:border-slate-850">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Status</span>
+                  <div className="flex flex-col gap-1 border-t sm:border-t-0 border-border pt-2 sm:pt-0 items-start">
+                    <span className="text-[11px] font-normal uppercase tracking-wider text-muted-foreground">Status</span>
                     <TaskStatusPill
                       status={task.status}
                       dueDate={task.due_date}
@@ -396,13 +396,13 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                 </div>
 
                 {/* Subtasks and Report display section - side by side */}
-                <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 grid gap-5 md:grid-cols-2 items-stretch">
+                <div className="mt-5 pt-5 border-t border-border grid gap-5 md:grid-cols-2 items-stretch">
                   
                   {/* Left Column: Subtasks Checklists */}
                   <div className="space-y-4">
                     {taskChecklists.length > 0 ? (
                       <>
-                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+                        <div className="flex items-center justify-between text-xs font-normal uppercase tracking-wider text-muted-foreground">
                           <span>Subtasks ({approvedCount}/{taskChecklists.length})</span>
                         </div>
 
@@ -416,14 +416,14 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                              return (
                                <div
                                  key={subtask.checklist_id}
-                                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800"
+                                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-[2px] bg-muted/50 border border-border"
                                >
                                  <p
                                    className={cn(
-                                     "text-xs font-semibold break-words flex-1 transition-all",
+                                     "text-xs font-normal break-words flex-1 transition-all",
                                      itemComplete
-                                       ? "text-slate-400 line-through dark:text-slate-500"
-                                       : "text-slate-800 dark:text-slate-200"
+                                       ? "text-muted-foreground line-through"
+                                       : "text-foreground"
                                    )}
                                  >
                                    {subtask.title}
@@ -440,32 +440,23 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                                          assigneeDone
                                        )
                                      }
-                                     className="flex items-center gap-1.5 outline-none text-xs font-semibold cursor-pointer"
+                                     className="flex items-center gap-1.5 outline-none text-xs font-normal cursor-pointer"
                                    >
                                      <span
                                        className={cn(
-                                         "grid size-4 shrink-0 place-items-center rounded border transition-all",
+                                         "grid size-4 shrink-0 place-items-center rounded-[2px] border transition-all",
                                          assigneeDone
-                                           ? "text-white"
-                                           : "border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800",
+                                           ? "border-primary bg-primary text-white"
+                                           : "border-border bg-card",
                                          (updating || isPending) && "opacity-50"
                                        )}
-                                       style={
-                                         assigneeDone
-                                           ? {
-                                               backgroundColor: "#6d28d9",
-                                               borderColor: "#6d28d9",
-                                             }
-                                           : undefined
-                                       }
                                      >
                                        {assigneeDone ? (
                                          <Check className="size-2.5 stroke-[3]" />
                                        ) : null}
                                      </span>
                                      <span 
-                                       className={cn("transition-colors", assigneeDone ? "" : "text-slate-500")}
-                                       style={assigneeDone ? { color: "#6d28d9" } : undefined}
+                                       className={cn("transition-colors", assigneeDone ? "text-primary" : "text-muted-foreground")}
                                      >
                                        Assignee
                                      </span>
@@ -484,16 +475,16 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                                          )
                                        }
                                        className={cn(
-                                         "flex items-center gap-1.5 outline-none text-xs font-semibold",
+                                         "flex items-center gap-1.5 outline-none text-xs font-normal",
                                          assigneeDone ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                                        )}
                                      >
                                        <span
                                          className={cn(
-                                           "grid size-4 shrink-0 place-items-center rounded border transition-all",
+                                           "grid size-4 shrink-0 place-items-center rounded-[2px] border transition-all",
                                            approved
                                              ? "text-white"
-                                             : "border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800",
+                                             : "border-border bg-card",
                                            (!assigneeDone || updating || isPending) && "opacity-50"
                                          )}
                                          style={
@@ -510,7 +501,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                                          ) : null}
                                        </span>
                                        <span 
-                                         className={cn("transition-colors", approved ? "" : "text-slate-500")}
+                                         className={cn("transition-colors", approved ? "" : "text-muted-foreground")}
                                          style={approved ? { color: "#10b981" } : undefined}
                                        >
                                          Leader
@@ -525,7 +516,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
 
                       </>
                     ) : (
-                      <p className="text-xs italic text-slate-400">
+                      <p className="text-xs italic text-muted-foreground">
                         No subtasks assigned to this task.
                       </p>
                     )}
@@ -533,16 +524,16 @@ export function ApprovalView({ data }: ApprovalViewProps) {
 
                   {/* Right Column: Completion report */}
                   <div className="flex flex-col gap-1.5 h-full">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    <p className="text-xs font-normal uppercase tracking-wider text-muted-foreground">
                       Completion Report
                     </p>
                     {task.report ? (
                       <LinkifiedText
                         text={task.report}
-                        className="flex-1 rounded border border-slate-200 bg-slate-50/50 dark:bg-slate-900/40 p-3 text-xs leading-relaxed text-slate-750 dark:text-slate-300 whitespace-pre-wrap"
+                        className="flex-1 rounded-[2px] border border-border bg-muted/50 p-3 text-xs leading-relaxed text-foreground whitespace-pre-wrap"
                       />
                     ) : (
-                      <p className="text-xs italic text-slate-400">
+                      <p className="text-xs italic text-muted-foreground">
                         No report submitted yet.
                       </p>
                     )}
@@ -551,7 +542,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                 </div>
 
                 {/* Bottom Actions Row - aligned with the grid */}
-                <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 grid gap-5 md:grid-cols-2 items-start">
+                <div className="mt-5 pt-5 border-t border-border grid gap-5 md:grid-cols-2 items-start">
                   
                   {/* Bottom Left: Approve All Button */}
                   <div>
@@ -566,7 +557,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                         taskChecklists.filter((c) => !c.pm_approved).length === 0
                       }
                       onClick={() => handleApproveAll(taskChecklists)}
-                      className="w-full h-10 font-semibold"
+                      className="w-full h-10 font-normal"
                     >
                       Approve All Subtasks
                     </Button>
@@ -579,7 +570,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                         disabled
                         variant="success"
                         size="lg"
-                        className="w-full h-10 font-semibold"
+                        className="w-full h-10 font-normal"
                       >
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Processing...
@@ -591,7 +582,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                         size="lg"
                         disabled={doneDisabled}
                         onClick={() => handleSubmitDone(task.task_id)}
-                        className="w-full h-10 font-semibold"
+                        className="w-full h-10 font-normal"
                       >
                         <CheckCircle2 className="h-4 w-4" />
                         Submit as Done
@@ -599,7 +590,7 @@ export function ApprovalView({ data }: ApprovalViewProps) {
                     )}
 
                     {doneDisabled && (
-                      <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-amber-650 dark:text-amber-500 leading-tight">
+                      <p className="mt-2 flex items-center gap-1.5 text-xs font-normal text-amber-650 dark:text-amber-500 leading-tight">
                         <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                         All subtasks must be approved by the leader first.
                       </p>

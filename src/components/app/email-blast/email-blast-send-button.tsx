@@ -72,11 +72,11 @@ export function EmailBlastSendButton({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+    <div className="space-y-3 rounded-[2px] border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-700">Kirim sekarang</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">
+          <p className="text-sm font-normal text-foreground">Kirim sekarang</p>
+          <p className="mt-0.5 text-xs font-normal text-muted-foreground">
             {formValid
               ? `Siap dikirim ke ${recipientCount} penerima${attachmentCount > 0 ? ` · ${attachmentCount} lampiran` : ""}.`
               : "Lengkapi subjek, body, dan penerima untuk mengaktifkan tombol kirim."}
@@ -111,14 +111,14 @@ export function EmailBlastSendButton({
       </div>
 
       {!formValid && status !== "sending" ? (
-        <p className="text-xs font-medium text-amber-700">
+        <p className="text-xs font-normal text-amber-700">
           Tombol kirim aktif setelah subjek, body, dan minimal satu penerima terisi.
         </p>
       ) : null}
 
       {message && status === "sending" ? (
         <div
-          className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-600"
+          className="flex items-start gap-2 rounded-[2px] border border-border bg-surface-inset px-3 py-2.5 text-sm font-normal text-muted-foreground"
           role="status"
         >
           <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
@@ -130,8 +130,8 @@ export function EmailBlastSendButton({
         <div
           className={
             status === "error"
-              ? "flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-700"
-              : "flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700"
+              ? "flex items-start gap-2 rounded-[2px] border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-normal text-red-700"
+              : "flex items-start gap-2 rounded-[2px] border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-normal text-emerald-700"
           }
           role="status"
         >

@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 
 function SectionTitle({ title }: { title: string }) {
-  return <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>;
+  return <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+    <label className="grid gap-2 text-sm font-normal text-foreground">
       <span>{label}</span>
       {children}
     </label>
@@ -72,8 +72,8 @@ export function EmailBlastSenderNameForm({ defaultName, onSave, onFeedback }: Em
               required
             />
           </Field>
-          <p className="text-xs font-medium text-slate-500">
-            Saat ini tersimpan: <span className="font-semibold text-slate-700">{saved}</span>
+          <p className="text-xs font-normal text-muted-foreground">
+            Saat ini tersimpan: <span className="font-normal text-foreground">{saved}</span>
           </p>
           <Button type="submit" variant="default" size="lg" className="h-10">
             Simpan nama

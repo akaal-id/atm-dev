@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 
 function SectionTitle({ title }: { title: string }) {
-  return <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>;
+  return <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="grid gap-2 text-sm font-semibold text-slate-700">
+    <label className="grid gap-2 text-sm font-normal text-foreground">
       <span>{label}</span>
       {children}
     </label>
@@ -66,8 +66,8 @@ export function EmailBlastCreateGroupForm({ onCreate }: EmailBlastCreateGroupFor
               required
             />
           </Field>
-          {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
-          {success ? <p className="text-sm font-medium text-emerald-700">{success}</p> : null}
+          {error ? <p className="text-sm font-normal text-red-600">{error}</p> : null}
+          {success ? <p className="text-sm font-normal text-emerald-700">{success}</p> : null}
           <Button type="submit" variant="default" size="xl" className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Buat grup

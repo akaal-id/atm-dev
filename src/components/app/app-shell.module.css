@@ -1,13 +1,19 @@
 .shell {
-  --shell-header-block-size: calc(2rem + 1.5rem + 0.25rem + 1.25rem);
+  --shell-header-block-size: 5.8125rem; /* 93px — matches brandBlock */
+  --shell-border: var(--border);
+  --shell-bg: #ffffff;
+  --shell-fg: var(--foreground);
+  position: relative;
   min-height: 100dvh;
   max-width: 100%;
   overflow-x: clip;
-  background: #f8fafc;
-  color: #020617;
+  background: var(--shell-bg);
+  color: var(--shell-fg);
 }
 
 .layout {
+  position: relative;
+  z-index: 1;
   display: block;
   min-width: 0;
 }
@@ -15,6 +21,7 @@
 .content {
   min-width: 0;
   max-width: 100%;
+  background: #ffffff;
   padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
 }
 
@@ -26,17 +33,21 @@
 }
 
 .main {
+  display: grid;
+  gap: 1.25rem;
   width: 100%;
   min-width: 0;
   max-width: 94rem;
   margin: 0 auto;
   padding: 1rem 1rem 1.25rem;
+  background: #ffffff;
 }
 
 .mainChatRoom {
   display: flex;
   flex: 1;
   flex-direction: column;
+  gap: 0;
   min-height: 0;
   max-width: none;
   margin: 0;
@@ -45,7 +56,7 @@
 
 @media (min-width: 640px) {
   .main {
-    padding: 2rem;
+    padding: 1.5rem 2rem 2rem;
   }
 }
 

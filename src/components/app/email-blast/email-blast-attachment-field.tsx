@@ -45,11 +45,11 @@ export function EmailBlastAttachmentField({ attachments, onChange }: EmailBlastA
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+    <div className="space-y-3 rounded-[2px] border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-700">Attachments</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">Flyer, proposal, atau dokumen promosi (opsional).</p>
+          <p className="text-sm font-normal text-foreground">Attachments</p>
+          <p className="mt-0.5 text-xs font-normal text-muted-foreground">Flyer, proposal, atau dokumen promosi (opsional).</p>
         </div>
         <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => inputRef.current?.click()}>
           <Paperclip className="h-4 w-4" />
@@ -67,7 +67,7 @@ export function EmailBlastAttachmentField({ attachments, onChange }: EmailBlastA
       />
 
       {attachments.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-4 py-5 text-center text-sm font-medium text-slate-500">
+        <div className="rounded-[2px] border border-dashed border-border bg-surface-inset/80 px-4 py-5 text-center text-sm font-normal text-muted-foreground">
           Belum ada lampiran. Klik &quot;Add files&quot; untuk mengunggah.
         </div>
       ) : (
@@ -75,12 +75,12 @@ export function EmailBlastAttachmentField({ attachments, onChange }: EmailBlastA
           {attachments.map((item) => (
             <li
               key={item.id}
-              className="flex min-w-0 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5"
+              className="flex min-w-0 items-center gap-3 rounded-[2px] border border-border bg-surface-inset px-3 py-2.5"
             >
-              <Paperclip className="h-4 w-4 shrink-0 text-slate-400" />
+              <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">{item.file.name}</p>
-                <p className="text-xs font-medium text-slate-500">{formatFileSize(item.file.size)}</p>
+                <p className="truncate text-sm font-normal text-foreground">{item.file.name}</p>
+                <p className="text-xs font-normal text-muted-foreground">{formatFileSize(item.file.size)}</p>
               </div>
               <Button
                 type="button"

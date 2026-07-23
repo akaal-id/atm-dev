@@ -108,32 +108,32 @@ export function MembersDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
-      <div className="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl sm:max-w-md sm:rounded-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 className="text-sm font-semibold text-slate-900">
+    <div className="fixed inset-0 z-50 grid place-items-end bg-neutral-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
+      <div className="flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-[2px] bg-card shadow-2xl sm:max-w-md sm:rounded-[2px]">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-normal text-foreground">
             {roomType === "private" ? "Participants" : "Members"} · {localMembers.length}
           </h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className="rounded-[2px] p-1 text-muted-foreground hover:bg-muted" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-border">
             {localMembers.map((m) => (
               <li key={m.user_id} className="flex items-center gap-3 px-4 py-2.5">
                 <Avatar name={m.author?.full_name ?? m.user_id} image={m.author?.profile_photo} size="sm" />
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-slate-900">{m.author?.full_name ?? m.user_id}</p>
-                  <p className="text-[11px] capitalize text-slate-400">{m.role}</p>
+                  <p className="truncate text-sm font-normal text-foreground">{m.author?.full_name ?? m.user_id}</p>
+                  <p className="text-[11px] capitalize text-muted-foreground">{m.role}</p>
                 </div>
                 {(canRemoveOthers && m.user_id !== currentUserId) || m.user_id === currentUserId ? (
                   <button
                     type="button"
                     onClick={() => handleRemove(m.user_id)}
                     disabled={pending}
-                    className="ml-auto grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="ml-auto grid h-8 w-8 place-items-center rounded-[2px] text-muted-foreground transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                     aria-label={m.user_id === currentUserId ? "Leave chat" : `Remove ${m.author?.full_name ?? m.user_id}`}
                   >
                     <UserMinus className="h-4 w-4" />
@@ -144,10 +144,10 @@ export function MembersDialog({
           </ul>
 
           {canManage && roomType === "group" ? (
-            <div className="border-t border-slate-100 p-3">
-              <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Add member</p>
-              <div className="mb-2 flex items-center gap-2 rounded-lg border border-slate-200 px-2.5">
-                <Search className="h-4 w-4 text-slate-400" />
+            <div className="border-t border-border p-3">
+              <p className="mb-2 px-1 text-xs font-normal uppercase tracking-wide text-muted-foreground">Add member</p>
+              <div className="mb-2 flex items-center gap-2 rounded-[2px] border border-border px-2.5">
+                <Search className="h-4 w-4 text-muted-foreground" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -162,19 +162,19 @@ export function MembersDialog({
                       type="button"
                       onClick={() => handleAdd(u)}
                       disabled={pending}
-                      className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-50 disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-[2px] px-2 py-2 text-left transition hover:bg-surface-inset disabled:opacity-50"
                     >
                       <Avatar name={u.full_name} image={u.profile_photo} size="sm" />
-                      <span className="truncate text-sm text-slate-900">{u.full_name}</span>
-                      <UserPlus className="ml-auto h-4 w-4 text-blue-600" />
+                      <span className="truncate text-sm text-foreground">{u.full_name}</span>
+                      <UserPlus className="ml-auto h-4 w-4 text-primary" />
                     </button>
                   </li>
                 ))}
-                {addable.length === 0 ? <li className="px-2 py-3 text-center text-xs text-slate-400">No more users to add.</li> : null}
+                {addable.length === 0 ? <li className="px-2 py-3 text-center text-xs text-muted-foreground">No more users to add.</li> : null}
               </ul>
             </div>
           ) : roomType === "private" ? (
-            <p className="border-t border-slate-100 p-4 text-center text-xs text-slate-400">
+            <p className="border-t border-border p-4 text-center text-xs text-muted-foreground">
               To chat with more people, start a group from Messages → New chat.
             </p>
           ) : null}

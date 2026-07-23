@@ -84,11 +84,11 @@ export function TaskFormModal({
   return (
     <>
     <ModalPortal>
-    <div className="fixed inset-0 z-50 grid place-items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
-      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-xl bg-white shadow-2xl sm:max-w-3xl sm:rounded-xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+    <div className="fixed inset-0 z-50 grid place-items-end bg-neutral-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
+      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[2px] bg-card shadow-2xl sm:max-w-3xl sm:rounded-[2px]">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold tracking-normal text-slate-950">{heading}</h2>
+            <h2 className="text-lg font-normal tracking-normal text-foreground">{heading}</h2>
           </div>
           <Button
             type="button"
@@ -133,8 +133,8 @@ export function TaskFormModal({
           <div className="grid gap-4 md:grid-cols-2">
             {isEdit ? (
               <Field label="Project">
-                <div className="input flex min-h-11 items-center bg-slate-50 text-sm font-semibold text-slate-700">{projectLabel}</div>
-                <p className="text-xs font-medium text-slate-500">Project cannot be changed because the ticket ID prefix is set at creation.</p>
+                <div className="input flex min-h-11 items-center bg-surface-inset text-sm font-normal text-foreground">{projectLabel}</div>
+                <p className="text-xs font-normal text-muted-foreground">Project cannot be changed because the ticket ID prefix is set at creation.</p>
               </Field>
             ) : (
               <Field label="Project">
@@ -168,25 +168,25 @@ export function TaskFormModal({
             onClick={() => setNeedLeaderApproval((current) => !current)}
             className={cn(
               "h-auto w-full justify-between gap-3 p-4 text-left font-normal",
-              needLeaderApproval ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50" : "text-slate-700",
+              needLeaderApproval ? "border-primary/30 bg-primary-subtle text-primary hover:bg-primary-subtle" : "text-foreground",
             )}
           >
             <span className="flex min-w-0 items-center gap-3">
-              <span className={cn("grid h-9 w-9 place-items-center rounded-lg", needLeaderApproval ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500")}>
+              <span className={cn("grid h-9 w-9 place-items-center rounded-[2px]", needLeaderApproval ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">Need Leader Approval</span>
-                <span className="mt-1 block text-xs font-medium text-slate-500">Show Leader approval checkboxes for Manager, Admin, or Super Admin review.</span>
+                <span className="block text-sm font-normal">Need Leader Approval</span>
+                <span className="mt-1 block text-xs font-normal text-muted-foreground">Show Leader approval checkboxes for Manager, Admin, or Super Admin review.</span>
               </span>
             </span>
-            <span className={cn("rounded-full px-2.5 py-1 text-xs font-bold", needLeaderApproval ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500")}>
+            <span className={cn("rounded-full px-2.5 py-1 text-xs font-normal", needLeaderApproval ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
               {needLeaderApproval ? "On" : "Off"}
             </span>
           </Button>
 
           <Field label="Assignees">
-            <div className="grid max-h-56 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
+            <div className="grid max-h-56 gap-2 overflow-y-auto rounded-[2px] border border-border bg-surface-inset p-2 sm:grid-cols-2">
               {activeUsers.map((user) => {
                 const checked = isEdit
                   ? task.assigned_to.includes(user.user_id)
@@ -196,11 +196,11 @@ export function TaskFormModal({
                   <label
                     key={user.user_id}
                     className={cn(
-                      "flex min-w-0 items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-sm font-semibold text-slate-700",
-                      checked && "border-blue-200 bg-blue-50 text-blue-700",
+                      "flex min-w-0 items-center gap-2 rounded-[2px] border border-white bg-card px-3 py-2 text-sm font-normal text-foreground",
+                      checked && "border-primary/30 bg-primary-subtle text-primary",
                     )}
                   >
-                    <input name="assigned_to" type="checkbox" defaultChecked={checked} value={user.user_id} className="h-4 w-4 accent-slate-950" />
+                    <input name="assigned_to" type="checkbox" defaultChecked={checked} value={user.user_id} className="h-4 w-4 accent-primary" />
                     <span className="truncate">{user.full_name}</span>
                   </label>
                 );
@@ -228,7 +228,7 @@ export function TaskFormModal({
             />
           </Field>
 
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" size="xl" onClick={() => setOpen(false)}>
               Cancel
             </Button>
@@ -275,7 +275,7 @@ export function CreateTaskModal({
 
   return (
     <>
-      <Button type="button" variant={triggerVariant} size="lg" className={cn("h-10 gap-2 px-3 font-semibold", triggerClassName)} onClick={() => setOpen(true)}>
+      <Button type="button" variant={triggerVariant} size="lg" className={cn("h-10 gap-2 px-3 font-normal", triggerClassName)} onClick={() => setOpen(true)}>
         <Plus className="h-4 w-4" />
         {title}
       </Button>
@@ -325,7 +325,7 @@ export function EditTaskModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2">
-      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <span className="text-sm font-normal text-foreground">{label}</span>
       {children}
     </label>
   );

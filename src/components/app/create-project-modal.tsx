@@ -51,7 +51,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
     <>
 
-      <Button type="button" size="lg" className="h-10 gap-2 px-3 font-semibold" onClick={() => setOpen(true)}>
+      <Button type="button" size="lg" className="h-10 gap-2 px-3 font-normal" onClick={() => setOpen(true)}>
 
         <Plus className="h-4 w-4" />
 
@@ -65,17 +65,17 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
         <ModalPortal>
 
-        <div className="fixed inset-0 z-50 grid place-items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
+        <div className="fixed inset-0 z-50 grid place-items-end bg-neutral-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
 
-          <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-xl bg-white shadow-2xl sm:max-w-3xl sm:rounded-xl">
+          <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[2px] bg-card shadow-2xl sm:max-w-3xl sm:rounded-[2px]">
 
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-5 py-4">
 
               <div>
 
-                <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Project workspace</p>
+                <p className="text-xs font-normal uppercase tracking-wide text-primary">Project workspace</p>
 
-                <h2 className="text-lg font-semibold tracking-normal text-slate-950">Create project</h2>
+                <h2 className="text-lg font-normal tracking-normal text-foreground">Create project</h2>
 
               </div>
 
@@ -161,7 +161,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
               <Field label="Members">
 
-                <div className="grid max-h-56 gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 sm:grid-cols-2">
+                <div className="grid max-h-56 gap-2 overflow-y-auto rounded-[2px] border border-border bg-surface-inset p-2 sm:grid-cols-2">
 
                   {activeUsers.map((user) => (
 
@@ -171,15 +171,15 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
                       className={cn(
 
-                        "flex min-w-0 items-center gap-2 rounded-lg border border-white bg-white px-3 py-2 text-sm font-semibold text-slate-700",
+                        "flex min-w-0 items-center gap-2 rounded-[2px] border border-white bg-card px-3 py-2 text-sm font-normal text-foreground",
 
-                        user.user_id === currentUser.user_id && "border-blue-200 bg-blue-50 text-blue-700",
+                        user.user_id === currentUser.user_id && "border-primary/30 bg-primary-subtle text-primary",
 
                       )}
 
                     >
 
-                      <input name="members" type="checkbox" value={user.user_id} defaultChecked={user.user_id === currentUser.user_id} className="h-4 w-4 accent-slate-950" />
+                      <input name="members" type="checkbox" value={user.user_id} defaultChecked={user.user_id === currentUser.user_id} className="h-4 w-4 accent-primary" />
 
                       <span className="truncate">{user.full_name}</span>
 
@@ -209,7 +209,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
 
 
-              <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
 
                 <Button type="button" variant="outline" size="xl" onClick={() => setOpen(false)}>
 
@@ -251,7 +251,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
     <label className="block space-y-2">
 
-      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <span className="text-sm font-normal text-foreground">{label}</span>
 
       {children}
 

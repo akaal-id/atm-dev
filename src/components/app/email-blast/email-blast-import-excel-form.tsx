@@ -51,18 +51,18 @@ export function EmailBlastImportExcelForm({ groupName, busy = false, onAdd }: Em
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+    <div className="space-y-3 rounded-[2px] border border-border bg-surface-inset/80 p-3">
       <div className="flex items-center gap-2">
-        <FileSpreadsheet className="h-4 w-4 text-slate-500" />
-        <p className="text-sm font-semibold text-slate-700">Tambah dari Excel</p>
+        <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+        <p className="text-sm font-normal text-foreground">Tambah dari Excel</p>
       </div>
 
-      <p className="text-xs leading-5 text-slate-500">
-        Baris 1: header <span className="font-semibold text-slate-700">nama</span> |{" "}
-        <span className="font-semibold text-slate-700">email</span>. Baris berikutnya berisi data kontak.
-        Format: <code className="rounded bg-white px-1 py-0.5">.xlsx</code>,{" "}
-        <code className="rounded bg-white px-1 py-0.5">.xls</code>, atau{" "}
-        <code className="rounded bg-white px-1 py-0.5">.csv</code>.
+      <p className="text-xs leading-5 text-muted-foreground">
+        Baris 1: header <span className="font-normal text-foreground">nama</span> |{" "}
+        <span className="font-normal text-foreground">email</span>. Baris berikutnya berisi data kontak.
+        Format: <code className="rounded bg-card px-1 py-0.5">.xlsx</code>,{" "}
+        <code className="rounded bg-card px-1 py-0.5">.xls</code>, atau{" "}
+        <code className="rounded bg-card px-1 py-0.5">.csv</code>.
       </p>
 
       <input
@@ -74,9 +74,9 @@ export function EmailBlastImportExcelForm({ groupName, busy = false, onAdd }: Em
         onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
       />
 
-      {fileName ? <p className="truncate text-xs font-medium text-slate-600">File: {fileName}</p> : null}
-      {error ? <p className="text-xs font-medium text-red-600">{error}</p> : null}
-      {success ? <p className="text-xs font-medium text-emerald-700">{success}</p> : null}
+      {fileName ? <p className="truncate text-xs font-normal text-muted-foreground">File: {fileName}</p> : null}
+      {error ? <p className="text-xs font-normal text-red-600">{error}</p> : null}
+      {success ? <p className="text-xs font-normal text-emerald-700">{success}</p> : null}
 
       <Button
         type="button"

@@ -143,7 +143,7 @@ function filterTasks(tasks: Task[], users: User[], projects: Project[], filters:
 }
 
 function TicketId({ id }: { id: string }) {
-  return <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs font-semibold text-slate-600">#{id}</code>;
+  return <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-normal text-muted-foreground">#{id}</code>;
 }
 
 function TaskAssignees({ task, users }: { task: Task; users: User[] }) {
@@ -478,7 +478,7 @@ function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
                             </Link>
                           );
                         })}
-                        {dayTasks.length > 4 ? <p className="text-xs font-bold text-blue-600">+{dayTasks.length - 4} more</p> : null}
+                        {dayTasks.length > 4 ? <p className="text-xs font-normal text-primary">+{dayTasks.length - 4} more</p> : null}
                       </div>
                     </>
                   ) : null}
@@ -494,11 +494,11 @@ function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
 
 function ProjectTaskCard({ task, users }: { task: Task; users: User[] }) {
   return (
-    <Link href={`/tasks/${task.task_id}`} className={cn(styles.projectTaskCard, "block rounded-lg border border-slate-200 p-3 transition hover:border-slate-300 hover:bg-slate-50")}>
+    <Link href={`/tasks/${task.task_id}`} className={cn(styles.projectTaskCard, "block rounded-[2px] border border-border p-3 transition hover:border-border hover:bg-surface-inset")}>
       <div className="flex min-w-0 items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <TicketId id={task.task_id} />
-          <p className="mt-2 break-words text-sm font-bold text-slate-950">{task.title}</p>
+          <p className="mt-2 break-words text-sm font-normal text-foreground">{task.title}</p>
         </div>
         <div className="shrink-0">
           <TaskStatusPill status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />

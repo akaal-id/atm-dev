@@ -164,7 +164,7 @@ export function EmployeeAdminControls({
         </div>
       </form>
 
-      {message ? <p className="rounded-lg bg-slate-50 p-3 text-sm font-semibold text-slate-600">{message}</p> : null}
+      {message ? <p className="rounded-[2px] bg-surface-inset p-3 text-sm font-normal text-muted-foreground">{message}</p> : null}
 
       {canRemove ? (
         <Button type="button" variant="destructiveOutline" size="xl" className="w-full md:w-auto" onClick={removeUser} disabled={removing}>
@@ -172,7 +172,7 @@ export function EmployeeAdminControls({
           {removing ? "Removing..." : "Remove user account"}
         </Button>
       ) : (
-        <p className="text-sm font-medium text-slate-500">You cannot remove your own account while signed in.</p>
+        <p className="text-sm font-normal text-muted-foreground">You cannot remove your own account while signed in.</p>
       )}
     </div>
   );
@@ -181,7 +181,7 @@ export function EmployeeAdminControls({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2">
-      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <span className="text-sm font-normal text-foreground">{label}</span>
       {children}
     </label>
   );

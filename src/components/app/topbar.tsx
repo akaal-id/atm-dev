@@ -8,7 +8,8 @@ import { NotificationLink } from "@/components/app/notification-actions";
 import { AppIcon } from "@/components/app/icons";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { isChatRoomPath, pageCopy } from "@/lib/navigation";
+import { isChatRoomPath } from "@/lib/navigation";
+import { getBreadcrumbs } from "@/lib/page-meta";
 import type { AppNotification, CurrentUser } from "@/lib/types";
 import styles from "./topbar.module.css";
 
@@ -21,29 +22,11 @@ interface TopbarProps {
   taskModalProjects: TaskModalProject[];
 }
 
-function getCopy(pathname: string) {
-  const exact = pageCopy[pathname];
-  if (exact) return exact;
-  if (pathname.startsWith("/tasks/")) return { title: "Task detail", description: "Checklist, comments, status history, and activity log." };
-  if (pathname.startsWith("/employees/")) return { title: "Employee profile", description: "Profile, attendance, task history, birthday, and performance score." };
-  if (pathname.startsWith("/email-blast/history/")) {
-    return { title: "Blast detail", description: "Email content, recipients, and delivery status for this send." };
-  }
-  if (pathname.startsWith("/email-blast/contacts/") && pathname !== "/email-blast/contacts") {
-    return pageCopy["/email-blast/contacts/[id]"] || {
-      title: "Group detail",
-      description: "Add or remove contacts for this group, then use it when composing a blast.",
-    };
-  }
-  if (pathname.startsWith("/chat")) return pageCopy["/chat"];
-  return pageCopy["/dashboard"];
-}
-
 export function Topbar({ user, unreadCount, recentNotifications, canCreateTasks, taskModalUsers, taskModalProjects }: TopbarProps) {
   const pathname = usePathname();
   if (isChatRoomPath(pathname)) return null;
 
-  const copy = getCopy(pathname);
+  const breadcrumbs = getBreadcrumbs(pathname);
   const previewNotifications = [...recentNotifications]
     .sort((left, right) => Number(left.is_read) - Number(right.is_read) || new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
     .slice(0, 3);
@@ -51,10 +34,27 @@ export function Topbar({ user, unreadCount, recentNotifications, canCreateTasks,
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-        <div className={styles.copy}>
-          <h1 className={styles.title}>{copy.title}</h1>
-          <p className={styles.description}>{copy.description}</p>
-        </div>
+        <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
+          <ol className={styles.breadcrumbList}>
+            {breadcrumbs.map((crumb, index) => {
+              const isLast = index === breadcrumbs.length - 1;
+              return (
+                <li key={`${crumb.label}-${index}`} className={styles.breadcrumbItem}>
+                  {index > 0 ? <span className={styles.breadcrumbSep} aria-hidden="true">/</span> : null}
+                  {crumb.href && !isLast ? (
+                    <Link href={crumb.href} className={styles.breadcrumbLink}>
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className={styles.breadcrumbCurrent} aria-current={isLast ? "page" : undefined}>
+                      {crumb.label}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
 
         <div className={styles.actions}>
           {canCreateTasks ? (

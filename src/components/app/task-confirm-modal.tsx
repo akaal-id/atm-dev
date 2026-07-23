@@ -30,11 +30,11 @@ export function TaskConfirmModal({
 
   return (
     <ModalPortal>
-    <div className="fixed inset-0 z-[60] grid place-items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
-      <div className="w-full rounded-t-xl bg-white shadow-2xl sm:max-w-md sm:rounded-xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+    <div className="fixed inset-0 z-[60] grid place-items-end bg-neutral-950/40 p-0 backdrop-blur-sm sm:place-items-center sm:p-6">
+      <div className="w-full rounded-t-[2px] bg-card shadow-2xl sm:max-w-md sm:rounded-[2px]">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
-            <h2 className="text-lg font-semibold tracking-normal text-slate-950">{title}</h2>
+            <h2 className="text-lg font-normal tracking-normal text-foreground">{title}</h2>
           </div>
           <Button
             type="button"
@@ -49,9 +49,9 @@ export function TaskConfirmModal({
         </div>
 
         <div className="space-y-5 p-5">
-          <p className="text-sm leading-6 text-slate-600">{description}</p>
+          <p className="text-sm leading-6 text-muted-foreground">{description}</p>
 
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
             <Button type="button" variant="outline" size="xl" onClick={() => onOpenChange(false)} disabled={confirming}>
               {cancelLabel}
             </Button>

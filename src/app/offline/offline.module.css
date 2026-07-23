@@ -27,14 +27,14 @@
   border-radius: 0.5rem;
   background: #020617;
   font-size: 0.875rem;
-  font-weight: 900;
+  font-weight: 400;
   color: #ffffff;
 }
 
 .title {
   margin-top: 1.5rem;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0;
   color: #020617;
 }
@@ -56,6 +56,6 @@
   background: #020617;
   padding: 0 1rem;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 400;
   color: #ffffff;
 }

@@ -17,7 +17,7 @@ const ChatInput = dynamic(
   () => import("@/components/app/chat/chat-input").then((mod) => mod.ChatInput),
   {
     ssr: false,
-    loading: () => <div className="h-[58px] border-t border-slate-200 bg-white" aria-hidden />,
+    loading: () => <div className="h-[58px] border-t border-border bg-card" aria-hidden />,
   },
 );
 
@@ -156,23 +156,23 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-slate-50">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-surface-inset">
       {/* Header */}
-      <header className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
-        <Link href="/chat" className="grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 md:hidden" aria-label="Back">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-2.5">
+        <Link href="/chat" className="grid h-9 w-9 place-items-center rounded-[2px] text-muted-foreground hover:bg-muted md:hidden" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <Avatar name={title} image={room.type === "group" ? room.avatar_url : undefined} size="sm" />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900">{title}</p>
-          <p className="text-[11px] text-slate-400">
+          <p className="truncate text-sm font-normal text-foreground">{title}</p>
+          <p className="text-[11px] text-muted-foreground">
             {room.type === "group" ? `${roomMembers.length} members` : "Direct message"}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setMembersOpen(true)}
-          className="ml-auto grid h-9 w-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+          className="ml-auto grid h-9 w-9 place-items-center rounded-[2px] text-muted-foreground hover:bg-muted"
           aria-label="Members"
         >
           <Users className="h-5 w-5" />
@@ -188,11 +188,11 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
           return <MessageBubble key={message.message_id} message={message} isOwn={isOwn} showAuthor={showAuthor} />;
         })}
         {optimisticMessages.length === 0 ? (
-          <p className="py-10 text-center text-sm text-slate-400">No messages yet. Say hello 👋</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">No messages yet. Say hello 👋</p>
         ) : null}
       </div>
 
-      <div className="mt-auto shrink-0 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="mt-auto shrink-0 border-t border-border bg-card pb-[env(safe-area-inset-bottom,0px)]">
         <ChatInput onSend={handleSend} />
       </div>
 

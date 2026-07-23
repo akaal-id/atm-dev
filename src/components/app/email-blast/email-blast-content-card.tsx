@@ -3,7 +3,7 @@ import { Paperclip } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 
 function SectionTitle({ title }: { title: string }) {
-  return <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>;
+  return <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>;
 }
 
 interface EmailBlastContentCardProps {
@@ -27,28 +27,28 @@ export function EmailBlastContentCard({
       </CardHeader>
       <CardBody className="space-y-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Subject</p>
-          <h1 className="mt-1 text-lg font-semibold tracking-normal text-slate-950">{subject}</h1>
+          <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Subject</p>
+          <h1 className="mt-1 text-lg font-normal tracking-normal text-foreground">{subject}</h1>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Body</p>
-          <pre className="mt-2 whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 font-sans text-sm leading-6 text-slate-700">
+          <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Body</p>
+          <pre className="mt-2 whitespace-pre-wrap rounded-[2px] border border-border bg-surface-inset p-4 font-sans text-sm leading-6 text-foreground">
             {body}
           </pre>
         </div>
         {attachmentName ? (
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <Paperclip className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+          <div className="flex items-center gap-2 rounded-[2px] border border-border bg-card px-3 py-2.5">
+            <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             {attachmentUrl ? (
-              <a href={attachmentUrl} className="truncate text-sm font-semibold text-blue-600 hover:underline">
+              <a href={attachmentUrl} className="truncate text-sm font-normal text-primary hover:underline">
                 {attachmentName}
               </a>
             ) : (
-              <span className="truncate text-sm font-semibold text-slate-800">{attachmentName}</span>
+              <span className="truncate text-sm font-normal text-neutral-800">{attachmentName}</span>
             )}
           </div>
         ) : (
-          <p className="text-sm font-medium text-slate-400">Tidak ada lampiran.</p>
+          <p className="text-sm font-normal text-muted-foreground">Tidak ada lampiran.</p>
         )}
       </CardBody>
     </Card>

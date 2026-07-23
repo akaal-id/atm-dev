@@ -28,27 +28,27 @@ export function EmailBlastGroupPicker({ groups, onApplyGroup }: EmailBlastGroupP
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+    <div className="space-y-3 rounded-[2px] border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-700">Pilih grup kontak</p>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">
+          <p className="text-sm font-normal text-foreground">Pilih grup kontak</p>
+          <p className="mt-0.5 text-xs font-normal text-muted-foreground">
             Pratinjau anggota grup, lalu tambahkan ke daftar penerima.
           </p>
         </div>
-        <Link href="/email-blast/contacts" className="text-sm font-semibold text-blue-600 hover:underline">
+        <Link href="/email-blast/contacts" className="text-sm font-normal text-primary hover:underline">
           Kelola grup
         </Link>
       </div>
 
       {groups.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-3 py-4 text-sm font-medium text-slate-500">
+        <p className="rounded-[2px] border border-dashed border-border bg-surface-inset/80 px-3 py-4 text-sm font-normal text-muted-foreground">
           Belum ada grup. Buat grup di halaman kontak terlebih dahulu.
         </p>
       ) : (
         <>
           <div className="relative">
-            <Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
             <select
               className="input appearance-none pl-9"
               value={selectedGroupId}
@@ -65,22 +65,22 @@ export function EmailBlastGroupPicker({ groups, onApplyGroup }: EmailBlastGroupP
           </div>
 
           {selectedGroup ? (
-            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+            <div className="space-y-3 rounded-[2px] border border-border bg-surface-inset/80 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-slate-800">Pratinjau: {selectedGroup.groupName}</p>
+                <p className="text-sm font-normal text-neutral-800">Pratinjau: {selectedGroup.groupName}</p>
                 <Badge tone="blue">{selectedGroup.contacts.length} kontak</Badge>
               </div>
               {selectedGroup.contacts.length === 0 ? (
-                <p className="text-sm font-medium text-slate-500">Grup ini masih kosong.</p>
+                <p className="text-sm font-normal text-muted-foreground">Grup ini masih kosong.</p>
               ) : (
                 <ul className="max-h-40 space-y-1.5 overflow-y-auto">
                   {selectedGroup.contacts.map((contact) => (
                     <li
                       key={contact.id}
-                      className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5"
+                      className="flex min-w-0 items-center justify-between gap-2 rounded-[2px] border border-border bg-card px-2.5 py-1.5"
                     >
-                      <span className="truncate text-sm font-medium text-slate-800">{contact.fullName}</span>
-                      <span className="shrink-0 truncate text-xs font-medium text-slate-500">{contact.email}</span>
+                      <span className="truncate text-sm font-normal text-neutral-800">{contact.fullName}</span>
+                      <span className="shrink-0 truncate text-xs font-normal text-muted-foreground">{contact.email}</span>
                     </li>
                   ))}
                 </ul>

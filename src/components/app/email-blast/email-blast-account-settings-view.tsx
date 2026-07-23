@@ -17,7 +17,7 @@ import styles from "./email-blast-account-settings.module.css";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
@@ -55,19 +55,19 @@ export function EmailBlastAccountSettingsView({ user }: EmailBlastAccountSetting
               <SectionTitle title="Account settings" action={<Badge tone="blue">{user.role.role_name}</Badge>} />
             </CardHeader>
             <CardBody className="space-y-4">
-              <p className="text-sm leading-6 text-slate-600">
+              <p className="text-sm leading-6 text-muted-foreground">
                 Pengaturan akun memakai identitas login dashboard. Atur nama tampilan pengirim dan preferensi blast di sini.
               </p>
               <div className={styles.identityGrid}>
                 <div className={styles.identityCard}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Signed in as</p>
-                  <p className="mt-1 break-words text-sm font-semibold text-slate-950">{user.full_name}</p>
-                  <p className="mt-0.5 break-all text-sm text-slate-600">{user.email}</p>
+                  <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Signed in as</p>
+                  <p className="mt-1 break-words text-sm font-normal text-foreground">{user.full_name}</p>
+                  <p className="mt-0.5 break-all text-sm text-muted-foreground">{user.email}</p>
                 </div>
                 <div className={styles.identityCard}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Role</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-950">{user.role.role_name}</p>
-                  <p className="mt-0.5 text-sm text-slate-600">{user.employment_status || "—"}</p>
+                  <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Role</p>
+                  <p className="mt-1 text-sm font-normal text-foreground">{user.role.role_name}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{user.employment_status || "—"}</p>
                 </div>
               </div>
             </CardBody>
@@ -87,9 +87,9 @@ export function EmailBlastAccountSettingsView({ user }: EmailBlastAccountSetting
             <SectionTitle title="Catatan" />
           </CardHeader>
           <CardBody>
-            <p className="text-sm leading-6 text-slate-500">
+            <p className="text-sm leading-6 text-muted-foreground">
               Email Blast memakai login dashboard ATM yang sudah ada. Resend memakai{" "}
-              <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">RESEND_API_KEY</code> di
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">RESEND_API_KEY</code> di
               environment server — tidak ada setup auth atau key per-user terpisah.
             </p>
           </CardBody>

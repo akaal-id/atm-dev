@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
@@ -47,7 +47,7 @@ export function EmailBlastRecipientsList({ recipients }: EmailBlastRecipientsLis
       </CardHeader>
       <CardBody className="space-y-2">
         {recipients.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-200 px-3 py-5 text-center text-sm font-medium text-slate-500">
+          <p className="rounded-[2px] border border-dashed border-border px-3 py-5 text-center text-sm font-normal text-muted-foreground">
             Tidak ada penerima pada kiriman ini.
           </p>
         ) : (
@@ -57,10 +57,10 @@ export function EmailBlastRecipientsList({ recipients }: EmailBlastRecipientsLis
               <div
                 key={recipient.id}
                 className={cn(
-                  "flex min-w-0 items-center justify-between gap-3 rounded-lg border px-3 py-2.5",
+                  "flex min-w-0 items-center justify-between gap-3 rounded-[2px] border px-3 py-2.5",
                   failed
                     ? "border-red-200 bg-red-50"
-                    : "border-slate-200 bg-white",
+                    : "border-border bg-card",
                 )}
               >
                 <div className="flex min-w-0 items-center gap-2">
@@ -69,8 +69,8 @@ export function EmailBlastRecipientsList({ recipients }: EmailBlastRecipientsLis
                   ) : null}
                   <span
                     className={cn(
-                      "min-w-0 truncate text-sm font-medium",
-                      failed ? "text-red-900" : "text-slate-800",
+                      "min-w-0 truncate text-sm font-normal",
+                      failed ? "text-red-900" : "text-neutral-800",
                     )}
                   >
                     {recipient.email}

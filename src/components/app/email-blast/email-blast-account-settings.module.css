@@ -29,9 +29,9 @@
 }
 
 .identityCard {
-  border-radius: 0.5rem;
-  border: 1px solid rgb(226 232 240);
-  background: color-mix(in srgb, #f8fafc 80%, white);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-inset, color-mix(in srgb, var(--muted) 80%, var(--card)));
   padding: 1rem;
 }
 

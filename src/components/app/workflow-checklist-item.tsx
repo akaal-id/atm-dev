@@ -31,14 +31,14 @@ function ChecklistToggle({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "h-10 font-semibold",
-        checked ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50" : "text-slate-600",
+        "h-10 font-normal",
+        checked ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50" : "text-muted-foreground",
       )}
     >
       <span
         className={cn(
           "grid size-4 shrink-0 place-items-center rounded-[4px] border transition-colors",
-          checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 bg-white",
+          checked ? "border-emerald-600 bg-emerald-600 text-white" : "border-border bg-card",
         )}
       >
         {checked ? <Check className="size-2.5 stroke-[3]" aria-hidden="true" /> : null}
@@ -210,7 +210,7 @@ export function WorkflowChecklistItem({
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 p-4">
+    <div className="rounded-[2px] border border-border p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           {editing ? (
@@ -221,9 +221,9 @@ export function WorkflowChecklistItem({
               autoFocus
             />
           ) : (
-            <p className={cn("break-words text-sm font-semibold", itemComplete ? "text-slate-500 line-through" : "text-slate-950")}>{item.title}</p>
+            <p className={cn("break-words text-sm font-normal", itemComplete ? "text-muted-foreground line-through" : "text-foreground")}>{item.title}</p>
           )}
-          <p className="mt-1 text-xs font-medium text-slate-400">
+          <p className="mt-1 text-xs font-normal text-muted-foreground">
             Assignee {assigneeDone ? "done" : "open"}
             {needsLeaderApproval ? <> · Leader {pmApproved ? "approved" : "pending"}</> : null}
           </p>
@@ -232,7 +232,7 @@ export function WorkflowChecklistItem({
           {canEditItem ? (
             editing ? (
               <>
-                <Button type="button" size="sm" className="font-semibold" onClick={requestSave} disabled={saving || !title.trim()}>
+                <Button type="button" size="sm" className="font-normal" onClick={requestSave} disabled={saving || !title.trim()}>
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {saving ? "Saving..." : "Save"}
                 </Button>
@@ -240,7 +240,7 @@ export function WorkflowChecklistItem({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="font-semibold"
+                  className="font-normal"
                   onClick={() => {
                     setTitle(item.title);
                     setEditing(false);
@@ -265,7 +265,7 @@ export function WorkflowChecklistItem({
           <StatusPill status={itemStatus} />
         </div>
       </div>
-      {error ? <p className="mt-2 text-xs font-semibold text-red-600">{error}</p> : null}
+      {error ? <p className="mt-2 text-xs font-normal text-red-600">{error}</p> : null}
       <div className="mt-4 flex flex-wrap gap-2">
         <ChecklistToggle checked={assigneeDone} disabled={!canEditItem} label="Assignee" onClick={handleToggleAssignee} />
         {needsLeaderApproval ? (

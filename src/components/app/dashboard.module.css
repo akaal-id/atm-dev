@@ -1,0 +1,449 @@
+.page {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--primary) 4%, var(--card)) 100%
+  );
+  padding: 1.125rem 1.25rem;
+}
+
+.heroEyebrow {
+  margin: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.heroTitle {
+  margin: 0.25rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.heroText {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.heroChip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-inset);
+  padding: 0.375rem 0.625rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foreground) 65%, transparent);
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.heroChip:hover {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  color: var(--primary);
+}
+
+.metrics {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: 1fr;
+}
+
+.sectionLink {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+  text-decoration: none;
+  transition: opacity 150ms ease;
+}
+
+.sectionLink:hover {
+  opacity: 0.75;
+}
+
+.sectionTitle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.sectionTitleText {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+.mainGrid {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+}
+
+.sideStack {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+}
+
+.bottomGrid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.taskRow {
+  padding: 1rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 150ms ease;
+}
+
+.taskRow:last-child {
+  border-bottom: 0;
+}
+
+.taskRow:hover {
+  background: var(--surface-inset);
+}
+
+.taskTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.taskMeta {
+  min-width: 0;
+}
+
+.taskId {
+  display: inline-block;
+  margin-bottom: 0.375rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  padding: 0.125rem 0.375rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+}
+
+.taskTitle {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.taskTitle:hover {
+  color: var(--primary);
+}
+
+.taskDesc {
+  margin-top: 0.25rem;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.stageBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.stageLabel {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.rankRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rankIndex {
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  background: var(--muted);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+
+.rankIndexLead {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+}
+
+.rankIndexMuted {
+  background: var(--surface-inset);
+  color: var(--muted-foreground);
+}
+
+.rankName {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.rankSub {
+  margin: 0.125rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.rankPoints {
+  margin: 0;
+  margin-left: auto;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+}
+
+.bdayRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.bdayRow:last-child {
+  border-bottom: 0;
+}
+
+.bdayName {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.bdayDate {
+  margin: 0.125rem 0 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+
+.eventCard {
+  border-top: 1px solid var(--border);
+  padding: 1rem 0 0;
+  background: transparent;
+}
+
+.eventCard + .eventCard {
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+}
+
+.eventTitle {
+  margin: 0.625rem 0 0;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.eventTime {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.announceRow {
+  display: block;
+  padding: 1rem 1.125rem;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  transition: background 150ms ease;
+}
+
+.announceRow:last-child {
+  border-bottom: 0;
+}
+
+.announceRow:hover {
+  background: var(--surface-inset);
+}
+
+.announceTitle {
+  margin: 0.625rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.announceBody {
+  margin: 0.25rem 0 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.pinned {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pinnedItem {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-inset);
+  padding: 0.875rem 1rem;
+  text-decoration: none;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.pinnedItem:hover {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+}
+
+.pinnedTitle {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.pinnedMeta {
+  margin: 0.125rem 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.empty {
+  padding: 1.5rem 1.125rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+@media (min-width: 640px) {
+  .hero {
+    padding: 1.25rem 1.375rem;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bottomGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bottomWide {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .page {
+    gap: 1.75rem;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mainGrid {
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.9fr);
+    gap: 1.5rem;
+  }
+}

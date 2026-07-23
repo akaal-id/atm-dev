@@ -40,7 +40,7 @@ export function FilterSelect({
 
   return (
     <div className={cn("grid min-w-0 gap-1.5", className)}>
-      {label ? <span className="text-xs font-extrabold text-slate-600">{label}</span> : null}
+      {label ? <span className="text-xs font-normal text-muted-foreground">{label}</span> : null}
       <Select
         value={value}
         items={items}
@@ -53,7 +53,7 @@ export function FilterSelect({
         <SelectTrigger
           size="filter"
           className={cn(
-            "bg-white text-sm font-semibold text-slate-950 shadow-none hover:bg-white",
+            "bg-card text-sm font-normal text-foreground shadow-none hover:bg-card",
             fullWidth ? "w-full" : "w-auto min-w-[11rem]",
           )}
         >

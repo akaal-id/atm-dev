@@ -14,7 +14,7 @@ import { cn, formatDate } from "@/lib/utils";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
@@ -55,21 +55,21 @@ export function EmailBlastDetailView({ blast }: EmailBlastDetailViewProps) {
             </CardHeader>
             <CardBody className="space-y-3">
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-medium text-slate-500">Sent at</span>
-                <span className="font-semibold text-slate-900">
+                <span className="font-normal text-muted-foreground">Sent at</span>
+                <span className="font-normal text-foreground">
                   {formatDate(blast.createdAt, { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-medium text-slate-500">Recipients</span>
+                <span className="font-normal text-muted-foreground">Recipients</span>
                 <Badge tone="neutral">{blast.recipients.length}</Badge>
               </div>
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-medium text-slate-500">Delivered / sent</span>
+                <span className="font-normal text-muted-foreground">Delivered / sent</span>
                 <Badge tone="green">{deliveredCount}</Badge>
               </div>
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-medium text-slate-500">Issues</span>
+                <span className="font-normal text-muted-foreground">Issues</span>
                 <Badge tone={issueCount > 0 ? "red" : "neutral"}>{issueCount}</Badge>
               </div>
             </CardBody>

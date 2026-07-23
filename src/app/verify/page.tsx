@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -14,7 +15,14 @@ export default async function VerifyPage({ searchParams }: { searchParams: Promi
   return (
     <main className={styles.page}>
       <section className={styles.cardCompact}>
-        <div className={styles.logo}>ATM</div>
+        <Image
+          src="/icon/mono-akaal-white.png"
+          alt="Akaal"
+          width={36}
+          height={36}
+          className={styles.logoMark}
+          priority
+        />
         <p className={styles.eyebrow}>Verify access</p>
         <h1 className={styles.title}>Enter your verification key</h1>
         <p className={styles.text}>Use the key sent to your email after admin approval. Then you can sign in with the password you created.</p>

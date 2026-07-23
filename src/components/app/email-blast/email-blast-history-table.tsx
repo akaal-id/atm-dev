@@ -31,7 +31,7 @@ export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) 
             {HEADERS.map((header, index) => (
               <th
                 key={`${header}-${index}`}
-                className="border-b border-slate-200 px-3 py-3 font-semibold text-slate-500"
+                className="border-b border-border px-3 py-3 font-normal text-muted-foreground"
               >
                 {header}
               </th>
@@ -46,7 +46,7 @@ export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) 
                 key={blast.id}
                 role="link"
                 tabIndex={0}
-                className="cursor-pointer transition hover:bg-slate-50/80 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-200"
+                className="cursor-pointer transition hover:bg-surface-inset/80 focus-visible:bg-surface-inset focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-200"
                 onClick={() => router.push(href)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -55,29 +55,29 @@ export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) 
                   }
                 }}
               >
-                <td className="border-b border-slate-100 px-3 py-3 align-middle">
+                <td className="border-b border-border px-3 py-3 align-middle">
                   <Link
                     href={href}
-                    className="font-semibold text-slate-950 transition hover:text-blue-600"
+                    className="font-normal text-foreground transition hover:text-primary"
                     onClick={(event) => event.stopPropagation()}
                   >
                     {blast.subject}
                   </Link>
-                  <p className="mt-0.5 line-clamp-1 text-xs font-medium text-slate-400">{blast.body}</p>
+                  <p className="mt-0.5 line-clamp-1 text-xs font-normal text-muted-foreground">{blast.body}</p>
                 </td>
-                <td className="whitespace-nowrap border-b border-slate-100 px-3 py-3 align-middle text-slate-600">
+                <td className="whitespace-nowrap border-b border-border px-3 py-3 align-middle text-muted-foreground">
                   {formatDate(blast.createdAt, { hour: "2-digit", minute: "2-digit" })}
                 </td>
-                <td className="border-b border-slate-100 px-3 py-3 align-middle font-mono tabular-nums text-slate-700">
+                <td className="border-b border-border px-3 py-3 align-middle font-mono tabular-nums text-foreground">
                   {blast.recipients.length}
                 </td>
-                <td className="max-w-40 truncate border-b border-slate-100 px-3 py-3 align-middle text-slate-600">
+                <td className="max-w-40 truncate border-b border-border px-3 py-3 align-middle text-muted-foreground">
                   {blast.attachmentName ?? "—"}
                 </td>
-                <td className="border-b border-slate-100 px-3 py-3 align-middle">
+                <td className="border-b border-border px-3 py-3 align-middle">
                   <EmailBlastStatusBadge status={blastOverallStatus(blast)} />
                 </td>
-                <td className="border-b border-slate-100 px-3 py-3 align-middle text-slate-400">
+                <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
                   <ChevronRight className="h-4 w-4" aria-hidden />
                   <span className="sr-only">Open detail</span>
                 </td>

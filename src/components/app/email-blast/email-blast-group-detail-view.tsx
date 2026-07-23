@@ -21,7 +21,7 @@ import { cn, formatDate } from "@/lib/utils";
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-semibold tracking-normal text-slate-950">{title}</h2>
+      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
@@ -193,7 +193,7 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
   if (group === undefined) {
     return (
       <Page>
-        <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-slate-600">
+        <div className="rounded-[2px] border border-border bg-card p-6 text-sm text-muted-foreground">
           Memuat detail grup…
         </div>
       </Page>
@@ -203,9 +203,9 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
   if (!group) {
     return (
       <Page>
-        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-6">
-          <p className="text-sm font-semibold text-slate-950">Grup tidak ditemukan</p>
-          <p className="text-sm text-slate-600">{error || "Grup mungkin sudah dihapus atau ID tidak valid."}</p>
+        <div className="space-y-3 rounded-[2px] border border-border bg-card p-6">
+          <p className="text-sm font-normal text-foreground">Grup tidak ditemukan</p>
+          <p className="text-sm text-muted-foreground">{error || "Grup mungkin sudah dihapus atau ID tidak valid."}</p>
           <Link href="/email-blast/contacts" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10")}>
             <ArrowLeft className="h-4 w-4" />
             Kembali ke contacts
@@ -235,12 +235,12 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-medium text-red-700">
+        <div className="rounded-[2px] border border-red-200 bg-red-50 px-3 py-2.5 text-sm font-normal text-red-700">
           {error}
         </div>
       ) : null}
       {info ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700">
+        <div className="rounded-[2px] border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-normal text-emerald-700">
           {info}
         </div>
       ) : null}
@@ -252,7 +252,7 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
               <SectionTitle title={group.groupName} />
             </CardHeader>
             <CardBody className="space-y-3">
-              <p className="text-sm text-slate-600">Dibuat {formatDate(group.createdAt)}</p>
+              <p className="text-sm text-muted-foreground">Dibuat {formatDate(group.createdAt)}</p>
               <Button
                 type="button"
                 variant="outline"
@@ -288,10 +288,10 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
           </CardHeader>
           <CardBody className="space-y-3">
             {group.contacts.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-slate-200 p-8 text-center">
-                <Users className="mx-auto h-8 w-8 text-slate-300" />
-                <p className="mt-3 text-sm font-semibold text-slate-700">Belum ada kontak</p>
-                <p className="mt-1 text-sm text-slate-500">Tambahkan email di form sebelah kiri.</p>
+              <div className="rounded-[2px] border border-dashed border-border p-8 text-center">
+                <Users className="mx-auto h-8 w-8 text-neutral-300" />
+                <p className="mt-3 text-sm font-normal text-foreground">Belum ada kontak</p>
+                <p className="mt-1 text-sm text-muted-foreground">Tambahkan email di form sebelah kiri.</p>
               </div>
             ) : (
               <EmailBlastGroupMembersTable

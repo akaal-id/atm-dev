@@ -24,8 +24,8 @@ export function EmailBlastSettingsFeedback({ feedback, onDismiss }: EmailBlastSe
       aria-live="polite"
       className={
         isSuccess
-          ? "flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
-          : "flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800"
+          ? "flex items-start gap-3 rounded-[2px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+          : "flex items-start gap-3 rounded-[2px] border border-red-200 bg-red-50 px-4 py-3 text-red-800"
       }
     >
       {isSuccess ? (
@@ -34,8 +34,8 @@ export function EmailBlastSettingsFeedback({ feedback, onDismiss }: EmailBlastSe
         <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold tracking-normal">{isSuccess ? "Pengaturan tersimpan" : "Gagal menyimpan"}</p>
-        <p className="mt-0.5 text-sm font-medium opacity-90">{feedback.message}</p>
+        <p className="text-sm font-normal tracking-normal">{isSuccess ? "Pengaturan tersimpan" : "Gagal menyimpan"}</p>
+        <p className="mt-0.5 text-sm font-normal opacity-90">{feedback.message}</p>
       </div>
       <Button
         type="button"

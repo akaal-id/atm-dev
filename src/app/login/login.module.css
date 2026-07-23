@@ -1,17 +1,37 @@
 .page {
   display: grid;
   min-height: 100dvh;
-  background: #f8fafc;
+  background: #f5f5f5;
 }
 
 .brandPanel {
   display: none;
+  position: relative;
   min-height: 100dvh;
   flex-direction: column;
   justify-content: space-between;
-  background: #020617;
+  overflow: hidden;
+  background: linear-gradient(165deg, #4a0e8f 0%, #2b0057 48%, #140030 100%);
   padding: 2.5rem;
   color: #ffffff;
+}
+
+.brandPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 20% 10%, rgb(138 43 226 / 0.35), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 90%, rgb(109 40 217 / 0.25), transparent 55%);
+  opacity: 0.9;
+}
+
+.brand,
+.heroCopy,
+.featureRow {
+  position: relative;
+  z-index: 1;
 }
 
 .brand {
@@ -20,78 +40,88 @@
   gap: 0.75rem;
 }
 
-.logoDark,
-.logoLight {
-  display: flex;
-  width: 2.75rem;
-  height: 2.75rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 900;
+.logoMark {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
 }
 
-.logoDark {
-  background: #ffffff;
-  color: #020617;
-}
-
-.logoLight {
-  background: #020617;
-  color: #ffffff;
+.logoMarkDark {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%);
 }
 
 .brandName {
-  font-weight: 700;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 .brandSubtext {
-  font-size: 0.875rem;
-  color: #94a3b8;
+  margin: 0.125rem 0 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: rgb(255 255 255 / 0.55);
 }
 
 .heroCopy {
-  max-width: 36rem;
+  max-width: 34rem;
 }
 
 .eyebrow {
-  font-size: 0.875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  margin: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #93c5fd;
+  color: rgb(255 255 255 / 0.55);
 }
 
 .heroTitle {
-  margin-top: 1.25rem;
-  font-size: 3rem;
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: 0;
+  margin: 1rem 0 0;
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
 .heroText {
-  margin-top: 1.25rem;
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  color: #cbd5e1;
+  margin: 1rem 0 0;
+  max-width: 30rem;
+  font-size: 0.9375rem;
+  font-weight: 300;
+  line-height: 1.65;
+  color: rgb(255 255 255 / 0.72);
 }
 
-.featureGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  font-size: 0.875rem;
+.featureRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.5);
 }
 
-.feature {
-  border-radius: 0.5rem;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  background: rgb(255 255 255 / 0.05);
-  padding: 1rem;
-  font-weight: 700;
-  color: #e2e8f0;
+.featureItem {
+  display: inline-flex;
+  align-items: center;
+}
+
+.featureSep {
+  margin: 0 0.625rem;
+  opacity: 0.6;
+  user-select: none;
 }
 
 .formPanel {
@@ -106,10 +136,11 @@
 .card {
   width: 100%;
   max-width: 28rem;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   background: #ffffff;
   padding: 1.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
 .mobileLogo {
@@ -117,51 +148,53 @@
 }
 
 .formIntro {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
 }
 
 .formEyebrow {
-  font-size: 0.875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  margin: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #2563eb;
+  color: rgba(0, 0, 0, 0.42);
 }
 
 .formTitle {
-  margin-top: 0.5rem;
+  margin: 0.5rem 0 0;
   font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #020617;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: #0a0a0a;
 }
 
 .formText {
-  margin-top: 0.5rem;
+  margin: 0.5rem 0 0;
   font-size: 0.875rem;
   line-height: 1.5rem;
-  color: #64748b;
+  color: rgba(0, 0, 0, 0.55);
 }
 
 .error {
   margin-top: 1.25rem;
-  border-radius: 0.5rem;
+  border-radius: 2px;
   border: 1px solid #fecdd3;
   background: #fff1f2;
   padding: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #be123c;
 }
 
 .success {
   margin-top: 1.25rem;
-  border-radius: 0.5rem;
+  border-radius: 2px;
   border: 1px solid #bbf7d0;
   background: #f0fdf4;
   padding: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #15803d;
 }
 
@@ -173,21 +206,25 @@
 
 .socialButton {
   display: inline-flex;
-  height: 2.75rem;
+  height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
   background: #ffffff;
   color: #334155;
-  font-size: 0.875rem;
-  font-weight: 800;
-  transition: border-color 150ms ease, background 150ms ease;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 .socialButton:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.22);
+  background: #fafafa;
 }
 
 .form {
@@ -203,19 +240,19 @@
 
 .label {
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 400;
   color: #334155;
 }
 
 .submit {
   width: 100%;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .demoBox {
   margin-top: 1.25rem;
-  border-radius: 0.5rem;
-  background: #f8fafc;
+  border-radius: 2px;
+  background: #f5f5f5;
   padding: 1rem;
   font-size: 0.875rem;
   color: #475569;
@@ -223,19 +260,19 @@
 
 .requestText {
   margin-top: 1rem;
-  color: #64748b;
+  color: rgba(0, 0, 0, 0.55);
   font-size: 0.875rem;
   line-height: 1.5rem;
 }
 
 .requestText a {
-  color: #2563eb;
-  font-weight: 700;
+  color: #6d28d9;
+  font-weight: 400;
 }
 
 .demoTitle {
-  font-weight: 700;
-  color: #020617;
+  font-weight: 400;
+  color: #0a0a0a;
 }
 
 .demoLine {

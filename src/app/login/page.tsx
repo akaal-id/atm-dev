@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -19,24 +20,32 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className={styles.page}>
       <section className={styles.brandPanel}>
         <div className={styles.brand}>
-          <div className={styles.logoDark}>ATM</div>
+          <Image
+            src="/icon/mono-akaal-white.png"
+            alt="Akaal"
+            width={40}
+            height={40}
+            className={styles.logoMark}
+            priority
+          />
           <div>
-            <p className={styles.brandName}>Akaal Team Management</p>
+            <p className={styles.brandName}>Akaal Team</p>
             <p className={styles.brandSubtext}>Internal operating system</p>
           </div>
         </div>
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Work, people, attendance, and performance</p>
+          <p className={styles.eyebrow}>Work, people, attendance</p>
           <h1 className={styles.heroTitle}>Run the team from one calm command center.</h1>
           <p className={styles.heroText}>
-            Tasks, HR profiles, leave approvals, calendar signals, announcements, notifications, and gamification are stitched into one fast PWA.
+            Tasks, HR profiles, leave approvals, calendar signals, announcements, notifications, and gamification — stitched into one fast PWA.
           </p>
         </div>
-        <div className={styles.featureGrid}>
-          {["RBAC", "Supabase", "PWA Ready"].map((item) => (
-            <div key={item} className={styles.feature}>
-              {item}
-            </div>
+        <div className={styles.featureRow} aria-label="Stack">
+          {["RBAC", "Supabase", "PWA Ready"].map((item, index) => (
+            <span key={item} className={styles.featureItem}>
+              {index > 0 ? <span className={styles.featureSep} aria-hidden="true">·</span> : null}
+              <span>{item}</span>
+            </span>
           ))}
         </div>
       </section>
@@ -44,7 +53,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <section className={styles.formPanel}>
         <div className={styles.card}>
           <div className={styles.mobileLogo}>
-            <div className={styles.logoLight}>ATM</div>
+            <Image
+              src="/icon/mono-akaal-white.png"
+              alt="Akaal"
+              width={36}
+              height={36}
+              className={styles.logoMarkDark}
+              priority
+            />
           </div>
           <div className={styles.formIntro}>
             <p className={styles.formEyebrow}>Secure sign in</p>

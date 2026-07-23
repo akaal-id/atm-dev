@@ -30,7 +30,7 @@ export function EmailBlastGroupMembersTable({
             {HEADERS.map((header) => (
               <th
                 key={header}
-                className="border-b border-slate-200 px-3 py-3 font-semibold text-slate-500"
+                className="border-b border-border px-3 py-3 font-normal text-muted-foreground"
               >
                 {header}
               </th>
@@ -39,27 +39,27 @@ export function EmailBlastGroupMembersTable({
         </thead>
         <tbody>
           {contacts.map((contact) => (
-            <tr key={contact.id} className="transition hover:bg-slate-50/80">
-              <td className="border-b border-slate-100 px-3 py-3 align-middle">
-                <p className="font-semibold text-slate-950">{contact.fullName || "—"}</p>
+            <tr key={contact.id} className="transition hover:bg-surface-inset/80">
+              <td className="border-b border-border px-3 py-3 align-middle">
+                <p className="font-normal text-foreground">{contact.fullName || "—"}</p>
               </td>
-              <td className="border-b border-slate-100 px-3 py-3 align-middle text-slate-600">
+              <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
                 <span className="break-all">{contact.email}</span>
               </td>
-              <td className="border-b border-slate-100 px-3 py-3 align-middle">
+              <td className="border-b border-border px-3 py-3 align-middle">
                 <EmailBlastVerificationBadge
                   status={contact.verificationStatus || "unchecked"}
                   detail={contact.verificationDetail}
                 />
               </td>
-              <td className="border-b border-slate-100 px-3 py-3 align-middle">
+              <td className="border-b border-border px-3 py-3 align-middle">
                 <div className="flex items-center gap-1">
                   {onVerify ? (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      className="text-slate-400 hover:text-slate-700"
+                      className="text-muted-foreground hover:text-foreground"
                       aria-label={`Cek ${contact.email}`}
                       disabled={busy}
                       title="Cek email ini"
@@ -73,7 +73,7 @@ export function EmailBlastGroupMembersTable({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      className="text-slate-400 hover:text-red-600"
+                      className="text-muted-foreground hover:text-red-600"
                       aria-label={`Hapus ${contact.email}`}
                       disabled={busy}
                       onClick={() => onRemove(contact.id)}

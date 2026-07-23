@@ -79,13 +79,13 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
 
   return (
     <>
-      <div className="bg-white p-3">
-        <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white focus-within:border-blue-400">
+      <div className="bg-card p-3">
+        <div className="flex items-end gap-2 rounded-[2px] border border-border bg-card focus-within:border-primary">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-l-2xl text-slate-500 transition hover:text-slate-900 disabled:opacity-50"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-l-[2px] text-muted-foreground transition hover:text-foreground disabled:opacity-50"
             aria-label="Attach file"
           >
             {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Paperclip className="h-5 w-5" />}
@@ -94,7 +94,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
           <button
             type="button"
             onClick={() => setTaskPickerOpen(true)}
-            className="grid h-10 w-10 shrink-0 place-items-center text-slate-500 transition hover:text-blue-600"
+            className="grid h-10 w-10 shrink-0 place-items-center text-muted-foreground transition hover:text-primary"
             aria-label="Attach task"
           >
             <ListTodo className="h-5 w-5" />
@@ -107,7 +107,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
           <button
             type="button"
             onClick={submitText}
-            className="m-1 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700"
+            className="m-1 grid h-9 w-9 shrink-0 place-items-center rounded-[2px] bg-primary text-white transition hover:bg-primary"
             aria-label="Send message"
           >
             <SendHorizontal className="h-4 w-4" />
@@ -116,7 +116,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
 
         {isUploading ? (
           <div className="mt-2 space-y-1" role="status" aria-live="polite">
-            <div className="flex items-center justify-between text-xs text-slate-500">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
                 {status === "preparing"
                   ? "Preparing upload…"
@@ -127,16 +127,16 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
               <button
                 type="button"
                 onClick={cancel}
-                className="inline-flex items-center gap-1 text-slate-500 transition hover:text-red-600"
+                className="inline-flex items-center gap-1 text-muted-foreground transition hover:text-red-600"
                 aria-label="Cancel upload"
               >
                 <X className="h-3.5 w-3.5" />
                 Cancel
               </button>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-blue-600 transition-[width] duration-150"
+                className="h-full rounded-full bg-primary transition-[width] duration-150"
                 style={{ width: `${status === "uploading" ? progress : status === "finalizing" ? 100 : 8}%` }}
               />
             </div>

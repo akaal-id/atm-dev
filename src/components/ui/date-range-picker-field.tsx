@@ -24,7 +24,7 @@ type DateRangePickerFieldProps = {
 };
 
 const triggerClassName =
-  "flex h-[2.75rem] w-full items-center gap-2 rounded-lg border border-input bg-white px-3 text-left text-sm font-semibold text-slate-950 shadow-none transition-colors outline-none hover:bg-white focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50";
+  "flex h-[2.75rem] w-full items-center gap-2 rounded-[2px] border border-input bg-card px-3 text-left text-sm font-normal text-foreground shadow-none transition-colors outline-none hover:bg-card focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50";
 
 function monthCells(monthKey: string) {
   const [year, month] = monthKey.split("-").map(Number);
@@ -118,10 +118,10 @@ export function DateRangePickerField({
 
   return (
     <div className={cn("grid min-w-0 gap-1.5", className)}>
-      {label ? <span className="text-xs font-extrabold text-slate-600">{label}</span> : null}
+      {label ? <span className="text-xs font-normal text-muted-foreground">{label}</span> : null}
       <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
         <PopoverTrigger type="button" className={cn(triggerClassName, !hasValue && !pendingFrom && "text-muted-foreground")}>
-          <CalendarDays className="size-4 shrink-0 text-slate-400" />
+          <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1 truncate text-left">
             {pendingFrom ? `${formatShortDate(pendingFrom)} – …` : formatRangeLabel(value, placeholder)}
           </span>
@@ -142,7 +142,7 @@ export function DateRangePickerField({
                   clearValue();
                 }
               }}
-              className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className="inline-flex size-7 shrink-0 items-center justify-center rounded-[2px] text-muted-foreground transition hover:bg-muted hover:text-muted-foreground"
             >
               <X className="size-4" />
             </span>
@@ -156,17 +156,17 @@ export function DateRangePickerField({
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous month" onClick={() => setMonthKey((current) => shiftMonth(current, -1))}>
               <ChevronLeft className="size-4" />
             </Button>
-            <p className="text-sm font-bold text-slate-900">{monthTitle(monthKey)}</p>
+            <p className="text-sm font-normal text-foreground">{monthTitle(monthKey)}</p>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Next month" onClick={() => setMonthKey((current) => shiftMonth(current, 1))}>
               <ChevronRight className="size-4" />
             </Button>
           </div>
 
-          <p className="mt-3 text-xs font-medium text-slate-500">
+          <p className="mt-3 text-xs font-normal text-muted-foreground">
             {pendingFrom ? "Select an end date" : "Select a start date"}
           </p>
 
-          <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">
+          <div className="mt-2 grid grid-cols-7 gap-1 text-center text-[0.7rem] font-normal tracking-wide text-muted-foreground uppercase">
             {WEEKDAYS.map((day) => (
               <span key={day} className="py-1">
                 {day}
@@ -194,9 +194,9 @@ export function DateRangePickerField({
                   size="icon-sm"
                   onClick={() => selectDate(date)}
                   className={cn(
-                    "size-9 rounded-md text-sm font-semibold",
+                    "size-9 rounded-[2px] text-sm font-normal",
                     inRange && "bg-primary-subtle text-primary hover:bg-primary-subtle",
-                    !isSelected && isToday && "bg-blue-50 text-blue-700 hover:bg-blue-100",
+                    !isSelected && isToday && "bg-primary-subtle text-primary hover:bg-primary-subtle",
                   )}
                 >
                   {Number(date.slice(8, 10))}
@@ -205,7 +205,7 @@ export function DateRangePickerField({
             })}
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
             <Button
               type="button"
               variant="link"
@@ -222,7 +222,7 @@ export function DateRangePickerField({
               type="button"
               variant="link"
               size="sm"
-              className="text-slate-500"
+              className="text-muted-foreground"
               onClick={() => {
                 clearValue();
                 setOpen(false);

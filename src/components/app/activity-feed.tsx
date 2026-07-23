@@ -12,11 +12,11 @@ function userName(users: User[], id: string) {
 }
 
 function SectionTitle({ title }: { title: string }) {
-  return <h2 className="text-base font-semibold text-slate-950">{title}</h2>;
+  return <h2 className="text-base font-normal text-foreground">{title}</h2>;
 }
 
 function EmptyState({ label }: { label: string }) {
-  return <p className="text-sm text-slate-500">{label}</p>;
+  return <p className="text-sm text-muted-foreground">{label}</p>;
 }
 
 export function ActivityFeed({
@@ -45,23 +45,23 @@ export function ActivityFeed({
       <CardBody className="space-y-3">
         {logs.length === 0 ? <EmptyState label={emptyLabel} /> : null}
         {visibleLogs.map((log) => (
-          <div key={log.log_id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
-            <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
+          <div key={log.log_id} className="flex gap-3 rounded-[2px] border border-border p-3">
+            <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
             <div className="min-w-0">
-              <p className="break-words text-sm font-semibold text-slate-950">{log.description}</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="break-words text-sm font-normal text-foreground">{log.description}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 {userName(users, log.user_id)} - {formatDate(log.created_at, { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
           </div>
         ))}
         {canCollapse && !expanded ? (
-          <Button type="button" variant="outline" size="lg" className="h-10 w-full font-semibold" onClick={() => setExpanded(true)}>
+          <Button type="button" variant="outline" size="lg" className="h-10 w-full font-normal" onClick={() => setExpanded(true)}>
             Show more
           </Button>
         ) : null}
         {canCollapse && expanded ? (
-          <Button type="button" variant="outline" size="lg" className="h-10 w-full font-semibold" onClick={() => setExpanded(false)}>
+          <Button type="button" variant="outline" size="lg" className="h-10 w-full font-normal" onClick={() => setExpanded(false)}>
             Show less
           </Button>
         ) : null}

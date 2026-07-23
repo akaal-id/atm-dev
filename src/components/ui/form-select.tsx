@@ -53,7 +53,7 @@ export function FormSelect({
         disabled={disabled}
         modal={false}
       >
-        <SelectTrigger size="form" className={cn("bg-white shadow-none hover:bg-white", fullWidth ? "w-full" : "w-auto min-w-[11rem]")}>
+        <SelectTrigger size="form" className={cn("bg-card shadow-none hover:bg-card", fullWidth ? "w-full" : "w-auto min-w-[11rem]")}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent side="bottom" align="start" sideOffset={6} alignItemWithTrigger={false}>

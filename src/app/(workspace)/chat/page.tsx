@@ -17,7 +17,7 @@ export default async function ChatPage() {
           <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-full bg-blue-50 text-blue-600">
             <MessageSquare className="h-7 w-7" />
           </div>
-          <p className="text-sm font-semibold text-slate-900">Your messages</p>
+          <p className="text-sm font-normal text-slate-900">Your messages</p>
           <p className="mt-1 text-sm text-slate-500">Select a conversation or start a new one to begin chatting.</p>
         </div>
       </div>
