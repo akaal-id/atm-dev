@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, CheckSquare, FolderKanban, FolderOpen, ListFilter, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, CalendarDays, FolderKanban, FolderOpen, ListFilter, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { TaskBoard } from "@/components/app/task-board";
@@ -13,9 +13,11 @@ import { DateRangePickerField } from "@/components/ui/date-range-picker-field";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { StatusPill, TaskStatusPill, statusTone } from "@/components/ui/status-pill";
+import { deriveWorkflowStatus } from "@/lib/data/workflow-templates-mock";
+import type { Workflow } from "@/lib/types";
 import { activeTasks, completedTasks, jakartaToday } from "@/lib/metrics";
 import { visibleTaskLabels } from "@/lib/task-approval";
-import type { CurrentUser, Project, Task, User } from "@/lib/types";
+import type { CurrentUser, Project, Task, TaskChecklist, User } from "@/lib/types";
 import { cn, formatShortDate, groupBy } from "@/lib/utils";
 import styles from "./task-workspace.module.css";
 
@@ -33,8 +35,8 @@ type TaskFilters = {
 
 const NO_PROJECT = "__no_project";
 const ALL = "all";
-const viewTabs: Array<TabItem & { id: TaskViewMode }> = [
-  { id: "board", label: "Board", icon: <CheckSquare /> },
+/** My / Team Task: no board — those pages span multiple workflows with different Kanban columns. */
+const taskViewTabs: Array<TabItem & { id: Exclude<TaskViewMode, "board"> }> = [
   { id: "list", label: "List", icon: <ListFilter /> },
   { id: "calendar", label: "Calendar", icon: <CalendarDays /> },
   { id: "project", label: "Project", icon: <FolderKanban /> },
@@ -417,8 +419,9 @@ const calendarTaskToneClass = {
 } as const;
 
 function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
-  const [monthKey, setMonthKey] = useState(currentMonthKey);
-  const today = jakartaToday();
+  // Keep month key stable across SSR/hydration (avoid timezone edge mismatches).
+  const [monthKey, setMonthKey] = useState(() => currentMonthKey());
+  const [today] = useState(() => jakartaToday());
   const monthOptions = useMemo(() => calendarMonthOptions(tasks), [tasks]);
   const cells = monthCells(monthKey);
   const monthTasks = tasks
@@ -438,8 +441,12 @@ function CalendarTaskView({ tasks, users }: { tasks: Task[]; users: User[] }) {
           className={styles.monthSelect}
         />
         <div className={styles.monthCardBadges}>
-          <Badge tone="blue">{monthTasks.length} tasks</Badge>
-          <Badge tone={urgentCount > 0 ? "red" : "neutral"}>{urgentCount} urgent</Badge>
+          <Badge tone="blue">
+            <span suppressHydrationWarning>{monthTasks.length}</span> tasks
+          </Badge>
+          <Badge tone={urgentCount > 0 ? "red" : "neutral"}>
+            <span suppressHydrationWarning>{urgentCount}</span> urgent
+          </Badge>
         </div>
       </div>
 
@@ -597,20 +604,28 @@ export function TaskWorkspace({
   tasks,
   users,
   projects,
+  checklists = [],
   currentUser,
   scope,
   canMoveFinished,
   action,
+  workflow = null,
+  header = null,
 }: {
   tasks: Task[];
   users: User[];
   projects: Project[];
+  checklists?: TaskChecklist[];
   currentUser: CurrentUser;
   scope: TaskScope;
   canMoveFinished: boolean;
   action?: React.ReactNode;
+  /** When set, board columns lock to this workflow (no template preview). */
+  workflow?: Workflow | null;
+  header?: React.ReactNode;
 }) {
-  const [activeView, setActiveView] = useState<TaskViewMode>("board");
+  /** Workflow detail = board only. My/Team Task default to list (no board). */
+  const [activeView, setActiveView] = useState<TaskViewMode>(workflow ? "board" : "list");
   const [filters, setFilters] = useState<TaskFilters>({
     query: "",
     projectId: ALL,
@@ -624,25 +639,49 @@ export function TaskWorkspace({
   const activeCount = activeTasks(tasks).length;
   const doneCount = completedTasks(tasks).length;
   const showFilters = activeView === "board" || activeView === "list" || activeView === "calendar";
+  const workflowStatus = workflow ? deriveWorkflowStatus(workflow, tasks) : null;
 
   return (
     <div className={styles.workspace}>
-      <div className={styles.toolbar}>
-        <Tabs
-          items={viewTabs}
-          value={activeView}
-          onValueChange={(value) => setActiveView(value as TaskViewMode)}
-          aria-label={`${scope === "my" ? "My" : "Team"} task views`}
-        />
-        <div className={styles.toolbarActions}>{action}</div>
+      <div className={cn(styles.chrome, header && styles.chromeWithHeader)}>
+        {header ? <div className={styles.chromeHeader}>{header}</div> : null}
+
+        {!workflow ? (
+          <div className={styles.toolbar}>
+            <Tabs
+              items={taskViewTabs}
+              value={activeView}
+              onValueChange={(value) => setActiveView(value as TaskViewMode)}
+              aria-label={`${scope === "my" ? "My" : "Team"} task views`}
+            />
+            {action ? <div className={styles.toolbarActions}>{action}</div> : null}
+          </div>
+        ) : null}
       </div>
 
       <div className={styles.summary}>
-        {showFilters ? <Badge tone="blue">{filteredTasks.length} shown</Badge> : null}
-        <Badge tone="blue">{tasks.length} {showFilters ? "total" : "tasks"}</Badge>
-        <Badge>{activeCount} active</Badge>
-        <Badge tone="green">{doneCount} done</Badge>
-        {scope === "my" ? <Badge tone="purple">Assigned to {currentUser.full_name}</Badge> : <Badge tone="purple">All team tasks</Badge>}
+        {workflowStatus ? <StatusPill status={workflowStatus} /> : null}
+        {showFilters ? (
+          <Badge tone="blue">
+            <span suppressHydrationWarning>{filteredTasks.length}</span> shown
+          </Badge>
+        ) : null}
+        <Badge tone="blue">
+          <span suppressHydrationWarning>{tasks.length}</span> {showFilters ? "total" : "tasks"}
+        </Badge>
+        <Badge>
+          <span suppressHydrationWarning>{activeCount}</span> active
+        </Badge>
+        <Badge tone="green">
+          <span suppressHydrationWarning>{doneCount}</span> done
+        </Badge>
+        {workflow ? (
+          <Badge tone="purple">{workflow.name}</Badge>
+        ) : scope === "my" ? (
+          <Badge tone="purple">Assigned to {currentUser.full_name}</Badge>
+        ) : (
+          <Badge tone="purple">All team tasks</Badge>
+        )}
       </div>
 
       {showFilters ? (
@@ -656,10 +695,20 @@ export function TaskWorkspace({
         />
       ) : null}
 
-      {activeView === "board" ? <TaskBoard tasks={filteredTasks} users={taskBoardUsers} canMoveFinished={canMoveFinished} /> : null}
-      {activeView === "list" ? <ListView filteredTasks={filteredTasks} users={users} projects={projects} /> : null}
-      {activeView === "calendar" ? <CalendarTaskView tasks={filteredTasks} users={users} /> : null}
-      {activeView === "project" ? <ProjectTaskView tasks={tasks} users={users} projects={projects} /> : null}
+      {workflow && activeView === "board" ? (
+        <TaskBoard
+          tasks={filteredTasks}
+          users={taskBoardUsers}
+          checklists={checklists}
+          canMoveFinished={canMoveFinished}
+          workflowTemplateId={workflow.workflow_id}
+          lockBoardSource
+          boardColumns={workflow.columns}
+        />
+      ) : null}
+      {!workflow && activeView === "list" ? <ListView filteredTasks={filteredTasks} users={users} projects={projects} /> : null}
+      {!workflow && activeView === "calendar" ? <CalendarTaskView tasks={filteredTasks} users={users} /> : null}
+      {!workflow && activeView === "project" ? <ProjectTaskView tasks={tasks} users={users} projects={projects} /> : null}
     </div>
   );
 }

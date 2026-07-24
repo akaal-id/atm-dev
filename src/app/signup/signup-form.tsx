@@ -8,10 +8,12 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface SignupFormProps {
   children: ReactNode;
+  /** Where to send the browser on unexpected server failure. */
+  errorRedirect?: string;
 }
 
 /** Access request form with client-side mock validation before the real signup API. */
-export function SignupForm({ children }: SignupFormProps) {
+export function SignupForm({ children, errorRedirect = "/signup?error=server" }: SignupFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clientError, setClientError] = useState("");
 
@@ -21,6 +23,7 @@ export function SignupForm({ children }: SignupFormProps) {
 
     const form = event.currentTarget;
     const data = new FormData(form);
+    const accountType = String(data.get("account_type") ?? "employee").trim();
     const email = String(data.get("email") ?? "").trim().toLowerCase();
     const fullName = String(data.get("full_name") ?? "").trim();
     const password = String(data.get("password") ?? "");
@@ -28,6 +31,9 @@ export function SignupForm({ children }: SignupFormProps) {
     const departmentId = String(data.get("department_id") ?? "").trim();
     const birthday = String(data.get("birthday") ?? "").trim();
     const joinDate = String(data.get("join_date") ?? "").trim();
+    const organizationName = String(data.get("organization_name") ?? "").trim();
+    const organizationId = String(data.get("organization_id") ?? "").trim();
+    const companyId = String(data.get("company_id") ?? "").trim();
 
     if (!fullName) {
       setClientError("Nama lengkap wajib diisi.");
@@ -45,8 +51,14 @@ export function SignupForm({ children }: SignupFormProps) {
       setClientError("Password dan konfirmasi harus sama.");
       return;
     }
-    if (!departmentId || !birthday || !joinDate) {
-      setClientError("Lengkapi department, tanggal lahir, dan tanggal bergabung.");
+
+    if (accountType === "org_owner") {
+      if (!organizationName) {
+        setClientError("Nama organisasi wajib diisi.");
+        return;
+      }
+    } else if (!organizationId || !companyId || !departmentId || !birthday || !joinDate) {
+      setClientError("Lengkapi organization ID, company, department, tanggal lahir, dan tanggal bergabung.");
       return;
     }
 
@@ -65,13 +77,13 @@ export function SignupForm({ children }: SignupFormProps) {
       }
 
       if (response.ok) {
-        window.location.assign("/signup/requested");
+        window.location.assign(accountType === "org_owner" ? "/signup/requested?type=org_owner" : "/signup/requested");
         return;
       }
 
-      window.location.assign("/signup?error=server");
+      window.location.assign(errorRedirect);
     } catch {
-      window.location.assign("/signup?error=server");
+      window.location.assign(errorRedirect);
     } finally {
       setIsSubmitting(false);
     }

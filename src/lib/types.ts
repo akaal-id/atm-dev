@@ -1,5 +1,6 @@
 export type RoleKey =
   | "super_admin"
+  | "org_owner"
   | "admin"
   | "leader"
   | "supervisor"
@@ -7,6 +8,20 @@ export type RoleKey =
   | "employee"
   | "intern"
   | "viewer";
+
+/** Tenant billing / paywall state (dummy today; real gateway later). */
+export type BillingStatus =
+  | "trial"
+  | "pending_payment"
+  | "active"
+  | "past_due"
+  | "cancelled";
+
+export type SubscriptionPlan = "starter" | "growth" | "enterprise" | "";
+export type SubscriptionInterval = "monthly" | "yearly" | "";
+
+/** Signup intent chosen on the public signup form. */
+export type SignupAccountType = "employee" | "org_owner";
 
 export type EmployeeStatus =
   | "Intern"
@@ -46,6 +61,8 @@ export type ProjectStatus =
   | "Completed"
   | "On Hold"
   | "Cancelled";
+
+export type WorkflowStatus = "Not Started" | "In Progress" | "Completed";
 
 export type Priority = "Low" | "Medium" | "High" | "Urgent";
 
@@ -96,6 +113,8 @@ export interface User {
   position: string;
   employment_status: EmployeeStatus;
   role_id: RoleKey;
+  /** Home / primary company for directory scoping. */
+  company_id?: string;
   birthday: string;
   join_date: string;
   is_active: boolean;
@@ -115,6 +134,7 @@ export interface Department {
   department_id: string;
   department_name: string;
   leader_user_id: string;
+  company_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -124,6 +144,8 @@ export interface Role {
   role_name: string;
   description: string;
   permissions_json: Permission[];
+  /** Deprecated — roles are platform-wide, not tenant-scoped. */
+  company_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -133,6 +155,10 @@ export interface Task {
   title: string;
   description: string;
   project_id: string;
+  /** Optional board grouping. */
+  workflow_id?: string;
+  /** Tenant scope; empty until multi-company backfill. */
+  company_id?: string;
   assigned_by: string;
   assigned_to: string[];
   priority: Priority;
@@ -154,6 +180,7 @@ export interface TaskComment {
   comment_id: string;
   task_id: string;
   user_id: string;
+  company_id?: string;
   comment: string;
   mentions: string[];
   created_at: string;
@@ -163,6 +190,7 @@ export interface TaskComment {
 export interface TaskChecklist {
   checklist_id: string;
   task_id: string;
+  company_id?: string;
   title: string;
   is_completed: boolean;
   assignee_completed: boolean;
@@ -177,6 +205,7 @@ export interface ProjectFile {
   file_id: string;
   task_id: string;
   project_id: string;
+  company_id?: string;
   title: string;
   owner_user_id: string;
   file_url: string;
@@ -191,6 +220,8 @@ export interface Project {
   ticket_id_prefix: string;
   project_name: string;
   description: string;
+  /** Tenant scope; empty until multi-company backfill. */
+  company_id?: string;
   owner_user_id: string;
   members: string[];
   priority: Priority;
@@ -203,9 +234,36 @@ export interface Project {
   updated_at: string;
 }
 
+export interface WorkflowColumn {
+  id: string;
+  name: string;
+  order_index: number;
+  is_2stage_approval_trigger: boolean;
+}
+
+export interface Workflow {
+  workflow_id: string;
+  name: string;
+  description: string;
+  status: WorkflowStatus;
+  project_id: string;
+  company_id: string;
+  columns: WorkflowColumn[];
+  sprint_start?: string;
+  sprint_end?: string;
+  ticket_id_prefix?: string;
+  template_id?: string;
+  template_name?: string;
+  inherit_project_tasks?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Attendance {
   attendance_id: string;
   user_id: string;
+  /** Tenant scope; empty until multi-company backfill. */
+  company_id?: string;
   date: string;
   clock_in: string;
   clock_out: string;
@@ -222,6 +280,7 @@ export interface Attendance {
 export interface LeaveRequest {
   request_id: string;
   user_id: string;
+  company_id?: string;
   request_type: LeaveRequestType;
   start_date: string;
   end_date: string;
@@ -239,6 +298,8 @@ export interface Announcement {
   title: string;
   body: string;
   category: "General" | "HR" | "Task" | "Event" | "Birthday" | "Important" | "Policy" | "Reminder";
+  /** Tenant scope; empty until multi-company backfill. */
+  company_id?: string;
   target_department: string;
   target_users: string[];
   is_pinned: boolean;
@@ -252,6 +313,7 @@ export interface CalendarEvent {
   event_id: string;
   title: string;
   description: string;
+  company_id?: string;
   type:
     | "Birthday"
     | "Task"
@@ -276,6 +338,7 @@ export interface CalendarEvent {
 export interface AppNotification {
   notification_id: string;
   user_id: string;
+  company_id?: string;
   title: string;
   description: string;
   type: string;
@@ -287,6 +350,7 @@ export interface AppNotification {
 export interface GamificationPoint {
   point_id: string;
   user_id: string;
+  company_id?: string;
   source_type: string;
   source_id: string;
   points: number;
@@ -300,6 +364,7 @@ export interface Badge {
   description: string;
   icon: string;
   criteria_json: Record<string, string | number | boolean>;
+  company_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -308,12 +373,15 @@ export interface UserBadge {
   user_badge_id: string;
   user_id: string;
   badge_id: string;
+  company_id?: string;
   earned_at: string;
 }
 
 export interface ActivityLog {
   log_id: string;
   user_id: string;
+  /** Tenant scope; empty until multi-company backfill. */
+  company_id?: string;
   action: string;
   entity_type: string;
   entity_id: string;
@@ -321,11 +389,90 @@ export interface ActivityLog {
   created_at: string;
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  slug?: string;
+  legal_name?: string;
+  description?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  logo_url?: string;
+  owner_user_id?: string;
+  billing_email?: string;
+  billing_status?: BillingStatus | string;
+  subscription_plan?: SubscriptionPlan | string;
+  subscription_interval?: SubscriptionInterval | string;
+  is_active: boolean;
+  /** Platform / payment verification — unlocks ERP for the org. */
+  is_verified?: boolean;
+  verified_at?: string;
+  trial_ends_at?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Company {
+  id: string;
+  organization_id: string;
+  name: string;
+  slug?: string;
+  legal_name?: string;
+  description?: string;
+  industry?: string;
+  website?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  city?: string;
+  address?: string;
+  logo_url?: string;
+  timezone?: string;
+  employee_count_estimate?: number;
+  is_active?: boolean;
+  /** Paid / verified company — required for dashboard access (except super_admin). */
+  is_verified?: boolean;
+  verified_at?: string;
+  billing_status?: BillingStatus | string;
+  subscription_plan?: SubscriptionPlan | string;
+  subscription_interval?: SubscriptionInterval | string;
+  subscription_started_at?: string;
+  subscription_expires_at?: string;
+  last_payment_at?: string;
+  monthly_price_cents?: number;
+  currency?: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface OrganizationUser {
+  organization_id: string;
+  user_id: string;
+  role: "org_owner" | "org_admin" | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CompanyUser {
+  company_id: string;
+  user_id: string;
+  role: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Setting {
   setting_id: string;
   setting_key: string;
   setting_value: string;
   setting_type: "text" | "number" | "boolean" | "json" | "time" | "date";
+  company_id?: string;
   updated_by: string;
   updated_at: string;
 }

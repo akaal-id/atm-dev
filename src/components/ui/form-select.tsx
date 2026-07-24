@@ -21,6 +21,8 @@ type FormSelectProps = {
   name: string;
   options: FormSelectOption[];
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
   required?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -32,23 +34,29 @@ export function FormSelect({
   name,
   options,
   defaultValue = "",
+  value: controlledValue,
+  onValueChange,
   required = false,
   disabled = false,
   placeholder = "Select option",
   className,
   fullWidth = true,
 }: FormSelectProps) {
-  const [value, setValue] = useState(defaultValue);
+  const isControlled = controlledValue !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+  const value = isControlled ? controlledValue : uncontrolledValue;
   const items = options.map((option) => ({ value: option.value, label: option.label }));
 
   return (
     <div className={cn("min-w-0", className)}>
       <input type="hidden" name={name} value={value} required={required} />
       <Select
-        value={value}
+        value={value || null}
         items={items}
         onValueChange={(nextValue) => {
-          if (nextValue !== null) setValue(nextValue);
+          if (nextValue === null) return;
+          if (!isControlled) setUncontrolledValue(nextValue);
+          onValueChange?.(nextValue);
         }}
         disabled={disabled}
         modal={false}

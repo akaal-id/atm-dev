@@ -1,20 +1,22 @@
-import { adminNavigation, emailBlastNavigation, pageCopy, primaryNavigation } from "@/lib/navigation";
+import { adminNavigation, emailBlastNavigation, pageCopy, primaryNavigation, taskNavigation } from "@/lib/navigation";
+import { appPathname, withTenant, type TenantRef } from "@/lib/tenant-path";
 
 export type PageCopy = { title: string; eyebrow: string; description: string };
 
 export function getPageCopy(pathname: string): PageCopy {
-  const exact = pageCopy[pathname];
+  const path = appPathname(pathname);
+  const exact = pageCopy[path];
   if (exact) return exact;
-  if (pathname.startsWith("/tasks/")) {
+  if (path.startsWith("/tasks/")) {
     return { title: "Task detail", eyebrow: "Tasks", description: "Checklist, comments, status history, and activity log." };
   }
-  if (pathname.startsWith("/employees/")) {
+  if (path.startsWith("/employees/")) {
     return { title: "Employee profile", eyebrow: "HR", description: "Profile, attendance, task history, birthday, and performance score." };
   }
-  if (pathname.startsWith("/email-blast/history/")) {
+  if (path.startsWith("/email-blast/history/")) {
     return { title: "Blast detail", eyebrow: "Email blast", description: "Email content, recipients, and delivery status for this send." };
   }
-  if (pathname.startsWith("/email-blast/contacts/") && pathname !== "/email-blast/contacts") {
+  if (path.startsWith("/email-blast/contacts/") && path !== "/email-blast/contacts") {
     return (
       pageCopy["/email-blast/contacts/[id]"] || {
         title: "Group detail",
@@ -23,14 +25,21 @@ export function getPageCopy(pathname: string): PageCopy {
       }
     );
   }
-  if (pathname.startsWith("/chat")) return pageCopy["/chat"];
+  if (path.startsWith("/chat")) return pageCopy["/chat"];
+  if (path.startsWith("/workflows/") && path !== "/workflows/new") {
+    return {
+      title: "Workflow board",
+      eyebrow: "Task boards",
+      description: "Tasks grouped in this workflow — same board, list, and calendar views.",
+    };
+  }
   return pageCopy["/dashboard"];
 }
 
 export type BreadcrumbItem = { label: string; href?: string };
 
 const labelByHref = new Map<string, string>();
-for (const item of [...primaryNavigation, ...adminNavigation, ...emailBlastNavigation]) {
+for (const item of [...primaryNavigation, ...adminNavigation, ...emailBlastNavigation, ...taskNavigation]) {
   labelByHref.set(item.href, item.label);
   for (const child of item.children || []) {
     labelByHref.set(child.href, child.label);
@@ -45,12 +54,13 @@ function segmentLabel(segment: string) {
     .join(" ");
 }
 
-export function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
-  if (!pathname || pathname === "/") {
-    return [{ label: "Dashboard", href: "/dashboard" }];
+export function getBreadcrumbs(pathname: string, tenant?: TenantRef | null): BreadcrumbItem[] {
+  const path = appPathname(pathname);
+  if (!path || path === "/") {
+    return [{ label: "Dashboard", href: withTenant("/dashboard", tenant) }];
   }
 
-  const parts = pathname.split("/").filter(Boolean);
+  const parts = path.split("/").filter(Boolean);
   const crumbs: BreadcrumbItem[] = [];
   let href = "";
 
@@ -63,9 +73,8 @@ export function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
 
     let label = known || copy?.title || segmentLabel(part);
 
-    // Dynamic segments: prefer page copy title for the leaf
     if (isLast) {
-      const leafCopy = getPageCopy(pathname);
+      const leafCopy = getPageCopy(path);
       if (!known && !pageCopy[href]) {
         label = leafCopy.title;
       } else if (copy) {
@@ -73,16 +82,16 @@ export function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
       }
     }
 
-    // Group parent labels
     if (part === "tasks" && !isLast) label = "Tasks";
+    if (part === "workflows" && !isLast) label = "Workflow";
     if (part === "admin" && !isLast) label = "Admin";
     if (part === "email-blast" && !isLast) label = "Email Blast";
     if (part === "attendance" && !isLast) label = "Attendance";
     if (part === "employees" && !isLast) label = "Employees";
     if (part === "chat" && !isLast) label = "Messages";
 
-    crumbs.push(isLast ? { label } : { label, href });
+    crumbs.push(isLast ? { label } : { label, href: withTenant(href, tenant) });
   }
 
-  return crumbs.length > 0 ? crumbs : [{ label: "Dashboard", href: "/dashboard" }];
+  return crumbs.length > 0 ? crumbs : [{ label: "Dashboard", href: withTenant("/dashboard", tenant) }];
 }

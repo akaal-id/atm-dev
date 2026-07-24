@@ -15,6 +15,7 @@ import {
   Filter,
   FolderOpen,
   Gauge,
+  GitBranch,
   MessageCircle,
   Paperclip,
   Plus,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 
 import { ActivityFeed } from "@/components/app/activity-feed";
+import { AnnouncementCreateForm } from "@/components/app/announcement-create-form";
 import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { CreateProjectModal } from "@/components/app/create-project-modal";
 import { TaskUpdatePanel } from "@/components/app/task-update-panel";
@@ -94,6 +96,7 @@ import type {
   TaskComment,
   User,
   UserBadge,
+  Workflow,
 } from "@/lib/types";
 import { cn, formatDate, formatShortDate, groupBy, isNumericDisplay, percent } from "@/lib/utils";
 
@@ -107,6 +110,7 @@ export type AppData = {
   checklists: TaskChecklist[];
   projectFiles: ProjectFile[];
   projects: Project[];
+  workflows: Workflow[];
   attendance: Attendance[];
   leaveRequests: LeaveRequest[];
   announcements: Announcement[];
@@ -315,21 +319,37 @@ function DashboardSectionTitle({ title, action }: { title: string; action?: Reac
   );
 }
 
+function attendanceClockTone(value: string): "green" | "yellow" | "neutral" {
+  if (value === "Active") return "green";
+  if (value === "Complete") return "yellow";
+  return "neutral";
+}
+
 export function DashboardView(data: AppData) {
   const myTasks = visibleTasksForUser(data.tasks, data.currentUser.user_id);
   const myActiveTasks = activeTasks(myTasks);
   const myCompletedTasks = completedTasks(myTasks);
   const dueToday = tasksDueOnDate(myActiveTasks, jakartaToday());
+  const todayTaskList = dueToday.length > 0 ? dueToday : myActiveTasks.slice(0, 5);
   const canApproveLeave = hasPermission(data.currentUser.role_id, "attendance:approve");
   const pendingApprovals = pendingLeaveRequests(data.leaveRequests, canApproveLeave ? { approverView: true } : { userId: data.currentUser.user_id });
   const attendanceRate = teamAttendanceRateThisWeek(data.attendance, data.users);
   const weekRange = currentWeekRange();
   const unread = data.notifications.filter((notification) => notification.user_id === data.currentUser.user_id && !notification.is_read);
-  const upcomingEvents = [...data.calendarEvents]
-    .sort((left, right) => left.start_date.localeCompare(right.start_date))
-    .slice(0, 4);
-  const leaderboard = leaderboardRows(data).slice(0, 4);
-  const birthdays = upcomingBirthdays(data.users, 30).slice(0, 3);
+  const teamAttendance = activeUsers(data.users)
+    .map((user) => {
+      const record = getTodayAttendance(data.attendance, user.user_id);
+      const clock = getClockStatus(record);
+      return { user, record, clock };
+    })
+    .slice(0, 8);
+  const latestAnnouncements = announcementsForUser(data.announcements, data.currentUser)
+    .sort((left, right) => {
+      if (left.is_pinned !== right.is_pinned) return left.is_pinned ? -1 : 1;
+      return right.scheduled_at.localeCompare(left.scheduled_at);
+    })
+    .slice(0, 3);
+  const recentActivity = [...data.activityLogs].sort((left, right) => right.created_at.localeCompare(left.created_at)).slice(0, 8);
   const firstName = data.currentUser.full_name.split(" ")[0] || data.currentUser.full_name;
 
   return (
@@ -349,8 +369,8 @@ export function DashboardView(data: AppData) {
           <Link href="/attendance" className={dashStyles.heroChip}>
             Attendance
           </Link>
-          <Link href="/calendar" className={dashStyles.heroChip}>
-            Calendar
+          <Link href="/announcements" className={dashStyles.heroChip}>
+            Announcements
           </Link>
         </div>
       </section>
@@ -380,7 +400,7 @@ export function DashboardView(data: AppData) {
         <Card>
           <CardHeader>
             <DashboardSectionTitle
-              title="Today focus"
+              title="Today's tasks"
               action={
                 <Link href="/tasks/my" className={dashStyles.sectionLink}>
                   Open tasks
@@ -389,10 +409,10 @@ export function DashboardView(data: AppData) {
             />
           </CardHeader>
           <CardBody flush>
-            {myActiveTasks.length === 0 ? (
-              <p className={dashStyles.empty}>No active tasks right now.</p>
+            {todayTaskList.length === 0 ? (
+              <p className={dashStyles.empty}>No tasks due today.</p>
             ) : (
-              myActiveTasks.slice(0, 5).map((task) => (
+              todayTaskList.slice(0, 5).map((task) => (
                 <article key={task.task_id} className={dashStyles.taskRow}>
                   <div className={dashStyles.taskTop}>
                     <div className={dashStyles.taskMeta}>
@@ -406,7 +426,7 @@ export function DashboardView(data: AppData) {
                     </div>
                   </div>
                   <div className={dashStyles.stageBar}>
-                    <span className={dashStyles.stageLabel}>Board stage</span>
+                    <span className={dashStyles.stageLabel}>Status</span>
                     <div className="flex flex-wrap items-center gap-2">
                       {task.due_date ? <span className="text-xs font-normal text-muted-foreground">Due {formatShortDate(task.due_date)}</span> : null}
                       <TaskStatusPill status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />
@@ -418,89 +438,53 @@ export function DashboardView(data: AppData) {
           </CardBody>
         </Card>
 
-        <div className={dashStyles.sideStack}>
-          <Card>
-            <CardHeader>
-              <DashboardSectionTitle title="Performance" action={<Trophy className="h-4 w-4 text-amber-500" />} />
-            </CardHeader>
-            <CardBody className="space-y-3">
-              {leaderboard.length === 0 ? (
-                <p className={dashStyles.empty}>No ranking data yet.</p>
-              ) : (
-                leaderboard.map((row, index) => (
-                  <div key={row.user.user_id} className={dashStyles.rankRow}>
-                    <div className={cn(dashStyles.rankIndex, index === 0 && dashStyles.rankIndexLead, index > 0 && dashStyles.rankIndexMuted)}>{index + 1}</div>
-                    <Avatar name={row.user.full_name} image={row.user.profile_photo} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <p className={dashStyles.rankName}>{row.user.full_name}</p>
-                      <p className={dashStyles.rankSub}>{row.badges[0]?.badge_name ?? "Building streak"}</p>
-                    </div>
-                    <p className={dashStyles.rankPoints}>{row.points}</p>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <DashboardSectionTitle title="Birthdays" action={<Cake className="h-4 w-4 text-rose-500" />} />
-            </CardHeader>
-            <CardBody flush>
-              {birthdays.length === 0 ? (
-                <p className={dashStyles.empty}>No birthdays in the next 30 days.</p>
-              ) : (
-                birthdays.map((user) => (
-                  <div key={user.user_id} className={dashStyles.bdayRow}>
-                    <Avatar name={user.full_name} image={user.profile_photo} size="sm" />
-                    <div>
-                      <p className={dashStyles.bdayName}>{user.full_name}</p>
-                      <p className={dashStyles.bdayDate}>{formatShortDate(user.birthday)}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
-        </div>
-      </div>
-
-      <div className={dashStyles.bottomGrid}>
-        <Card className={dashStyles.bottomWide}>
+        <Card>
           <CardHeader>
             <DashboardSectionTitle
-              title="Calendar preview"
+              title="Team attendance"
               action={
-                <Link href="/calendar" className={dashStyles.sectionLink}>
-                  View calendar
+                <Link href="/attendance" className={dashStyles.sectionLink}>
+                  View all
                 </Link>
               }
             />
           </CardHeader>
-          <CardBody className="grid gap-3 sm:grid-cols-2">
-            {upcomingEvents.length === 0 ? (
-              <p className={dashStyles.empty}>No upcoming events.</p>
+          <CardBody flush>
+            {teamAttendance.length === 0 ? (
+              <p className={dashStyles.empty}>No team members to show.</p>
             ) : (
-              upcomingEvents.map((event) => (
-                <div key={event.event_id} className={dashStyles.eventCard}>
-                  <Badge tone={statusTone(event.type)}>{event.type}</Badge>
-                  <p className={dashStyles.eventTitle}>{event.title}</p>
-                  <p className={dashStyles.eventTime}>{formatDate(event.start_date, { hour: "2-digit", minute: "2-digit" })}</p>
+              teamAttendance.map(({ user, record, clock }) => (
+                <div key={user.user_id} className={dashStyles.attendRow}>
+                  <Avatar name={user.full_name} image={user.profile_photo} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className={dashStyles.attendName}>{user.full_name}</p>
+                    <p className={dashStyles.attendDetail}>{clock.detail}</p>
+                  </div>
+                  <Badge tone={attendanceClockTone(clock.value)}>{record?.status ?? clock.value}</Badge>
                 </div>
               ))
             )}
           </CardBody>
         </Card>
+      </div>
 
+      <div className={dashStyles.bottomGrid}>
         <Card>
           <CardHeader>
-            <DashboardSectionTitle title="Pinned updates" />
+            <DashboardSectionTitle
+              title="Latest announcements"
+              action={
+                <Link href="/announcements" className={dashStyles.sectionLink}>
+                  View all
+                </Link>
+              }
+            />
           </CardHeader>
           <CardBody flush>
-            {data.announcements.length === 0 ? (
+            {latestAnnouncements.length === 0 ? (
               <p className={dashStyles.empty}>No announcements yet.</p>
             ) : (
-              data.announcements.slice(0, 2).map((announcement) => (
+              latestAnnouncements.map((announcement) => (
                 <Link key={announcement.announcement_id} href="/announcements" className={dashStyles.announceRow}>
                   <Badge tone={announcement.is_pinned ? "yellow" : "blue"}>{announcement.category}</Badge>
                   <p className={dashStyles.announceTitle}>{announcement.title}</p>
@@ -510,6 +494,16 @@ export function DashboardView(data: AppData) {
             )}
           </CardBody>
         </Card>
+
+        <div className={dashStyles.bottomWide}>
+          <ActivityFeed
+            logs={recentActivity}
+            users={data.users}
+            title="Recent activity"
+            emptyLabel="No recent activity yet."
+            initialLimit={5}
+          />
+        </div>
       </div>
     </div>
   );
@@ -538,6 +532,7 @@ export function TaskListView({ data, scope }: { data: AppData; scope: "my" | "te
         tasks={tasks}
         users={data.users}
         projects={data.projects}
+        checklists={data.checklists}
         currentUser={data.currentUser}
         scope={scope}
         canMoveFinished={canMoveFinished}
@@ -1314,23 +1309,7 @@ export function AnnouncementsView(data: AppData & { canManage: boolean }) {
         </CardHeader>
         <CardBody>
           {data.canManage ? (
-            <form action="/api/resources/Announcements" method="post" className="space-y-4">
-              <input type="hidden" name="created_by" value={data.currentUser.user_id} />
-              <Field label="Title"><input name="title" required className="input" /></Field>
-              <Field label="Category">
-                <FormSelect
-                  name="category"
-                  defaultValue="General"
-                  options={["General", "HR", "Task", "Event", "Birthday", "Important", "Policy", "Reminder"].map((category) => ({
-                    value: category,
-                    label: category,
-                  }))}
-                />
-              </Field>
-              <Field label="Body"><textarea name="body" required className="input min-h-28" /></Field>
-              <label className="flex items-center gap-2 text-sm font-normal text-foreground"><input name="is_pinned" type="checkbox" className="h-4 w-4 accent-primary" /> Pin important announcement</label>
-              <Button type="submit" variant="default" size="xl" className="w-full">Publish</Button>
-            </form>
+            <AnnouncementCreateForm createdBy={data.currentUser.user_id} />
           ) : (
             <div className="space-y-3">
               <InfoTile label="Visible posts" value={`${visibleAnnouncements.length} announcement${visibleAnnouncements.length === 1 ? "" : "s"}`} />
@@ -1722,17 +1701,42 @@ export function AdminView(data: AppData) {
 export function SettingsView(data: AppData) {
   return (
     <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-      <Card>
-        <CardHeader>
-          <SectionTitle title="CMS settings" />
-        </CardHeader>
-        <CardBody className="overflow-x-auto">
-          <DataTable
-            headers={["Key", "Value", "Type", "Updated"]}
-            rows={data.settings.map((setting) => [setting.setting_key, setting.setting_value, setting.setting_type, formatDate(setting.updated_at)])}
-          />
-        </CardBody>
-      </Card>
+      <div className="grid min-w-0 gap-5">
+        <Card>
+          <CardHeader>
+            <SectionTitle
+              title="Task workflows"
+              action={
+                <Link href="/workflows" className={cn(buttonVariants({ variant: "default", size: "lg" }), "h-10")}>
+                  <GitBranch className="h-4 w-4" />
+                  Manage workflows
+                </Link>
+              }
+            />
+          </CardHeader>
+          <CardBody className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Atur papan workflow untuk mengelompokkan task. Saat membuat workflow, project opsional — task project
+              yang terhubung ikut tampil di board tersebut.
+            </p>
+            <Link href="/workflows" className="inline-flex items-center gap-1.5 text-sm font-normal text-primary">
+              Buka menu Workflow
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader>
+            <SectionTitle title="CMS settings" />
+          </CardHeader>
+          <CardBody className="overflow-x-auto">
+            <DataTable
+              headers={["Key", "Value", "Type", "Updated"]}
+              rows={data.settings.map((setting) => [setting.setting_key, setting.setting_value, setting.setting_type, formatDate(setting.updated_at)])}
+            />
+          </CardBody>
+        </Card>
+      </div>
       <Card>
         <CardHeader>
           <SectionTitle title="Database connection" />

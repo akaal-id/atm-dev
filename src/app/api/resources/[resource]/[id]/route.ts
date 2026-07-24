@@ -51,6 +51,15 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
   let previousAssignedTo: string[] = [];
   let existingTask: Task | undefined;
 
+  if (resource === "Workflows") {
+    if ("name" in payload) patch.name = String(payload.name ?? "").trim();
+    if ("description" in payload) patch.description = String(payload.description ?? "");
+    if ("status" in payload) {
+      const status = String(payload.status ?? "Not Started").trim();
+      patch.status = status === "In Progress" || status === "Completed" ? status : "Not Started";
+    }
+  }
+
   if (
     resource === "Tasks" &&
     (patch.assigned_to !== undefined ||
@@ -65,6 +74,12 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
   if (resource === "Tasks") {
     delete patch.task_id;
     delete patch.project_id;
+
+    if (patch.workflow_id !== undefined) {
+      const workflowId = String(patch.workflow_id ?? "").trim();
+      if (workflowId) patch.workflow_id = workflowId;
+      else patch.workflow_id = "";
+    }
 
     if (patch.need_leader_approval !== undefined || patch.labels !== undefined) {
       const needLeaderApproval = patch.need_leader_approval !== undefined ? Boolean(patch.need_leader_approval) : taskNeedsLeaderApproval(existingTask as Task);

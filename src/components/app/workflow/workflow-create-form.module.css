@@ -1,0 +1,347 @@
+.shell {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: calc(100dvh - var(--shell-header-block-size, 5.8125rem) - 3.5rem);
+}
+
+.wizard {
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 40rem;
+}
+
+.intro {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.description {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.progress {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.progressTrack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.progressSegment {
+  height: 0.2rem;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.progressSegmentDone,
+.progressSegmentActive {
+  background: color-mix(in srgb, var(--primary) 70%, var(--border));
+}
+
+.progressLabels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progressLabel {
+  min-width: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.progressLabelActive {
+  color: var(--primary);
+}
+
+.progressLabelDone {
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
+}
+
+.panel {
+  display: grid;
+  gap: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 1.25rem 1.35rem;
+}
+
+.stepBody {
+  display: grid;
+  gap: 1rem;
+}
+
+.fieldGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .fieldGrid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.field {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--foreground);
+}
+
+.optional {
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.modeTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-inset, var(--muted));
+}
+
+.modeTab {
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.modeTabActive {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.templateGrid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.templateCard {
+  display: grid;
+  gap: 0.4rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 0.85rem 0.95rem;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.templateCard:hover {
+  border-color: color-mix(in srgb, var(--foreground) 18%, var(--border));
+}
+
+.templateCardSelected {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+
+.templateName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.templateBadge {
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  background: var(--primary-subtle, color-mix(in srgb, var(--primary) 10%, transparent));
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.templateDesc {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.templateColumns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.columnChip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-inset, var(--muted));
+  padding: 0.2rem 0.45rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.02em;
+  color: var(--muted-foreground);
+}
+
+.columnChipApproval {
+  border-color: color-mix(in srgb, #d97706 40%, transparent);
+  color: #b45309;
+}
+
+.customEditor {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.columnList,
+.backlogList {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.columnRow,
+.backlogRow {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-inset, var(--muted));
+  padding: 0.5rem 0.6rem;
+}
+
+.backlogRow {
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+}
+
+.backlogRow :global(.input) {
+  background: var(--card);
+}
+
+.columnIndex {
+  text-align: center;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.columnNameInput {
+  width: 100%;
+  background: var(--card);
+}
+
+.approvalToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.columnActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.inlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.actionsRight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .progressLabel {
+    display: none;
+  }
+
+  .columnRow {
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+  }
+
+  .approvalToggle,
+  .columnActions {
+    grid-column: 2;
+  }
+}

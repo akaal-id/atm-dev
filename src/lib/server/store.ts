@@ -29,6 +29,7 @@ const idFields: Record<ResourceName, string> = {
   Task_Checklists: "checklist_id",
   Project_Files: "file_id",
   Projects: "project_id",
+  Workflows: "workflow_id",
   Attendance: "attendance_id",
   Leave_Requests: "request_id",
   Announcements: "announcement_id",
@@ -50,6 +51,7 @@ const idPrefixes: Record<ResourceName, string> = {
   Task_Checklists: "chk",
   Project_Files: "pf",
   Projects: "prj",
+  Workflows: "wf",
   Attendance: "att",
   Leave_Requests: "req",
   Announcements: "ann",
@@ -96,23 +98,107 @@ export function getResourceIdField(resource: ResourceName) {
   return idFields[resource];
 }
 
-export async function listResource<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
+/** Resources that carry company_id and must be tenant-filtered. */
+const companyScopedResources = new Set<ResourceName>([
+  "Users",
+  "Departments",
+  // Roles are platform-wide — same catalog for every org/company.
+  "Tasks",
+  "Task_Comments",
+  "Task_Checklists",
+  "Project_Files",
+  "Projects",
+  "Workflows",
+  "Attendance",
+  "Leave_Requests",
+  "Announcements",
+  "Calendar_Events",
+  "Notifications",
+  "Gamification_Points",
+  "Badges",
+  "User_Badges",
+  "Activity_Logs",
+  "Settings",
+]);
+
+async function applyCompanyScopeToRows<R extends ResourceName>(resource: R, rows: ResourceItem<R>[]) {
+  if (!companyScopedResources.has(resource)) return rows;
+  const { resolveCompanyScope, filterRowsByCompanyScope } = await import("@/lib/server/company-scope");
+  const scope = await resolveCompanyScope();
+  return filterRowsByCompanyScope(rows as unknown as Array<Record<string, unknown>>, scope) as unknown as ResourceItem<R>[];
+}
+
+async function stampCompanyIdOnCreate(resource: ResourceName, record: Record<string, unknown>) {
+  if (!companyScopedResources.has(resource)) return record;
+  if (String(record.company_id ?? "").trim()) return record;
+  const { resolveCompanyScope } = await import("@/lib/server/company-scope");
+  const { DEFAULT_COMPANY_ID } = await import("@/lib/server/company-context");
+  const scope = await resolveCompanyScope();
+  record.company_id =
+    scope.mode === "single"
+      ? scope.companyId
+      : scope.mode === "org" && scope.allowedCompanyIds[0]
+        ? scope.allowedCompanyIds[0]
+        : DEFAULT_COMPANY_ID;
+  return record;
+}
+
+async function listResourceRaw<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
   if (shouldUseSupabase()) {
-    const rows = await readSupabaseResource(resource);
-    return normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
+    const raw = await readSupabaseResource(resource);
+    return normalizeSupabaseRecords(resource, raw) as unknown as ResourceItem<R>[];
   }
-
   if (shouldUseAppsScript()) {
-    const rows = await readAppsScriptSheet(resource as SheetName);
-    return rows as unknown as ResourceItem<R>[];
+    return (await readAppsScriptSheet(resource as SheetName)) as unknown as ResourceItem<R>[];
   }
-
   if (shouldUseSheets()) {
-    const rows = await readSheet(resource as SheetName);
-    return rows as unknown as ResourceItem<R>[];
+    return (await readSheet(resource as SheetName)) as unknown as ResourceItem<R>[];
+  }
+  return store[resource] as ResourceItem<R>[];
+}
+
+/** Tenant-filtered list (default for app data). */
+export async function listResource<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
+  const rows = await listResourceRaw(resource);
+  return (await applyCompanyScopeToRows(resource, rows)) as ResourceItem<R>[];
+}
+
+/** Unscoped list — for auth/identity lookups that must not depend on active company. */
+export async function listResourceUnscoped<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
+  return listResourceRaw(resource);
+}
+
+export async function listResourceByFieldUnscoped<R extends ResourceName>(
+  resource: R,
+  field: string,
+  value: string | number | boolean,
+  options: { limit?: number; orderBy?: string; ascending?: boolean } = {},
+): Promise<ResourceItem<R>[]> {
+  if (shouldUseSupabase()) {
+    const rows = await readSupabaseResourceWhere(resource, {
+      filters: { [field]: value },
+      limit: options.limit,
+      orderBy: options.orderBy,
+      ascending: options.ascending,
+    });
+    const normalized = normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
+    return typeof options.limit === "number" ? normalized.slice(0, options.limit) : normalized;
   }
 
-  return store[resource] as ResourceItem<R>[];
+  let rows = (await listResourceUnscoped(resource)).filter((item) => {
+    const record = item as unknown as Record<string, unknown>;
+    return String(record[field] ?? "") === String(value);
+  });
+
+  if (options.orderBy) {
+    rows = [...rows].sort((left, right) => {
+      const leftValue = String((left as unknown as Record<string, unknown>)[options.orderBy!] ?? "");
+      const rightValue = String((right as unknown as Record<string, unknown>)[options.orderBy!] ?? "");
+      return options.ascending ? leftValue.localeCompare(rightValue) : rightValue.localeCompare(leftValue);
+    });
+  }
+
+  return typeof options.limit === "number" ? rows.slice(0, options.limit) : rows;
 }
 
 export async function listResourceByField<R extends ResourceName>(
@@ -128,7 +214,9 @@ export async function listResourceByField<R extends ResourceName>(
       orderBy: options.orderBy,
       ascending: options.ascending,
     });
-    return normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
+    const normalized = normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
+    const scoped = await applyCompanyScopeToRows(resource, normalized);
+    return typeof options.limit === "number" ? scoped.slice(0, options.limit) : scoped;
   }
 
   let rows = (await listResource(resource)).filter((item) => {
@@ -156,10 +244,13 @@ export async function getResourceById<R extends ResourceName>(resource: R, id: s
 export async function createResource<R extends ResourceName>(resource: R, payload: Partial<ResourceItem<R>>) {
   const now = new Date().toISOString();
   const idField = idFields[resource] as keyof ResourceItem<R>;
+  const stamped = await stampCompanyIdOnCreate(resource, {
+    ...(payload as Record<string, unknown>),
+  });
   const record = {
-    ...payload,
-    [idField]: payload[idField] ?? makeId(idPrefixes[resource]),
-    created_at: (payload as Record<string, unknown>).created_at ?? now,
+    ...stamped,
+    [idField]: stamped[idField as string] ?? makeId(idPrefixes[resource]),
+    created_at: stamped.created_at ?? now,
     updated_at: now,
   } as unknown as ResourceItem<R>;
 

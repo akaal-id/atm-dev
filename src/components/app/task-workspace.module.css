@@ -4,11 +4,10 @@
   min-width: 0;
 }
 
-.toolbar {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
+.chrome {
+  display: grid;
   gap: 0.75rem;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: linear-gradient(
@@ -19,10 +18,41 @@
   padding: 0.875rem;
 }
 
+.chromeWithHeader {
+  gap: 0;
+}
+
+.chromeHeader {
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chromeWithHeader .toolbar {
+  margin-top: 0.875rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.boardOnlyLabel {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
 .toolbarActions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
 .filterPanel {

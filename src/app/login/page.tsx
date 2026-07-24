@@ -3,8 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/app/login-form";
-import { safeNextPath } from "@/lib/auth-routes";
+import { isLegacyWorkspacePath, safeNextPath } from "@/lib/auth-routes";
 import { getCurrentUser } from "@/lib/server/auth";
+import { getActiveCompanyContext } from "@/lib/server/company-context";
+import { buildTenantPath, DEFAULT_COMPANY_ID, DEFAULT_ORG_ID, isTenantPath } from "@/lib/tenant-path";
 import styles from "./login.module.css";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; verified?: string }> }) {
@@ -14,7 +16,24 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const appleEnabled = Boolean(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET);
   const nextPath = safeNextPath(params.next);
 
-  if (user) redirect(nextPath);
+  if (user) {
+    if (isTenantPath(nextPath) || nextPath === "/billing") {
+      redirect(nextPath);
+    }
+    try {
+      const context = await getActiveCompanyContext(user.user_id);
+      const tenant = {
+        orgId: context.organization?.id || context.company.organization_id || DEFAULT_ORG_ID,
+        companyId: context.company.id || DEFAULT_COMPANY_ID,
+      };
+      if (isLegacyWorkspacePath(nextPath) || nextPath === "/dashboard") {
+        redirect(buildTenantPath({ ...tenant, path: nextPath }));
+      }
+      redirect(buildTenantPath({ ...tenant, path: "/dashboard" }));
+    } catch {
+      redirect(buildTenantPath({ orgId: DEFAULT_ORG_ID, companyId: DEFAULT_COMPANY_ID, path: "/dashboard" }));
+    }
+  }
 
   return (
     <main className={styles.page}>
@@ -86,6 +105,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
           <p className={styles.requestText}>
             No account yet? <Link href="/signup">Request access</Link> or <Link href="/verify">enter a verification key</Link>.
+          </p>
+          <p className={styles.requestText}>
+            <Link href="/signup/organization">Register as organization owner</Link>
           </p>
         </div>
       </section>

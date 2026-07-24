@@ -188,6 +188,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     payload.labels = setLeaderApprovalRequirement(Array.isArray(payload.labels) ? payload.labels : [], needLeaderApproval);
     payload.need_leader_approval = needLeaderApproval;
     payload.completed_at ??= "";
+    const workflowId = String(payload.workflow_id ?? "").trim();
+    if (workflowId) payload.workflow_id = workflowId;
+    else delete payload.workflow_id;
   }
 
   if (resource === "Projects") {
@@ -199,6 +202,21 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     payload.progress = Number(payload.progress ?? 0);
     payload.notes ??= "";
     payload.links = Array.isArray(payload.links) ? payload.links : [];
+  }
+
+  if (resource === "Workflows") {
+    payload.name = String(payload.name ?? "").trim();
+    payload.description = String(payload.description ?? "").trim();
+    const status = String(payload.status ?? "Not Started").trim();
+    payload.status = status === "In Progress" || status === "Completed" ? status : "Not Started";
+    payload.project_id = String(payload.project_id ?? "").trim();
+    payload.columns = Array.isArray(payload.columns) ? payload.columns : [];
+    payload.sprint_start = String(payload.sprint_start ?? "").trim();
+    payload.sprint_end = String(payload.sprint_end ?? "").trim();
+    payload.ticket_id_prefix = String(payload.ticket_id_prefix ?? "").trim().toUpperCase();
+    payload.template_id = String(payload.template_id ?? "").trim();
+    payload.template_name = String(payload.template_name ?? "").trim();
+    payload.inherit_project_tasks = Boolean(payload.inherit_project_tasks);
   }
 
   if (resource === "Task_Checklists") {

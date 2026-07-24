@@ -13,6 +13,7 @@ export const supabaseTables: Record<SupabaseResourceName, string> = {
   Task_Checklists: "task_checklists",
   Project_Files: "project_files",
   Projects: "projects",
+  Workflows: "workflows",
   Attendance: "attendance",
   Leave_Requests: "leave_requests",
   Announcements: "announcements",

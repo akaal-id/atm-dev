@@ -3,13 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/lib/server/auth";
-import { listResource } from "@/lib/server/store";
 
-import { Button } from "@/components/ui/button";
-import { DatePickerField } from "@/components/ui/date-picker-field";
-import { FormSelect } from "@/components/ui/form-select";
-
-import { PasswordField } from "./password-field";
+import { SignupFields } from "./signup-fields";
 import { SignupForm } from "./signup-form";
 import styles from "./signup.module.css";
 
@@ -20,7 +15,6 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
   const params = await searchParams;
   const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   const appleEnabled = Boolean(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET);
-  const departments = await listResource("Departments");
 
   if (user) redirect("/dashboard");
 
@@ -38,8 +32,8 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         <p className={styles.eyebrow}>Request access</p>
         <h1 className={styles.title}>Create your Akaal Team Management account</h1>
         <p className={styles.text}>
-          Email Blast memakai akun dashboard yang sama. Ajukan akses di sini; admin akan menyetujui dan mengirim verification key.
-          Tidak ada pendaftaran terpisah untuk modul blast.
+          Ajukan akses sebagai karyawan. Masukkan Organization ID, pilih company, lalu department. Admin akan menyetujui
+          dan mengirim verification key.
         </p>
 
         {params.error === "exists" ? <div className={styles.error}>An active account already exists for this email.</div> : null}
@@ -65,72 +59,14 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         ) : null}
 
         <SignupForm>
-          <label className={styles.field}>
-            <span>
-              Full name <b className={styles.requiredMark}>*</b>
-            </span>
-            <input name="full_name" required className="input" autoComplete="name" />
-          </label>
-          <label className={styles.field}>
-            <span>
-              Email <b className={styles.requiredMark}>*</b>
-            </span>
-            <input name="email" type="email" required className="input" autoComplete="email" />
-          </label>
-          <PasswordField name="password" label="Password" autoComplete="new-password" required />
-          <PasswordField name="confirm_password" label="Confirm password" autoComplete="new-password" required />
-          <label className={styles.field}>
-            <span>Profile photo</span>
-            <input name="profile_photo" type="url" className="input" placeholder="https://..." />
-            <input
-              name="profile_photo_file"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
-              className="input"
-            />
-          </label>
-          <label className={styles.field}>
-            <span>Phone</span>
-            <input name="phone" className="input" autoComplete="tel" />
-          </label>
-          <label className={styles.field}>
-            <span>
-              Department <b className={styles.requiredMark}>*</b>
-            </span>
-            <FormSelect
-              name="department_id"
-              required
-              defaultValue=""
-              placeholder="Select department"
-              options={departments.map((department) => ({
-                value: department.department_id,
-                label: department.department_name,
-              }))}
-            />
-          </label>
-          <label className={styles.field}>
-            <span>
-              Birth date <b className={styles.requiredMark}>*</b>
-            </span>
-            <DatePickerField name="birthday" required variant="form" />
-          </label>
-          <label className={styles.field}>
-            <span>
-              Join date <b className={styles.requiredMark}>*</b>
-            </span>
-            <DatePickerField name="join_date" required variant="form" />
-          </label>
-          <label className={styles.fieldWide}>
-            <span>Bio</span>
-            <textarea name="bio" className="input" rows={4} placeholder="Tell the team a little about your role or background." />
-          </label>
-          <Button className={styles.submit} type="submit" size="lg">
-            Request account
-          </Button>
+          <SignupFields />
         </SignupForm>
 
         <p className={styles.footerText}>
           Already verified? <Link href="/login">Sign in</Link>
+        </p>
+        <p className={styles.footerText}>
+          <Link href="/signup/organization">Register as organization owner</Link>
         </p>
       </section>
     </main>

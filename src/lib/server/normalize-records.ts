@@ -61,22 +61,58 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
       need_leader_approval: row.need_leader_approval as boolean | string | number | undefined,
     });
     normalized.progress = ensureNumber(row.progress);
+    normalized.company_id = String(row.company_id ?? "");
+    normalized.workflow_id = String(row.workflow_id ?? "");
   }
 
   if (resource === "Projects") {
     normalized.members = ensureStringArray(row.members);
     normalized.links = ensureStringArray(row.links);
     normalized.progress = ensureNumber(row.progress);
+    normalized.company_id = String(row.company_id ?? "");
+  }
+
+  if (resource === "Workflows") {
+    const columns = row.columns;
+    if (Array.isArray(columns)) {
+      normalized.columns = columns;
+    } else if (typeof columns === "string" && columns.trim()) {
+      try {
+        const parsed = JSON.parse(columns) as unknown;
+        normalized.columns = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        normalized.columns = [];
+      }
+    } else {
+      normalized.columns = [];
+    }
+    normalized.inherit_project_tasks = ensureBoolean(row.inherit_project_tasks);
+    normalized.company_id = String(row.company_id ?? "");
+    normalized.project_id = String(row.project_id ?? "");
+    normalized.sprint_start = String(row.sprint_start ?? "");
+    normalized.sprint_end = String(row.sprint_end ?? "");
+    normalized.ticket_id_prefix = String(row.ticket_id_prefix ?? "");
+    normalized.template_id = String(row.template_id ?? "");
+    normalized.template_name = String(row.template_name ?? "");
+    const status = String(row.status ?? "Not Started").trim();
+    normalized.status =
+      status === "In Progress" || status === "Completed" ? status : "Not Started";
   }
 
   if (resource === "Attendance") {
     normalized.active_minutes = ensureNumber(row.active_minutes);
     normalized.location_count = ensureNumber(row.location_count);
+    normalized.company_id = String(row.company_id ?? "");
   }
 
   if (resource === "Announcements") {
     normalized.target_users = ensureStringArray(row.target_users);
     normalized.is_pinned = ensureBoolean(row.is_pinned);
+    normalized.company_id = String(row.company_id ?? "");
+  }
+
+  if (resource === "Activity_Logs") {
+    normalized.company_id = String(row.company_id ?? "");
   }
 
   if (resource === "Task_Comments") {

@@ -9,7 +9,7 @@ import { resourceNames } from "@/lib/server/store";
 import { uploadFormFile } from "@/lib/server/uploads";
 import type { Permission } from "@/lib/types";
 
-const listFields = new Set(["assigned_to", "labels", "members", "target_users", "mentions", "links"]);
+const listFields = new Set(["assigned_to", "labels", "members", "target_users", "mentions", "links", "columns"]);
 
 const readPermissions: Partial<Record<ResourceName, Permission[]>> = {
   Users: ["employees:view", "employees:manage"],
@@ -20,6 +20,7 @@ const readPermissions: Partial<Record<ResourceName, Permission[]>> = {
   Task_Checklists: ["tasks:own", "tasks:team", "tasks:manage"],
   Project_Files: ["dashboard:view", "tasks:own", "tasks:team", "projects:manage"],
   Projects: ["dashboard:view", "tasks:own", "tasks:team", "projects:manage"],
+  Workflows: ["dashboard:view", "tasks:own", "tasks:team", "tasks:manage", "projects:manage"],
   Attendance: ["attendance:own", "attendance:team"],
   Leave_Requests: ["attendance:own", "attendance:approve"],
   Announcements: ["announcements:view"],
@@ -41,6 +42,7 @@ const writePermissions: Partial<Record<ResourceName, Permission[]>> = {
   Task_Checklists: ["tasks:own", "tasks:team", "tasks:manage"],
   Project_Files: ["tasks:own", "tasks:team", "tasks:manage", "projects:manage"],
   Projects: ["projects:manage"],
+  Workflows: ["tasks:manage", "projects:manage"],
   Attendance: ["attendance:own", "attendance:team"],
   Leave_Requests: ["attendance:own", "attendance:approve"],
   Announcements: ["announcements:manage"],
@@ -80,7 +82,7 @@ function coerceField(key: string, value: FormDataEntryValue) {
   if (typeof File !== "undefined" && value instanceof File) return "";
 
   const text = String(value);
-  if (["is_active", "is_completed", "assignee_completed", "pm_approved", "need_leader_approval", "is_pinned", "is_read"].includes(key)) {
+  if (["is_active", "is_completed", "assignee_completed", "pm_approved", "need_leader_approval", "is_pinned", "is_read", "inherit_project_tasks"].includes(key)) {
     return text === "on" || text === "true" || text === "TRUE";
   }
   if (["progress", "points"].includes(key)) return Number(text);
@@ -195,9 +197,10 @@ export function getRecordId(record: Record<string, unknown>, resource: ResourceN
     Tasks: "task_id",
     Task_Comments: "comment_id",
     Task_Checklists: "checklist_id",
-    Project_Files: "file_id",
-    Projects: "project_id",
-    Attendance: "attendance_id",
+  Project_Files: "file_id",
+  Projects: "project_id",
+  Workflows: "workflow_id",
+  Attendance: "attendance_id",
     Leave_Requests: "request_id",
     Announcements: "announcement_id",
     Calendar_Events: "event_id",

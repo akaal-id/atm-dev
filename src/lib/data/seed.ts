@@ -19,6 +19,7 @@ import type {
   User,
   UserBadge,
 } from "@/lib/types";
+import { seedWorkflows } from "@/lib/data/workflow-seed";
 
 export const demoPassword = "atm-demo-2026";
 
@@ -49,8 +50,16 @@ export const roles: Role[] = [
   {
     role_id: "super_admin",
     role_name: "Super Admin",
-    description: "Can access and manage everything.",
+    description: "Platform developer — can access and manage every organization.",
     permissions_json: allPermissions,
+    created_at: "2026-01-02T09:00:00.000Z",
+    updated_at: "2026-05-20T09:00:00.000Z",
+  },
+  {
+    role_id: "org_owner",
+    role_name: "Organization Owner",
+    description: "Owns an organization and its companies. Full admin within own org only.",
+    permissions_json: allPermissions.filter((permission) => permission !== "roles:manage"),
     created_at: "2026-01-02T09:00:00.000Z",
     updated_at: "2026-05-20T09:00:00.000Z",
   },
@@ -972,6 +981,7 @@ export const seedResources = {
   Task_Checklists: taskChecklists,
   Project_Files: projectFiles,
   Projects: projects,
+  Workflows: seedWorkflows,
   Attendance: attendance,
   Leave_Requests: leaveRequests,
   Announcements: announcements,

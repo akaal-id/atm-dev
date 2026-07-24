@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { CreateTaskModal, type TaskModalProject, type TaskModalUser } from "@/components/app/create-task-modal";
+import { CreateTaskModal, type TaskModalProject, type TaskModalUser, type TaskModalWorkflow } from "@/components/app/create-task-modal";
+import { CompanySwitcher } from "@/components/app/company-switcher";
+import { OrganizationSwitcher } from "@/components/app/organization-switcher";
 import { NotificationLink } from "@/components/app/notification-actions";
 import { AppIcon } from "@/components/app/icons";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { isChatRoomPath } from "@/lib/navigation";
 import { getBreadcrumbs } from "@/lib/page-meta";
 import type { AppNotification, CurrentUser } from "@/lib/types";
+import { useTenant } from "@/components/app/tenant-provider";
 import styles from "./topbar.module.css";
 
 interface TopbarProps {
@@ -20,13 +23,24 @@ interface TopbarProps {
   canCreateTasks: boolean;
   taskModalUsers: TaskModalUser[];
   taskModalProjects: TaskModalProject[];
+  taskModalWorkflows?: TaskModalWorkflow[];
 }
 
-export function Topbar({ user, unreadCount, recentNotifications, canCreateTasks, taskModalUsers, taskModalProjects }: TopbarProps) {
+export function Topbar({
+  user,
+  unreadCount,
+  recentNotifications,
+  canCreateTasks,
+  taskModalUsers,
+  taskModalProjects,
+  taskModalWorkflows,
+}: TopbarProps) {
   const pathname = usePathname();
+  const tenant = useTenant();
   if (isChatRoomPath(pathname)) return null;
 
-  const breadcrumbs = getBreadcrumbs(pathname);
+  const breadcrumbs = getBreadcrumbs(pathname, tenant);
+  const tenantHref = tenant.href;
   const previewNotifications = [...recentNotifications]
     .sort((left, right) => Number(left.is_read) - Number(right.is_read) || new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
     .slice(0, 3);
@@ -57,18 +71,22 @@ export function Topbar({ user, unreadCount, recentNotifications, canCreateTasks,
         </nav>
 
         <div className={styles.actions}>
+          <OrganizationSwitcher />
+          <CompanySwitcher />
+
           {canCreateTasks ? (
             <CreateTaskModal
               currentUser={user}
               users={taskModalUsers}
               projects={taskModalProjects}
+              workflows={taskModalWorkflows}
               title="Create ticket"
               triggerVariant="outline"
               triggerClassName={styles.createTask}
             />
           ) : null}
 
-          <Link href="/notifications" className={styles.notificationButton} aria-label="Open notifications">
+          <Link href={tenantHref("/notifications")} className={styles.notificationButton} aria-label="Open notifications">
             <AppIcon name="Bell" className={styles.icon} />
             {unreadCount > 0 ? <span className={styles.count}>{unreadCount}</span> : null}
           </Link>
@@ -100,7 +118,7 @@ export function Topbar({ user, unreadCount, recentNotifications, canCreateTasks,
                   ))
                 )}
               </div>
-              <Link href="/notifications" className={styles.notificationFooter}>
+              <Link href={tenantHref("/notifications")} className={styles.notificationFooter}>
                 View all notifications
               </Link>
               <form action="/api/auth/logout" method="post" className={styles.logoutForm}>

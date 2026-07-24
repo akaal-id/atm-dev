@@ -3,11 +3,13 @@
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppIcon } from "@/components/app/icons";
+import { useTenant } from "@/components/app/tenant-provider";
 import { Button } from "@/components/ui/button";
 import type { NavigationItem } from "@/lib/navigation";
+import { appPathname } from "@/lib/tenant-path";
 import { cn } from "@/lib/utils";
 import styles from "./sidebar-nav.module.css";
 
@@ -20,24 +22,40 @@ interface SidebarNavProps {
 
 function isItemActive(pathname: string, item: NavigationItem) {
   if (item.children?.length) {
-    return item.children.some((child) => pathname === child.href || pathname.startsWith(`${child.href}/`));
-  }
-  if (item.href === "/email-blast") {
-    return pathname === "/email-blast";
+    return item.children.some((child) => isChildActive(pathname, child.href));
   }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 function isChildActive(pathname: string, href: string) {
   if (href === "/email-blast") return pathname === "/email-blast";
+  if (href === "/tasks/my") return pathname === "/tasks/my" || pathname.startsWith("/tasks/my/");
+  if (href === "/tasks/team") return pathname === "/tasks/team" || pathname.startsWith("/tasks/team/");
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   const pathname = usePathname();
+  const path = appPathname(pathname);
+  const { href: tenantHref } = useTenant();
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const navItems = useMemo(
+    () =>
+      items.map((item) => ({
+        ...item,
+        linkHref: tenantHref(item.href),
+        children: item.children?.map((child) => ({ ...child, linkHref: tenantHref(child.href) })),
+      })),
+    [items, tenantHref],
+  );
+
+  const adminNavItems = useMemo(
+    () => adminItems.map((item) => ({ ...item, linkHref: tenantHref(item.href) })),
+    [adminItems, tenantHref],
+  );
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -55,12 +73,12 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   useEffect(() => {
     const next: Record<string, boolean> = {};
     for (const item of items) {
-      if (item.children?.length && isItemActive(pathname, item)) {
+      if (item.children?.length && isItemActive(path, item)) {
         next[item.href] = true;
       }
     }
     setOpenGroups((current) => ({ ...current, ...next }));
-  }, [pathname, items]);
+  }, [path, items]);
 
   function toggleCollapsed() {
     setCollapsed((current) => !current);
@@ -73,7 +91,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   return (
     <aside className={cn(styles.sidebar, collapsed && styles.collapsed)}>
       <div className={styles.brandBlock}>
-        <Link href="/dashboard" className={styles.brandLink} title="Akaal Team Management">
+        <Link href={tenantHref("/dashboard")} className={styles.brandLink} title="Akaal Team Management">
           <span className={styles.logoWrap}>
             <img
               src="/icon/mono-akaal-white.png"
@@ -93,8 +111,8 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
 
       <nav className={styles.nav}>
         <div className={styles.navGroup}>
-          {items.map((item) => {
-            const active = isItemActive(pathname, item);
+          {navItems.map((item) => {
+            const active = isItemActive(path, item);
             const hasChildren = Boolean(item.children?.length);
             const expanded = hasChildren && (openGroups[item.href] || active) && !collapsed;
 
@@ -122,11 +140,11 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
                   {expanded ? (
                     <div className={styles.subLinks}>
                       {item.children.map((child) => {
-                        const childActive = isChildActive(pathname, child.href);
+                        const childActive = isChildActive(path, child.href);
                         return (
                           <Link
                             key={child.href}
-                            href={child.href}
+                            href={child.linkHref}
                             title={child.label}
                             className={cn(styles.subLink, childActive && styles.activePrimary)}
                           >
@@ -143,7 +161,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.linkHref}
                 title={item.label}
                 className={cn(styles.link, active && styles.activePrimary)}
               >
@@ -154,16 +172,16 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
           })}
         </div>
 
-        {adminItems.length > 0 ? (
+        {adminNavItems.length > 0 ? (
           <div className={styles.adminGroup}>
             <p className={styles.groupLabel}>Admin</p>
             <div className={styles.adminLinks}>
-              {adminItems.map((item) => {
-                const active = pathname === item.href;
+              {adminNavItems.map((item) => {
+                const active = path === item.href;
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={item.linkHref}
                     title={item.label}
                     className={cn(styles.link, active && styles.activeAdmin)}
                   >

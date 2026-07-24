@@ -10,7 +10,7 @@ import { cache } from "react";
 import { departments as seedDepartments, roles as seedRoles } from "@/lib/data/seed";
 import { hasPermission } from "@/lib/permissions";
 import { authOptions } from "@/lib/server/next-auth-options";
-import { listResource, listResourceByField } from "@/lib/server/store";
+import { listResourceByFieldUnscoped, listResourceUnscoped } from "@/lib/server/store";
 import type { CurrentUser, Permission, RoleKey, User } from "@/lib/types";
 
 export const sessionCookieName = "atm_session";
@@ -62,7 +62,9 @@ export async function getSession() {
   const email = nextAuthSession?.user?.email;
   if (!email) return null;
 
-  const users = await listResourceByField("Users", "email", email.toLowerCase(), { limit: 1 });
+  // Identity lookups must ignore active company — otherwise a switched company cookie
+  // can hide the session user and cause login↔dashboard redirect loops.
+  const users = await listResourceByFieldUnscoped("Users", "email", email.toLowerCase(), { limit: 1 });
   const user = users.find((candidate) => candidate.email.toLowerCase() === email.toLowerCase() && candidate.is_active) as User | undefined;
   if (!user) return null;
 
@@ -75,7 +77,7 @@ export async function getSession() {
 
 export async function authenticateUser(email: string, password: string) {
   const normalizedEmail = email.toLowerCase();
-  const users = await listResourceByField("Users", "email", normalizedEmail, { limit: 1 });
+  const users = await listResourceByFieldUnscoped("Users", "email", normalizedEmail, { limit: 1 });
   const user = users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail && candidate.is_active) as User | undefined;
 
   if (!user) return null;
@@ -91,9 +93,9 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Cur
   if (!session) return null;
 
   const [users, departments, roles] = await Promise.all([
-    listResourceByField("Users", "user_id", session.userId, { limit: 1 }),
-    listResource("Departments"),
-    listResource("Roles"),
+    listResourceByFieldUnscoped("Users", "user_id", session.userId, { limit: 1 }),
+    listResourceUnscoped("Departments"),
+    listResourceUnscoped("Roles"),
   ]);
   const user = users.find((candidate) => candidate.user_id === session.userId && candidate.is_active);
   if (!user) return null;

@@ -29,6 +29,8 @@ export const projectStatuses = [
   "Cancelled",
 ] as const;
 
+export const workflowStatuses = ["Not Started", "In Progress", "Completed"] as const;
+
 export const attendanceStatuses = [
   "Present",
   "Late",
@@ -61,5 +63,10 @@ export function roleLabel(roleId: RoleKey) {
 }
 
 export function canApproveTaskAsLeader(user: { role_id: RoleKey; employment_status: EmployeeStatus | string }) {
-  return user.role_id === "super_admin" || user.role_id === "admin" || user.employment_status === "Manager";
+  return (
+    user.role_id === "super_admin" ||
+    user.role_id === "org_owner" ||
+    user.role_id === "admin" ||
+    user.employment_status === "Manager"
+  );
 }

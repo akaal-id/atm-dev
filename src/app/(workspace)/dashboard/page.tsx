@@ -9,10 +9,7 @@ export default async function DashboardPage() {
     "Attendance",
     "Leave_Requests",
     "Announcements",
-    "Calendar_Events",
-    "Gamification_Points",
-    "Badges",
-    "User_Badges",
+    "Activity_Logs",
   ]);
   data.notifications = await listResourceByField("Notifications", "user_id", data.currentUser.user_id, {
     limit: 50,

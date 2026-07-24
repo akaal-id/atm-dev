@@ -1,0 +1,140 @@
+.panel {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.summary {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.label {
+  margin: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.42);
+}
+
+.value {
+  margin: 0.2rem 0 0;
+  color: #0a0a0a;
+  font-size: 0.9375rem;
+}
+
+.badge {
+  margin: 0.2rem 0 0;
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 2px;
+  background: #fff7ed;
+  color: #c2410c;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.plan {
+  border: 1px solid rgba(109, 40, 217, 0.22);
+  border-radius: 2px;
+  padding: 1rem;
+  background: #faf5ff;
+}
+
+.planHead {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.planIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #6d28d9;
+  margin-top: 0.15rem;
+}
+
+.planName {
+  margin: 0;
+  font-size: 0.8125rem;
+  text-transform: capitalize;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.price {
+  margin: 0.15rem 0 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  color: #0a0a0a;
+}
+
+.features {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.features li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: #334155;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.check {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #6d28d9;
+  margin-top: 0.15rem;
+}
+
+.payButton {
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.note {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.error {
+  margin: 0;
+  border: 1px solid #fecdd3;
+  border-radius: 2px;
+  background: #fff1f2;
+  padding: 0.75rem;
+  color: #be123c;
+  font-size: 0.875rem;
+}
+
+.spin {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 640px) {
+  .summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -278,7 +278,7 @@
   color: var(--foreground);
 }
 
-.bdayRow {
+.attendRow {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -286,47 +286,23 @@
   border-bottom: 1px solid var(--border);
 }
 
-.bdayRow:last-child {
+.attendRow:last-child {
   border-bottom: 0;
 }
 
-.bdayName {
+.attendName {
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.875rem;
   font-weight: 400;
   color: var(--foreground);
 }
 
-.bdayDate {
+.attendDetail {
   margin: 0.125rem 0 0;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  color: var(--muted-foreground);
-}
-
-.eventCard {
-  border-top: 1px solid var(--border);
-  padding: 1rem 0 0;
-  background: transparent;
-}
-
-.eventCard + .eventCard {
-  margin-top: 0.875rem;
-  padding-top: 0.875rem;
-}
-
-.eventTitle {
-  margin: 0.625rem 0 0;
-  font-size: 0.9375rem;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: var(--foreground);
-}
-
-.eventTime {
-  margin: 0.25rem 0 0;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--muted-foreground);
 }
 

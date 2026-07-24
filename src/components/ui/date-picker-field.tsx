@@ -9,6 +9,9 @@ import { jakartaToday } from "@/lib/metrics";
 import { cn, formatShortDate } from "@/lib/utils";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+type CalendarView = "days" | "months" | "years";
 
 type DatePickerFieldProps = {
   label?: string;
@@ -38,17 +41,30 @@ function monthCells(monthKey: string) {
   return cells;
 }
 
-function monthTitle(monthKey: string) {
+function parseMonthKey(monthKey: string) {
   const [year, month] = monthKey.split("-").map(Number);
+  return { year, month };
+}
+
+function toMonthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function monthTitle(monthKey: string) {
+  const { year, month } = parseMonthKey(monthKey);
   return new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(Date.UTC(year, month - 1, 1)),
   );
 }
 
 function shiftMonth(monthKey: string, delta: number) {
-  const [year, month] = monthKey.split("-").map(Number);
+  const { year, month } = parseMonthKey(monthKey);
   const date = new Date(Date.UTC(year, month - 1 + delta, 1));
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+  return toMonthKey(date.getUTCFullYear(), date.getUTCMonth() + 1);
+}
+
+function yearDecadeStart(year: number) {
+  return Math.floor(year / 12) * 12;
 }
 
 const filterControlClassName =
@@ -75,8 +91,11 @@ export function DatePickerField({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const value = isControlled ? controlledValue : internalValue;
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<CalendarView>("days");
   const [monthKey, setMonthKey] = useState(value ? value.slice(0, 7) : today.slice(0, 7));
   const cells = useMemo(() => monthCells(monthKey), [monthKey]);
+  const { year, month } = parseMonthKey(monthKey);
+  const decadeStart = yearDecadeStart(year);
   const canClear = clearable ?? (variant === "filter" && !required);
   const emptyLabel = placeholder ?? (variant === "filter" ? "Any date" : "Select date");
   const triggerClassName = variant === "filter" ? filterControlClassName : formControlClassName;
@@ -91,6 +110,7 @@ export function DatePickerField({
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
       setMonthKey(value ? value.slice(0, 7) : today.slice(0, 7));
+      setView("days");
     }
     setOpen(nextOpen);
   };
@@ -98,6 +118,30 @@ export function DatePickerField({
   const selectDate = (date: string) => {
     setValue(date);
     setOpen(false);
+  };
+
+  const headerLabel =
+    view === "days"
+      ? monthTitle(monthKey)
+      : view === "months"
+        ? String(year)
+        : `${decadeStart} – ${decadeStart + 11}`;
+
+  const goPrev = () => {
+    if (view === "days") setMonthKey((current) => shiftMonth(current, -1));
+    else if (view === "months") setMonthKey(toMonthKey(year - 1, month));
+    else setMonthKey(toMonthKey(year - 12, month));
+  };
+
+  const goNext = () => {
+    if (view === "days") setMonthKey((current) => shiftMonth(current, 1));
+    else if (view === "months") setMonthKey(toMonthKey(year + 1, month));
+    else setMonthKey(toMonthKey(year + 12, month));
+  };
+
+  const advanceView = () => {
+    if (view === "days") setView("months");
+    else if (view === "months") setView("years");
   };
 
   return (
@@ -142,64 +186,121 @@ export function DatePickerField({
 
         <PopoverContent side="bottom" align="start" sideOffset={4} className="w-[18.5rem] p-3">
           <div className="flex items-center justify-between gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Previous month"
-              onClick={() => setMonthKey((current) => shiftMonth(current, -1))}
-            >
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous" onClick={goPrev}>
               <ChevronLeft className="size-4" />
             </Button>
-            <p className="text-sm font-normal text-foreground">{monthTitle(monthKey)}</p>
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Next month"
-              onClick={() => setMonthKey((current) => shiftMonth(current, 1))}
+              className="inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-[2px] px-2 py-1.5 text-sm font-normal text-foreground transition hover:bg-muted"
+              onClick={advanceView}
+              aria-label={view === "days" ? "Choose month" : view === "months" ? "Choose year" : "Year range"}
+              disabled={view === "years"}
             >
+              <span className="truncate">{headerLabel}</span>
+              {view !== "years" ? <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" /> : null}
+            </button>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Next" onClick={goNext}>
               <ChevronRight className="size-4" />
             </Button>
           </div>
 
-          <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[0.7rem] font-normal tracking-wide text-muted-foreground uppercase">
-            {WEEKDAYS.map((day) => (
-              <span key={day} className="py-1">
-                {day}
-              </span>
-            ))}
-          </div>
+          {view === "days" ? (
+            <>
+              <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[0.7rem] font-normal tracking-wide text-muted-foreground uppercase">
+                {WEEKDAYS.map((day) => (
+                  <span key={day} className="py-1">
+                    {day}
+                  </span>
+                ))}
+              </div>
 
-          <div className="mt-1 grid grid-cols-7 gap-1">
-            {cells.map((date, index) => {
-              if (!date) {
-                return <span key={`empty-${index}`} className="size-9" aria-hidden="true" />;
-              }
+              <div className="mt-1 grid grid-cols-7 gap-1">
+                {cells.map((date, index) => {
+                  if (!date) {
+                    return <span key={`empty-${index}`} className="size-9" aria-hidden="true" />;
+                  }
 
-              const isSelected = value === date;
-              const isToday = today === date;
+                  const isSelected = value === date;
+                  const isToday = today === date;
 
-              return (
-                <Button
-                  key={date}
-                  type="button"
-                  variant={isSelected ? "default" : "ghost"}
-                  size="icon-sm"
-                  onClick={() => selectDate(date)}
-                  className={cn(
-                    "size-9 rounded-[2px] text-sm font-normal",
-                    !isSelected && isToday && "bg-primary-subtle text-primary hover:bg-primary-subtle",
-                  )}
-                >
-                  {Number(date.slice(8, 10))}
-                </Button>
-              );
-            })}
-          </div>
+                  return (
+                    <Button
+                      key={date}
+                      type="button"
+                      variant={isSelected ? "default" : "ghost"}
+                      size="icon-sm"
+                      onClick={() => selectDate(date)}
+                      className={cn(
+                        "size-9 rounded-[2px] text-sm font-normal",
+                        !isSelected && isToday && "bg-primary-subtle text-primary hover:bg-primary-subtle",
+                      )}
+                    >
+                      {Number(date.slice(8, 10))}
+                    </Button>
+                  );
+                })}
+              </div>
+            </>
+          ) : null}
+
+          {view === "months" ? (
+            <div className="mt-3 grid grid-cols-3 gap-1">
+              {MONTH_SHORT.map((label, index) => {
+                const nextMonth = index + 1;
+                const isSelected = month === nextMonth;
+                return (
+                  <Button
+                    key={label}
+                    type="button"
+                    variant={isSelected ? "default" : "ghost"}
+                    size="sm"
+                    className="h-10 rounded-[2px] font-normal"
+                    onClick={() => {
+                      setMonthKey(toMonthKey(year, nextMonth));
+                      setView("days");
+                    }}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {view === "years" ? (
+            <div className="mt-3 grid grid-cols-3 gap-1">
+              {Array.from({ length: 12 }, (_, index) => decadeStart + index).map((nextYear) => {
+                const isSelected = year === nextYear;
+                return (
+                  <Button
+                    key={nextYear}
+                    type="button"
+                    variant={isSelected ? "default" : "ghost"}
+                    size="sm"
+                    className="h-10 rounded-[2px] font-normal"
+                    onClick={() => {
+                      setMonthKey(toMonthKey(nextYear, month));
+                      setView("months");
+                    }}
+                  >
+                    {nextYear}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
 
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-            <Button type="button" variant="link" size="sm" onClick={() => selectDate(today)}>
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={() => {
+                setMonthKey(today.slice(0, 7));
+                setView("days");
+                selectDate(today);
+              }}
+            >
               Today
             </Button>
             {canClear ? (

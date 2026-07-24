@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormSelect } from "@/components/ui/form-select";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { useTenant } from "@/components/app/tenant-provider";
 import type { EmployeeStatus, RoleKey } from "@/lib/types";
 
 export interface EmployeeAdminUser {
@@ -48,6 +49,7 @@ export function EmployeeAdminControls({
   canRemove: boolean;
 }) {
   const router = useRouter();
+  const { href: tenantHref } = useTenant();
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [message, setMessage] = useState("");
@@ -97,7 +99,7 @@ export function EmployeeAdminControls({
       return;
     }
 
-    router.push("/employees");
+    router.push(tenantHref("/employees"));
     router.refresh();
   };
 

@@ -1,4 +1,5 @@
 import type { EmployeeStatus, Permission, RoleKey } from "@/lib/types";
+import { appPathname } from "@/lib/tenant-path";
 
 export type IconName =
   | "LayoutDashboard"
@@ -16,7 +17,8 @@ export type IconName =
   | "Sparkles"
   | "UserPlus"
   | "MessageCircle"
-  | "Mail";
+  | "Mail"
+  | "GitBranch";
 
 export interface NavigationItem {
   label: string;
@@ -33,11 +35,22 @@ export const emailBlastNavigation: NavigationItem[] = [
   { label: "Settings", href: "/email-blast/settings", icon: "Settings", permission: "dashboard:view" },
 ];
 
+export const taskNavigation: NavigationItem[] = [
+  { label: "Workflow", href: "/workflows", icon: "GitBranch", permission: "dashboard:view" },
+  { label: "My Task", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" },
+  { label: "Team Task", href: "/tasks/team", icon: "Users", permission: "dashboard:view" },
+  { label: "Approvals", href: "/admin/approval", icon: "CheckSquare", permission: "admin:view" },
+];
+
 export const primaryNavigation: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
-  { label: "My Tasks", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" },
-  { label: "Team Tasks", href: "/tasks/team", icon: "Users", permission: "dashboard:view" },
-  { label: "Approvals", href: "/admin/approval", icon: "CheckSquare", permission: "admin:view" },
+  {
+    label: "Task",
+    href: "/tasks",
+    icon: "CheckSquare",
+    permission: "dashboard:view",
+    children: taskNavigation,
+  },
   { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "dashboard:view" },
   { label: "Calendar", href: "/calendar", icon: "CalendarDays", permission: "dashboard:view" },
   { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
@@ -56,19 +69,32 @@ export const primaryNavigation: NavigationItem[] = [
 
 export const adminNavigation: NavigationItem[] = [
   { label: "Admin", href: "/admin", icon: "Shield", permission: "admin:view" },
-  { label: "Settings", href: "/admin/settings", icon: "Settings", permission: "settings:manage" },
+  {
+    label: "Settings",
+    href: "/admin/settings",
+    icon: "Settings",
+    permission: "settings:manage",
+    children: [
+      { label: "Company settings", href: "/admin/settings", icon: "Settings", permission: "settings:manage" },
+      { label: "Attendance Rules", href: "/admin/attendance-settings", icon: "Clock3", permission: "settings:manage" },
+      { label: "Gamification", href: "/admin/gamification-settings", icon: "Sparkles", permission: "settings:manage" },
+    ],
+  },
   { label: "Roles", href: "/admin/roles", icon: "KeyRound", permission: "roles:manage" },
-  { label: "Attendance Rules", href: "/admin/attendance-settings", icon: "Clock3", permission: "settings:manage" },
-  { label: "Gamification", href: "/admin/gamification-settings", icon: "Sparkles", permission: "settings:manage" },
   { label: "Invite User", href: "/invite", icon: "UserPlus", permission: "employees:manage" },
 ];
 
 export function isChatRoomPath(pathname: string) {
-  return /^\/chat\/[^/]+$/.test(pathname);
+  return /^\/chat\/[^/]+$/.test(appPathname(pathname));
 }
 
 export function usesTeamTaskNav(roleId: RoleKey, employmentStatus: EmployeeStatus | string) {
-  return roleId === "super_admin" || roleId === "admin" || employmentStatus === "Manager";
+  return (
+    roleId === "super_admin" ||
+    roleId === "org_owner" ||
+    roleId === "admin" ||
+    employmentStatus === "Manager"
+  );
 }
 
 export function getBottomNavigation(roleId: RoleKey, employmentStatus: EmployeeStatus | string): NavigationItem[] {
@@ -105,6 +131,16 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     title: "Projects",
     eyebrow: "Progress tracking",
     description: "Owners, timelines, milestones, notes, and delivery health.",
+  },
+  "/workflows": {
+    title: "Workflows",
+    eyebrow: "Task boards",
+    description: "Group tasks into boards with optional project links and Kanban columns.",
+  },
+  "/workflows/new": {
+    title: "New workflow",
+    eyebrow: "Task boards",
+    description: "Name the board, choose Kanban columns, then optionally seed a backlog.",
   },
   "/project-files": {
     title: "Project Files",

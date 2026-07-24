@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 
 import bcrypt from "bcryptjs";
 
-import { createResource, listResource, updateResource } from "@/lib/server/store";
+import { createResource, listResourceUnscoped, updateResource } from "@/lib/server/store";
 import { sendEmail } from "@/lib/server/resend";
 import type { User } from "@/lib/types";
 
@@ -12,6 +12,8 @@ interface SignupRequestInput {
   full_name: string;
   email: string;
   password?: string;
+  organization_id?: string;
+  company_id?: string;
   department_id?: string;
   birthday?: string;
   join_date?: string;
@@ -53,7 +55,7 @@ function isPendingUser(user: User) {
 }
 
 export async function createSignupRequest(input: SignupRequestInput) {
-  const users = await listResource("Users");
+  const users = await listResourceUnscoped("Users");
   const existing = users.find((user) => user.email.toLowerCase() === input.email.toLowerCase()) as User | undefined;
 
   if (existing?.is_active) {
@@ -75,6 +77,7 @@ export async function createSignupRequest(input: SignupRequestInput) {
       bio: input.bio ?? existing.bio ?? "",
       phone: input.phone ?? existing.phone ?? "",
       department_id: input.department_id ?? existing.department_id ?? "",
+      company_id: input.company_id ?? existing.company_id ?? "",
       birthday: input.birthday ?? existing.birthday ?? "",
       join_date: input.join_date ?? existing.join_date ?? "",
       position: "Pending access",
@@ -107,6 +110,7 @@ export async function createSignupRequest(input: SignupRequestInput) {
     bio: input.bio ?? "",
     phone: input.phone ?? "",
     department_id: input.department_id ?? "",
+    company_id: input.company_id ?? "",
     position: "Pending access",
     employment_status: "Inactive",
     role_id: "employee",
@@ -130,7 +134,7 @@ export async function createSignupRequest(input: SignupRequestInput) {
 }
 
 export async function approveSignupRequest(userId: string, adminUser: AdminActor) {
-  const users = await listResource("Users");
+  const users = await listResourceUnscoped("Users");
   const user = users.find((candidate) => candidate.user_id === userId) as User | undefined;
   if (!user) return { ok: false, reason: "not_found" as const };
 
@@ -163,7 +167,7 @@ export async function approveSignupRequest(userId: string, adminUser: AdminActor
 }
 
 export async function rejectSignupRequest(userId: string, adminUser: AdminActor, reason: string) {
-  const users = await listResource("Users");
+  const users = await listResourceUnscoped("Users");
   const user = users.find((candidate) => candidate.user_id === userId) as User | undefined;
   if (!user) return { ok: false, reason: "not_found" as const };
 
@@ -190,7 +194,7 @@ export async function rejectSignupRequest(userId: string, adminUser: AdminActor,
 }
 
 export async function verifySignupKey(email: string, key: string) {
-  const users = await listResource("Users");
+  const users = await listResourceUnscoped("Users");
   const user = users.find((candidate) => candidate.email.toLowerCase() === email.toLowerCase() && candidate.signup_status === "approved") as User | undefined;
 
   if (!user || user.signup_status !== "approved" || !user.verification_key_hash) {
@@ -258,8 +262,8 @@ async function sendRejectedEmail(user: User, reason: string) {
 }
 
 async function notifyAdminsAboutRequest(user: User) {
-  const users = await listResource("Users");
-  const admins = users.filter((candidate) => candidate.is_active && ["super_admin", "admin"].includes(candidate.role_id));
+  const users = await listResourceUnscoped("Users");
+  const admins = users.filter((candidate) => candidate.is_active && ["super_admin", "admin", "org_owner"].includes(candidate.role_id));
 
   await Promise.all(
     admins.map((admin) =>

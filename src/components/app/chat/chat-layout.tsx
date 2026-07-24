@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { useTenant } from "@/components/app/tenant-provider";
 import type { DirectoryUser } from "@/components/app/chat/members-dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { createRoom } from "@/lib/server/chat-actions";
@@ -37,6 +38,7 @@ export function ChatLayout({
 }) {
   const [query, setQuery] = useState("");
   const [newChatOpen, setNewChatOpen] = useState(false);
+  const { href: tenantHref } = useTenant();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -91,7 +93,7 @@ export function ChatLayout({
             filtered.map((room) => (
               <Link
                 key={room.room_id}
-                href={`/chat/${room.room_id}`}
+                href={tenantHref(`/chat/${room.room_id}`)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 transition hover:bg-surface-inset",
                   activeRoomId === room.room_id && "bg-primary-subtle",
@@ -131,6 +133,7 @@ export function ChatLayout({
 
 function NewChatDialog({ open, onClose, directory }: { open: boolean; onClose: () => void; directory: DirectoryUser[] }) {
   const router = useRouter();
+  const { href: tenantHref } = useTenant();
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -164,7 +167,7 @@ function NewChatDialog({ open, onClose, directory }: { open: boolean; onClose: (
       setSelected(new Set());
       setQuery("");
       setGroupName("");
-      router.push(`/chat/${room.room_id}`);
+      router.push(tenantHref(`/chat/${room.room_id}`));
       router.refresh();
     });
   }

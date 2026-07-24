@@ -7,6 +7,7 @@ import { useState } from "react";
 import { EditTaskModal, type TaskModalProject, type TaskModalUser } from "@/components/app/create-task-modal";
 import { Button } from "@/components/ui/button";
 import { TaskConfirmModal } from "@/components/app/task-confirm-modal";
+import { useTenant } from "@/components/app/tenant-provider";
 import { canApproveTaskAsLeader, hasPermission } from "@/lib/permissions";
 import { taskNeedsLeaderApproval } from "@/lib/task-approval";
 import type { CurrentUser, Task, TaskChecklist } from "@/lib/types";
@@ -26,6 +27,7 @@ export function TaskUpdatePanel({
   projects: TaskModalProject[];
 }) {
   const router = useRouter();
+  const { href: tenantHref } = useTenant();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -67,7 +69,7 @@ export function TaskUpdatePanel({
     }
 
     setDeleteConfirmOpen(false);
-    router.push("/tasks/my");
+    router.push(tenantHref("/tasks/my"));
     router.refresh();
   };
 
