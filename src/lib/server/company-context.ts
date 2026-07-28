@@ -17,7 +17,7 @@ export const DEFAULT_COMPANY_ID = "cmp_akaal";
 
 export type CompanyScope =
   | { mode: "all"; companyId: null; isSuperAdmin: true; allowedCompanyIds: null }
-  | { mode: "org"; companyId: null; isSuperAdmin: false; allowedCompanyIds: string[] }
+  | { mode: "org"; companyId: null; isSuperAdmin: boolean; allowedCompanyIds: string[] }
   | { mode: "single"; companyId: string; isSuperAdmin: boolean; allowedCompanyIds: null };
 
 export const defaultOrganization: Organization = {
