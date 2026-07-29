@@ -68,10 +68,11 @@ function uploadConfigForField(fieldName: string) {
     maxBytes: isProfilePhoto ? 5 * 1024 * 1024 : 10 * 1024 * 1024,
     allowedMimeTypes: isProfilePhoto ? imageMimeTypes : attachmentMimeTypes,
     bucket: isEmailBlast ? emailBlastBucketName() : bucketName(),
+    public: !isEmailBlast,
   };
 }
 
-function emailBlastBucketName() {
+export function emailBlastBucketName() {
   return process.env.SUPABASE_EMAIL_BLAST_BUCKET || "email-blast-attachments";
 }
 
@@ -101,10 +102,11 @@ function resolveMimeType(file: File, allowedMimeTypes: string[]) {
   return file.type;
 }
 
-let bucketPromises = new Map<string, Promise<void>>();
+const bucketPromises = new Map<string, Promise<void>>();
 
-async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = attachmentMimeTypes) {
-  const existing = bucketPromises.get(bucket);
+async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = attachmentMimeTypes, isPublic = true) {
+  const cacheKey = `${bucket}:${isPublic}`;
+  const existing = bucketPromises.get(cacheKey);
   if (existing) return existing;
 
   const promise = (async () => {
@@ -114,7 +116,28 @@ async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = atta
       headers: uploadHeaders(),
     });
 
-    if (check.ok) return;
+    if (check.ok) {
+      const current = (await check.json().catch(() => null)) as { public?: boolean } | null;
+      if (current && current.public !== isPublic) {
+        // Bucket exists but its visibility drifted from what this field requires (e.g. was created
+        // public before this field switched to private) — correct it in place rather than leaving
+        // files under the wrong access policy.
+        const update = await fetch(`${baseUrl}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
+          method: "PUT",
+          headers: uploadHeaders(),
+          body: JSON.stringify({
+            id: bucket,
+            public: isPublic,
+            file_size_limit: 10 * 1024 * 1024,
+            allowed_mime_types: allowedMimeTypes,
+          }),
+        });
+        if (!update.ok) {
+          throw new UploadError(`Could not update Supabase Storage bucket visibility. Status ${update.status}.`);
+        }
+      }
+      return;
+    }
 
     if (check.status !== 404) {
       throw new UploadError(`Could not verify Supabase Storage bucket. Status ${check.status}.`);
@@ -126,7 +149,7 @@ async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = atta
       body: JSON.stringify({
         id: bucket,
         name: bucket,
-        public: true,
+        public: isPublic,
         file_size_limit: 10 * 1024 * 1024,
         allowed_mime_types: allowedMimeTypes,
       }),
@@ -136,11 +159,11 @@ async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = atta
       throw new UploadError(`Could not create Supabase Storage bucket. Status ${create.status}.`);
     }
   })().catch((error) => {
-    bucketPromises.delete(bucket);
+    bucketPromises.delete(cacheKey);
     throw error;
   });
 
-  bucketPromises.set(bucket, promise);
+  bucketPromises.set(cacheKey, promise);
   return promise;
 }
 
@@ -156,7 +179,7 @@ export async function uploadFormFile(file: File, fieldName: string) {
     throw new UploadError("Unsupported file type. Upload a JPG, PNG, WebP, GIF, PDF, or Word document.");
   }
 
-  await ensureUploadBucket(config.bucket, config.allowedMimeTypes);
+  await ensureUploadBucket(config.bucket, config.allowedMimeTypes, config.public);
 
   const baseUrl = supabaseUrl();
   const bucket = config.bucket;
@@ -176,10 +199,56 @@ export async function uploadFormFile(file: File, fieldName: string) {
     throw new UploadError(`Supabase upload failed. Status ${response.status}. ${preview.slice(0, 180)}`);
   }
 
-  return `${baseUrl}/storage/v1/object/public/${bucket}/${path}`;
+  return config.public ? `${baseUrl}/storage/v1/object/public/${bucket}/${path}` : path;
 }
 
-/** Upload an email-blast attachment into the dedicated public bucket. */
-export async function uploadEmailBlastAttachment(file: File) {
+/**
+ * Archive an email-blast attachment into the private bucket (history/audit only — the file itself
+ * is sent to recipients as a real email attachment, never via this stored copy). Returns the
+ * bucket-relative object path, not a URL, since the bucket has no public access.
+ */
+export async function archiveEmailBlastAttachment(file: File) {
   return uploadFormFile(file, "email_blast_attachment");
+}
+
+function parseStoredAttachmentRef(value: string): { bucket: string; path: string } | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const publicUrlMatch = trimmed.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+  if (publicUrlMatch) {
+    return { bucket: publicUrlMatch[1], path: publicUrlMatch[2] };
+  }
+  if (/^https?:\/\//i.test(trimmed)) return null;
+
+  return { bucket: emailBlastBucketName(), path: trimmed };
+}
+
+/**
+ * Turn a stored attachment reference (bucket-relative path, or a legacy full public URL from
+ * before the bucket was made private) into a short-lived signed URL for viewing in blast history.
+ */
+export async function signStoredEmailAttachment(value: string, expiresIn = 600): Promise<string | null> {
+  const ref = parseStoredAttachmentRef(value);
+  if (!ref) return null;
+
+  const baseUrl = supabaseUrl();
+  const key = supabaseKey();
+  if (!baseUrl || !key) return null;
+
+  const response = await fetch(
+    `${baseUrl}/storage/v1/object/sign/${ref.bucket}/${ref.path}`,
+    {
+      method: "POST",
+      headers: uploadHeaders(),
+      body: JSON.stringify({ expiresIn }),
+      cache: "no-store",
+    },
+  );
+  if (!response.ok) return null;
+
+  const payload = (await response.json().catch(() => null)) as { signedURL?: string } | null;
+  if (!payload?.signedURL) return null;
+
+  return `${baseUrl}/storage/v1${payload.signedURL.replace(/^\/storage\/v1/, "")}`;
 }

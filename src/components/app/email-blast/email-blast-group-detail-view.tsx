@@ -2,8 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Mail, ShieldCheck, Trash2, Users } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  FileSpreadsheet,
+  Mail,
+  Search,
+  ShieldCheck,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   EmailBlastAddContactForm,
@@ -14,18 +24,23 @@ import { EmailBlastImportExcelForm } from "@/components/app/email-blast/email-bl
 import { Page } from "@/components/app/page-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Card, CardBody } from "@/components/ui/card";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { Modal } from "@/components/ui/modal";
+import { Pagination } from "@/components/ui/pagination";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { ContactVerificationStatus, MockContactGroup } from "@/lib/data/email-blast-contacts-mock";
 import { cn, formatDate } from "@/lib/utils";
 
-function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
-      {action ? <div className="shrink-0">{action}</div> : null}
-    </div>
-  );
-}
+const PAGE_SIZE = 10;
+const ALL_STATUS = "all";
+const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: ALL_STATUS, label: "Semua status" },
+  { value: "unchecked", label: "Belum dicek" },
+  { value: "valid", label: "Verified" },
+  { value: "invalid", label: "Email tidak valid" },
+  { value: "unknown", label: "Gagal dicek" },
+];
 
 function mapGroup(row: unknown): MockContactGroup | null {
   if (!row || typeof row !== "object") return null;
@@ -37,6 +52,7 @@ function mapGroup(row: unknown): MockContactGroup | null {
       id: string;
       email: string;
       full_name: string;
+      company?: string;
       verification_status?: ContactVerificationStatus;
       verification_detail?: string;
     }>;
@@ -50,6 +66,7 @@ function mapGroup(row: unknown): MockContactGroup | null {
       id: contact.id,
       email: contact.email,
       fullName: contact.full_name,
+      company: contact.company || "",
       verificationStatus: contact.verification_status || "unchecked",
       verificationDetail: contact.verification_detail || "",
     })),
@@ -64,6 +81,12 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState(ALL_STATUS);
+  const [page, setPage] = useState(1);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -101,6 +124,7 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
           contacts: contacts.map((contact) => ({
             email: contact.email,
             full_name: contact.fullName,
+            company: contact.company,
           })),
         }),
       });
@@ -190,6 +214,25 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
     }
   }
 
+  const filteredContacts = useMemo(() => {
+    if (!group) return [];
+    const trimmed = query.trim().toLowerCase();
+    return group.contacts.filter((contact) => {
+      if (statusFilter !== ALL_STATUS && (contact.verificationStatus || "unchecked") !== statusFilter) return false;
+      if (!trimmed) return true;
+      const haystack = `${contact.fullName} ${contact.email} ${contact.company}`.toLowerCase();
+      return haystack.includes(trimmed);
+    });
+  }, [group, query, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredContacts.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedContacts = filteredContacts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   if (group === undefined) {
     return (
       <Page>
@@ -219,16 +262,19 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
 
   return (
     <Page>
-      <div className="flex flex-wrap items-center gap-3">
-        <Link href="/email-blast/contacts" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10")}>
+      <div className="ws-toolbar">
+        <Link href="/email-blast/contacts" className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }), "shrink-0")} aria-label="Back to contacts">
           <ArrowLeft className="h-4 w-4" />
-          Back to contacts
         </Link>
-        <Badge tone="blue">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-lg font-normal tracking-normal text-foreground">{group.groupName}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Dibuat {formatDate(group.createdAt)}</p>
+        </div>
+        <Badge tone="blue" className="h-11 px-3">
           <Users className="mr-1 inline h-3.5 w-3.5" />
           {group.contacts.length} contacts
         </Badge>
-        <Link href="/email-blast" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10")}>
+        <Link href="/email-blast" className={cn(buttonVariants({ variant: "outline", size: "xl" }))}>
           <Mail className="h-4 w-4" />
           Compose
         </Link>
@@ -245,65 +291,120 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
         </div>
       ) : null}
 
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <SectionTitle title={group.groupName} />
-            </CardHeader>
-            <CardBody className="space-y-3">
-              <p className="text-sm text-muted-foreground">Dibuat {formatDate(group.createdAt)}</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="h-10 w-full"
-                disabled={locked || group.contacts.length === 0}
-                onClick={() => void handleVerify()}
-              >
-                <ShieldCheck className="h-4 w-4" />
-                {verifying ? "Mengecek…" : "Cek semua email"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="h-10 w-full text-red-600 hover:bg-red-50 hover:text-red-700"
-                disabled={locked}
-                onClick={() => void handleDeleteGroup()}
-              >
-                <Trash2 className="h-4 w-4" />
-                Hapus grup
-              </Button>
-            </CardBody>
-          </Card>
-
-          <EmailBlastAddContactForm groupName={group.groupName} busy={locked} onAdd={handleAddContacts} />
-          <EmailBlastImportExcelForm groupName={group.groupName} busy={locked} onAdd={handleAddContacts} />
+      <div className="ws-toolbar">
+        <div className="relative min-w-[14rem] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="input h-11 pl-9 text-sm font-normal"
+            placeholder="Cari nama, email, atau company"
+          />
         </div>
+        <FilterSelect value={statusFilter} options={STATUS_OPTIONS} onValueChange={setStatusFilter} fullWidth={false} />
 
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Anggota grup" action={<Badge tone="neutral">{group.contacts.length}</Badge>} />
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {group.contacts.length === 0 ? (
-              <div className="rounded-[2px] border border-dashed border-border p-8 text-center">
-                <Users className="mx-auto h-8 w-8 text-neutral-300" />
-                <p className="mt-3 text-sm font-normal text-foreground">Belum ada kontak</p>
-                <p className="mt-1 text-sm text-muted-foreground">Tambahkan email di form sebelah kiri.</p>
-              </div>
-            ) : (
-              <EmailBlastGroupMembersTable
-                contacts={group.contacts}
-                busy={locked}
-                onVerify={(contactId) => void handleVerify([contactId])}
-                onRemove={(contactId) => void handleRemoveContact(contactId)}
-              />
-            )}
-          </CardBody>
-        </Card>
+        <Button
+          type="button"
+          variant="outline"
+          size="xl"
+          disabled={locked || group.contacts.length === 0}
+          onClick={() => void handleVerify()}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          {verifying ? "Mengecek…" : "Cek semua email"}
+        </Button>
+
+        <Popover open={addMenuOpen} onOpenChange={setAddMenuOpen} modal={false}>
+          <PopoverTrigger
+            type="button"
+            disabled={locked}
+            className={cn(buttonVariants({ variant: "default", size: "xl" }))}
+          >
+            <UserPlus className="h-4 w-4" />
+            Tambah ke grup
+            <ChevronDown className="h-4 w-4" />
+          </PopoverTrigger>
+          <PopoverContent side="bottom" align="end" sideOffset={6} className="w-56 p-1.5">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-[2px] px-2.5 py-2 text-left text-sm font-normal text-foreground transition hover:bg-surface-inset"
+              onClick={() => {
+                setAddMenuOpen(false);
+                setAddOpen(true);
+              }}
+            >
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
+              Input manual
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 rounded-[2px] px-2.5 py-2 text-left text-sm font-normal text-foreground transition hover:bg-surface-inset"
+              onClick={() => {
+                setAddMenuOpen(false);
+                setImportOpen(true);
+              }}
+            >
+              <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+              Upload file
+            </button>
+          </PopoverContent>
+        </Popover>
+
+        <Button
+          type="button"
+          variant="destructiveOutline"
+          size="xl"
+          disabled={locked}
+          onClick={() => void handleDeleteGroup()}
+        >
+          <Trash2 className="h-4 w-4" />
+          Hapus grup
+        </Button>
       </div>
+
+      <Card>
+        <CardBody className="p-0">
+          {group.contacts.length === 0 ? (
+            <div className="p-8 text-center">
+              <Users className="mx-auto h-8 w-8 text-neutral-300" />
+              <p className="mt-3 text-sm font-normal text-foreground">Belum ada kontak</p>
+              <p className="mt-1 text-sm text-muted-foreground">Klik &quot;Tambah ke grup&quot; untuk menambah anggota.</p>
+            </div>
+          ) : filteredContacts.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Tidak ada kontak yang cocok dengan filter.</div>
+          ) : (
+            <EmailBlastGroupMembersTable
+              contacts={pagedContacts}
+              busy={locked}
+              onVerify={(contactId) => void handleVerify([contactId])}
+              onRemove={(contactId) => void handleRemoveContact(contactId)}
+            />
+          )}
+        </CardBody>
+        <Pagination page={currentPage} pageCount={pageCount} totalItems={filteredContacts.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </Card>
+
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Tambah kontak manual" eyebrow={group.groupName}>
+        <EmailBlastAddContactForm
+          groupName={group.groupName}
+          busy={busy}
+          onAdd={async (contacts) => {
+            await handleAddContacts(contacts);
+            setAddOpen(false);
+          }}
+        />
+      </Modal>
+
+      <Modal open={importOpen} onClose={() => setImportOpen(false)} title="Tambah dari Excel" eyebrow={group.groupName}>
+        <EmailBlastImportExcelForm
+          groupName={group.groupName}
+          busy={busy}
+          onAdd={async (contacts) => {
+            await handleAddContacts(contacts);
+            setImportOpen(false);
+          }}
+        />
+      </Modal>
     </Page>
   );
 }

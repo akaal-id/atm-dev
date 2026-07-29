@@ -59,7 +59,8 @@ export function EmailBlastImportExcelForm({ groupName, busy = false, onAdd }: Em
 
       <p className="text-xs leading-5 text-muted-foreground">
         Baris 1: header <span className="font-normal text-foreground">nama</span> |{" "}
-        <span className="font-normal text-foreground">email</span>. Baris berikutnya berisi data kontak.
+        <span className="font-normal text-foreground">email</span> |{" "}
+        <span className="font-normal text-foreground">company</span> (opsional). Baris berikutnya berisi data kontak.
         Format: <code className="rounded bg-card px-1 py-0.5">.xlsx</code>,{" "}
         <code className="rounded bg-card px-1 py-0.5">.xls</code>, atau{" "}
         <code className="rounded bg-card px-1 py-0.5">.csv</code>.

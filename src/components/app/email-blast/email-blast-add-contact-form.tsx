@@ -21,6 +21,7 @@ function parseEmails(raw: string) {
 export type NewContactInput = {
   email: string;
   fullName: string;
+  company: string;
 };
 
 interface EmailBlastAddContactFormProps {
@@ -32,6 +33,7 @@ interface EmailBlastAddContactFormProps {
 /** Add one or more contacts to the selected group. */
 export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: EmailBlastAddContactFormProps) {
   const [fullName, setFullName] = useState("");
+  const [company, setCompany] = useState("");
   const [emailDraft, setEmailDraft] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -53,14 +55,17 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
     }
 
     const name = fullName.trim();
+    const companyName = company.trim();
     const contacts = emails.map((email, index) => ({
       email,
       fullName: emails.length === 1 ? name : index === 0 && name ? name : "",
+      company: emails.length === 1 ? companyName : index === 0 && companyName ? companyName : "",
     }));
 
     try {
       await onAdd(contacts);
       setFullName("");
+      setCompany("");
       setEmailDraft("");
       setError("");
       setSuccess(
@@ -94,6 +99,23 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
           className="input h-10 text-sm font-normal"
           placeholder="Nama lengkap"
           autoComplete="name"
+          disabled={busy}
+        />
+      </label>
+
+      <label className="grid gap-1.5 text-xs font-normal text-muted-foreground">
+        Company (opsional)
+        <input
+          type="text"
+          value={company}
+          onChange={(event) => {
+            setCompany(event.target.value);
+            if (error) setError("");
+            if (success) setSuccess("");
+          }}
+          className="input h-10 text-sm font-normal"
+          placeholder="Nama perusahaan"
+          autoComplete="organization"
           disabled={busy}
         />
       </label>

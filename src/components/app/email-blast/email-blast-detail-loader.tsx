@@ -15,6 +15,7 @@ function mapBlast(row: unknown): MockEmailBlast | null {
     subject: string;
     body: string;
     attachment_url?: string;
+    attachment_name?: string;
     created_at: string;
     recipients?: Array<{ id: string; email: string; status: string }>;
   };
@@ -23,7 +24,7 @@ function mapBlast(row: unknown): MockEmailBlast | null {
     id: blast.id,
     subject: blast.subject,
     body: blast.body,
-    attachmentName: blast.attachment_url ? blast.attachment_url.split("/").pop() || "attachment" : null,
+    attachmentName: blast.attachment_name || (blast.attachment_url ? "attachment" : null),
     attachmentUrl: blast.attachment_url || null,
     createdAt: blast.created_at,
     recipients: (blast.recipients || []).map((recipient) => ({

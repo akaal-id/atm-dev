@@ -6,7 +6,7 @@ import { EmailBlastVerificationBadge } from "@/components/app/email-blast/email-
 import { Button } from "@/components/ui/button";
 import type { MockContact } from "@/lib/data/email-blast-contacts-mock";
 
-const HEADERS = ["Nama", "Email", "Status", "Aksi"] as const;
+const HEADERS = ["Nama", "Email", "Company", "Status", "Aksi"] as const;
 
 interface EmailBlastGroupMembersTableProps {
   contacts: MockContact[];
@@ -45,6 +45,9 @@ export function EmailBlastGroupMembersTable({
               </td>
               <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
                 <span className="break-all">{contact.email}</span>
+              </td>
+              <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
+                {contact.company || "—"}
               </td>
               <td className="border-b border-border px-3 py-3 align-middle">
                 <EmailBlastVerificationBadge

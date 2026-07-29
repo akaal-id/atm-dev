@@ -1,13 +1,17 @@
+export const MAX_ATTACHMENT_TOTAL_BYTES = 30 * 1024 * 1024;
+
 export type EmailBlastFormValues = {
   subject: string;
   body: string;
   recipientCount: number;
+  attachmentTotalBytes: number;
 };
 
 export type EmailBlastFormErrors = {
   subject?: string;
   body?: string;
   recipients?: string;
+  attachments?: string;
 };
 
 export function validateEmailBlastForm(values: EmailBlastFormValues): EmailBlastFormErrors {
@@ -23,6 +27,10 @@ export function validateEmailBlastForm(values: EmailBlastFormValues): EmailBlast
 
   if (values.recipientCount < 1) {
     errors.recipients = "Tambahkan minimal satu penerima.";
+  }
+
+  if (values.attachmentTotalBytes > MAX_ATTACHMENT_TOTAL_BYTES) {
+    errors.attachments = `Total lampiran maksimal ${Math.round(MAX_ATTACHMENT_TOTAL_BYTES / 1024 / 1024)}MB.`;
   }
 
   return errors;

@@ -1,26 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Users } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ChevronRight, Mail, Plus, Search, Trash2, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { EmailBlastCreateGroupForm } from "@/components/app/email-blast/email-blast-create-group-form";
-import { EmailBlastGroupList } from "@/components/app/email-blast/email-blast-group-list";
 import { Page } from "@/components/app/page-layout";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardBody } from "@/components/ui/card";
+import { FilterSelect } from "@/components/ui/filter-select";
+import { Modal } from "@/components/ui/modal";
+import { Pagination } from "@/components/ui/pagination";
 import type { MockContactGroup } from "@/lib/data/email-blast-contacts-mock";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
-function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex min-w-0 items-center justify-between gap-3">
-      <h2 className="min-w-0 truncate text-base font-normal tracking-normal text-foreground">{title}</h2>
-      {action ? <div className="shrink-0">{action}</div> : null}
-    </div>
-  );
-}
+const PAGE_SIZE = 10;
+
+type SortMode = "newest" | "oldest" | "name";
+
+const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
+  { value: "newest", label: "Terbaru" },
+  { value: "oldest", label: "Terlama" },
+  { value: "name", label: "Nama A-Z" },
+];
 
 function mapGroups(rows: unknown[]): MockContactGroup[] {
   return rows.map((entry) => {
@@ -28,7 +30,7 @@ function mapGroups(rows: unknown[]): MockContactGroup[] {
       id: string;
       group_name: string;
       created_at: string;
-      contacts?: Array<{ id: string; email: string; full_name: string }>;
+      contacts?: Array<{ id: string; email: string; full_name: string; company?: string; verification_status?: string }>;
     };
     return {
       id: group.id,
@@ -38,15 +40,29 @@ function mapGroups(rows: unknown[]): MockContactGroup[] {
         id: contact.id,
         email: contact.email,
         fullName: contact.full_name,
+        company: contact.company || "",
+        verificationStatus: (contact.verification_status as MockContactGroup["contacts"][number]["verificationStatus"]) || "unchecked",
       })),
     };
   });
 }
 
-/** Contact groups index — create groups and open detail pages to manage members. */
+function sortGroups(groups: MockContactGroup[], sort: SortMode) {
+  const sorted = [...groups];
+  if (sort === "name") return sorted.sort((left, right) => left.groupName.localeCompare(right.groupName, undefined, { sensitivity: "base" }));
+  sorted.sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  return sort === "oldest" ? sorted : sorted.reverse();
+}
+
+/** Contact groups index — table of groups, opens detail pages to manage members. */
 export function EmailBlastContactsView() {
   const [groups, setGroups] = useState<MockContactGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortMode>("newest");
+  const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -66,16 +82,25 @@ export function EmailBlastContactsView() {
   }, [refresh]);
 
   async function handleCreate(groupName: string) {
-    const response = await fetch("/api/email-blast/contact-groups", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ group_name: groupName }),
-    });
-    if (!response.ok) return;
-    await refresh();
+    setCreating(true);
+    try {
+      const response = await fetch("/api/email-blast/contact-groups", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ group_name: groupName }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(payload?.error || "Gagal membuat grup.");
+      await refresh();
+      setCreateOpen(false);
+    } finally {
+      setCreating(false);
+    }
   }
 
-  async function handleDeleteGroup(groupId: string) {
+  async function handleDeleteGroup(groupId: string, groupName: string) {
+    const confirmed = window.confirm(`Hapus grup "${groupName}" beserta seluruh anggotanya?`);
+    if (!confirmed) return;
     const response = await fetch("/api/email-blast/contact-groups", {
       method: "DELETE",
       headers: { "content-type": "application/json" },
@@ -85,40 +110,127 @@ export function EmailBlastContactsView() {
     await refresh();
   }
 
+  const filteredGroups = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    const filtered = trimmed
+      ? groups.filter((group) => {
+          const haystack = [group.groupName, ...group.contacts.map((c) => `${c.fullName} ${c.email} ${c.company}`)]
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(trimmed);
+        })
+      : groups;
+    return sortGroups(filtered, sort);
+  }, [groups, query, sort]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredGroups.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedGroups = filteredGroups.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <Page>
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <EmailBlastCreateGroupForm onCreate={(name) => void handleCreate(name)} />
-
-        <Card>
-          <CardHeader>
-            <SectionTitle
-              title="Contact groups"
-              action={
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="neutral">
-                    <Users className="mr-1 inline h-3.5 w-3.5" />
-                    {loading ? "…" : `${groups.length} groups`}
-                  </Badge>
-                  <Link href="/email-blast" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10")}>
-                    <Mail className="h-4 w-4" />
-                    Compose
-                  </Link>
-                </div>
-              }
-            />
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <p className="text-sm leading-6 text-muted-foreground">
-              Klik sebuah grup untuk membuka halaman detail dan mengelola anggotanya.
-            </p>
-            <EmailBlastGroupList
-              groups={groups}
-              onDeleteGroup={(id) => void handleDeleteGroup(id)}
-            />
-          </CardBody>
-        </Card>
+      <div className="ws-toolbar">
+        <div className="relative min-w-[14rem] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="input h-11 pl-9 text-sm font-normal"
+            placeholder="Cari nama grup, kontak, atau company"
+          />
+        </div>
+        <FilterSelect
+          value={sort}
+          options={SORT_OPTIONS}
+          onValueChange={(value) => setSort(value as SortMode)}
+          fullWidth={false}
+        />
+        <Link href="/email-blast" className={cn(buttonVariants({ variant: "outline", size: "xl" }))}>
+          <Mail className="h-4 w-4" />
+          Compose
+        </Link>
+        <Button type="button" variant="default" size="xl" onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4" />
+          New group
+        </Button>
       </div>
+
+      <Card>
+        <CardBody className="p-0">
+          {groups.length === 0 && !loading ? (
+            <div className="p-8 text-center">
+              <Users className="mx-auto h-8 w-8 text-neutral-300" />
+              <p className="mt-3 text-sm font-normal text-foreground">Belum ada grup kontak.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Buat grup pertama untuk mempercepat blast berulang.</p>
+            </div>
+          ) : filteredGroups.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Tidak ada grup yang cocok dengan pencarian.</div>
+          ) : (
+            <div className="-mx-1 overflow-x-auto overscroll-x-contain px-1 sm:mx-0 sm:px-0">
+              <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+                <thead>
+                  <tr>
+                    {["Group", "Contacts", "Verified", "Created", ""].map((header) => (
+                      <th key={header} className="border-b border-border px-3 py-3 font-normal text-muted-foreground">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedGroups.map((group) => {
+                    const verifiedCount = group.contacts.filter((c) => c.verificationStatus === "valid").length;
+                    return (
+                      <tr key={group.id} className="transition hover:bg-surface-inset/80">
+                        <td className="border-b border-border px-3 py-3 align-middle">
+                          <Link href={`/email-blast/contacts/${group.id}`} className="font-normal text-foreground hover:text-primary">
+                            {group.groupName}
+                          </Link>
+                        </td>
+                        <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">{group.contacts.length}</td>
+                        <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
+                          {verifiedCount}/{group.contacts.length}
+                        </td>
+                        <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">{formatDate(group.createdAt)}</td>
+                        <td className="border-b border-border px-3 py-3 align-middle">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-red-600"
+                              aria-label={`Hapus grup ${group.groupName}`}
+                              onClick={() => void handleDeleteGroup(group.id, group.groupName)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <Link
+                              href={`/email-blast/contacts/${group.id}`}
+                              className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "text-muted-foreground")}
+                              aria-label={`Buka grup ${group.groupName}`}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardBody>
+        <Pagination page={currentPage} pageCount={pageCount} totalItems={filteredGroups.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+      </Card>
+
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Buat grup baru" eyebrow="Contact groups">
+        <EmailBlastCreateGroupForm busy={creating} onCreate={handleCreate} />
+      </Modal>
     </Page>
   );
 }

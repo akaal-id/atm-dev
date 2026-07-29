@@ -9,12 +9,19 @@ interface ResendResult {
   id?: string;
 }
 
+export type EmailAttachment = {
+  filename: string;
+  /** Base64-encoded file content. */
+  content: string;
+};
+
 interface TransactionalEmail {
   to: string;
   subject: string;
   html: string;
   text: string;
   from?: string;
+  attachments?: EmailAttachment[];
 }
 
 function getFromEmail() {
@@ -34,7 +41,7 @@ export function isResendConfigured() {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
-export async function sendEmail({ to, subject, html, text, from }: TransactionalEmail): Promise<ResendResult> {
+export async function sendEmail({ to, subject, html, text, from, attachments }: TransactionalEmail): Promise<ResendResult> {
   if (!isResendConfigured()) return { ok: true, skipped: true };
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -49,6 +56,7 @@ export async function sendEmail({ to, subject, html, text, from }: Transactional
       subject,
       html,
       text,
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
     }),
   });
 
@@ -68,80 +76,83 @@ export type BlastRecipientResult = {
   resendId?: string;
 };
 
+export type BlastRecipient = {
+  email: string;
+  /** Merge field for the [Nama Penerima] placeholder. */
+  fullName?: string;
+  /** Merge field for the [Nama Perusahaan] placeholder. */
+  company?: string;
+};
+
 export type BlastEmailInput = {
-  recipients: string[];
+  recipients: BlastRecipient[];
   subject: string;
   body: string;
   from?: string;
-  attachmentUrl?: string;
-  attachmentUrls?: string[];
+  attachments?: EmailAttachment[];
 };
 
-function resolveAttachmentUrls(attachmentUrl?: string, attachmentUrls?: string[]) {
-  const urls = [
-    ...(attachmentUrls || []),
-    ...(attachmentUrl ? [attachmentUrl] : []),
-  ]
-    .map((url) => url.trim())
-    .filter(Boolean);
-  return [...new Set(urls)];
+/** Replace the two supported blast merge fields with a recipient's data. */
+function renderMergeFields(text: string, recipient: BlastRecipient) {
+  return text
+    .replaceAll("[Nama Penerima]", recipient.fullName || "")
+    .replaceAll("[Nama Perusahaan]", recipient.company || "");
 }
 
-function bodyToHtml(body: string, attachmentUrls: string[] = []) {
+function bodyToHtml(body: string, hasAttachments: boolean) {
   const htmlBody = escapeHtml(body).replaceAll("\n", "<br />");
-  const attachmentBlock =
-    attachmentUrls.length > 0
-      ? `<p style="margin:20px 0 0">${attachmentUrls
-          .map(
-            (url, index) =>
-              `<a href="${escapeHtml(url)}" style="color:#2563eb;font-weight:700">Lihat lampiran${
-                attachmentUrls.length > 1 ? ` ${index + 1}` : ""
-              }</a>`,
-          )
-          .join("<br />")}</p>`
-      : "";
+  const attachmentNote = hasAttachments
+    ? `<p style="margin:20px 0 0;color:#475569">Lihat lampiran pada email ini.</p>`
+    : "";
   return `
     <div style="font-family:Plus Jakarta Sans, sans-serif;line-height:1.6;color:#0f172a">
       <p style="margin:0 0 16px">${htmlBody}</p>
-      ${attachmentBlock}
+      ${attachmentNote}
       <p style="margin:24px 0 0;font-size:12px;color:#94a3b8">Dikirim via Akaal Email Blast</p>
     </div>
   `;
 }
 
-/** Send one email per recipient via existing Resend config; aggregates per-address status. */
+/** Send one email per recipient via existing Resend config; merges [Nama Penerima]/[Nama Perusahaan] per address. */
 export async function sendBlastEmail({
   recipients,
   subject,
   body,
   from,
-  attachmentUrl,
-  attachmentUrls,
+  attachments,
 }: BlastEmailInput): Promise<{ ok: boolean; skipped?: boolean; results: BlastRecipientResult[] }> {
-  const uniqueRecipients = [...new Set(recipients.map((email) => email.trim().toLowerCase()).filter(Boolean))];
-  const urls = resolveAttachmentUrls(attachmentUrl, attachmentUrls);
-  const html = bodyToHtml(body, urls);
-  const text = urls.length > 0 ? `${body}\n\nLampiran:\n${urls.join("\n")}` : body;
+  const uniqueRecipients = new Map<string, BlastRecipient>();
+  for (const recipient of recipients) {
+    const email = recipient.email.trim().toLowerCase();
+    if (!email || uniqueRecipients.has(email)) continue;
+    uniqueRecipients.set(email, { ...recipient, email });
+  }
+  const hasAttachments = Boolean(attachments && attachments.length > 0);
 
   if (!isResendConfigured()) {
     return {
       ok: true,
       skipped: true,
-      results: uniqueRecipients.map((email) => ({ email, status: "skipped" as const })),
+      results: [...uniqueRecipients.keys()].map((email) => ({ email, status: "skipped" as const })),
     };
   }
 
   const results: BlastRecipientResult[] = [];
-  for (const email of uniqueRecipients) {
-    const result = await sendEmail({ to: email, subject, html, text, from });
+  for (const recipient of uniqueRecipients.values()) {
+    const personalizedSubject = renderMergeFields(subject, recipient);
+    const personalizedBody = renderMergeFields(body, recipient);
+    const html = bodyToHtml(personalizedBody, hasAttachments);
+    const text = hasAttachments ? `${personalizedBody}\n\n(Lihat lampiran pada email ini.)` : personalizedBody;
+
+    const result = await sendEmail({ to: recipient.email, subject: personalizedSubject, html, text, from, attachments });
     if (result.ok) {
       results.push({
-        email,
+        email: recipient.email,
         status: result.skipped ? "skipped" : "sent",
         resendId: result.id,
       });
     } else {
-      results.push({ email, status: "failed", error: result.error });
+      results.push({ email: recipient.email, status: "failed", error: result.error });
     }
   }
 

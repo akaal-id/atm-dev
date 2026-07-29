@@ -12,7 +12,10 @@ import {
   isEmailBlastFormValid,
   validateEmailBlastForm,
 } from "@/components/app/email-blast/email-blast-form-validation";
-import { EmailBlastRecipientsField } from "@/components/app/email-blast/email-blast-recipients-field";
+import {
+  EmailBlastRecipientsField,
+  type ComposeRecipient,
+} from "@/components/app/email-blast/email-blast-recipients-field";
 import { EmailBlastGroupPicker } from "@/components/app/email-blast/email-blast-group-picker";
 import { EmailBlastResultNotice } from "@/components/app/email-blast/email-blast-result-notice";
 import {
@@ -59,7 +62,7 @@ function mapGroups(rows: unknown[]): MockContactGroup[] {
       id: string;
       group_name: string;
       created_at: string;
-      contacts?: Array<{ id: string; email: string; full_name: string }>;
+      contacts?: Array<{ id: string; email: string; full_name: string; company?: string }>;
     };
     return {
       id: group.id,
@@ -69,6 +72,7 @@ function mapGroups(rows: unknown[]): MockContactGroup[] {
         id: contact.id,
         email: contact.email,
         fullName: contact.full_name,
+        company: contact.company || "",
       })),
     };
   });
@@ -79,7 +83,7 @@ export function EmailBlastComposeView() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<EmailBlastAttachment[]>([]);
-  const [recipients, setRecipients] = useState<string[]>([]);
+  const [recipients, setRecipients] = useState<ComposeRecipient[]>([]);
   const [groups, setGroups] = useState<MockContactGroup[]>([]);
   const [result, setResult] = useState<SendResult | null>(null);
   const [touched, setTouched] = useState({ subject: false, body: false, recipients: false });
@@ -91,45 +95,39 @@ export function EmailBlastComposeView() {
       .catch(() => setGroups([]));
   }, []);
 
+  const attachmentTotalBytes = useMemo(
+    () => attachments.reduce((sum, item) => sum + item.file.size, 0),
+    [attachments],
+  );
   const formValues = useMemo(
-    () => ({ subject, body, recipientCount: recipients.length }),
-    [subject, body, recipients.length],
+    () => ({ subject, body, recipientCount: recipients.length, attachmentTotalBytes }),
+    [subject, body, recipients.length, attachmentTotalBytes],
   );
   const errors = validateEmailBlastForm(formValues);
   const formValid = isEmailBlastFormValid(formValues);
 
-  async function uploadAttachments() {
-    const urls: string[] = [];
-    for (const item of attachments) {
-      const form = new FormData();
-      form.append("file", item.file);
-      const response = await fetch("/api/email-blast/upload", {
-        method: "POST",
-        body: form,
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(payload?.error || `Gagal mengunggah ${item.file.name}.`);
-      }
-      const url = String(payload?.data?.url ?? "").trim();
-      if (!url) throw new Error(`Upload ${item.file.name} tidak mengembalikan URL.`);
-      urls.push(url);
-    }
-    return urls;
-  }
-
   async function handleSend() {
-    const attachmentUrls = await uploadAttachments();
+    const form = new FormData();
+    form.append("subject", subject);
+    form.append("body", body);
+    form.append(
+      "recipients",
+      JSON.stringify(
+        recipients.map((recipient) => ({
+          email: recipient.email,
+          contact_id: recipient.contactId,
+          full_name: recipient.fullName,
+          company: recipient.company,
+        })),
+      ),
+    );
+    for (const item of attachments) {
+      form.append("attachments", item.file, item.file.name);
+    }
+
     const response = await fetch("/api/email-blast/send", {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        subject,
-        body,
-        recipients,
-        attachment_url: attachmentUrls[0] || "",
-        attachment_urls: attachmentUrls,
-      }),
+      body: form,
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
@@ -194,18 +192,27 @@ export function EmailBlastComposeView() {
                   rows={8}
                   aria-invalid={touched.body && Boolean(errors.body)}
                 />
+                <p className="text-xs font-normal text-muted-foreground">
+                  Placeholder tersedia di subject &amp; body: <code className="rounded bg-muted px-1 py-0.5">[Nama Penerima]</code>{" "}
+                  dan <code className="rounded bg-muted px-1 py-0.5">[Nama Perusahaan]</code> — otomatis diganti sesuai data
+                  kontak tiap penerima saat dikirim.
+                </p>
               </Field>
             </div>
 
-            <EmailBlastAttachmentField attachments={attachments} onChange={setAttachments} />
+            <EmailBlastAttachmentField attachments={attachments} onChange={setAttachments} error={errors.attachments} />
 
             <EmailBlastGroupPicker
               groups={groups}
-              onApplyGroup={(emails) => {
+              onApplyGroup={(contacts) => {
                 setRecipients((current) => {
                   const merged = [...current];
-                  for (const email of emails) {
-                    if (!merged.includes(email)) merged.push(email);
+                  const existing = new Set(merged.map((item) => item.email));
+                  for (const contact of contacts) {
+                    const email = contact.email.toLowerCase();
+                    if (existing.has(email)) continue;
+                    existing.add(email);
+                    merged.push({ email, contactId: contact.id, fullName: contact.fullName, company: contact.company });
                   }
                   return merged;
                 });

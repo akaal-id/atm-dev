@@ -6,11 +6,11 @@ import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { MockContactGroup } from "@/lib/data/email-blast-contacts-mock";
+import type { MockContact, MockContactGroup } from "@/lib/data/email-blast-contacts-mock";
 
 interface EmailBlastGroupPickerProps {
   groups: MockContactGroup[];
-  onApplyGroup: (emails: string[]) => void;
+  onApplyGroup: (contacts: MockContact[]) => void;
 }
 
 /** Pick a saved contact group, preview members, then add to recipients. */
@@ -24,7 +24,7 @@ export function EmailBlastGroupPicker({ groups, onApplyGroup }: EmailBlastGroupP
 
   function handleApply() {
     if (!selectedGroup || selectedGroup.contacts.length === 0) return;
-    onApplyGroup(selectedGroup.contacts.map((contact) => contact.email.toLowerCase()));
+    onApplyGroup(selectedGroup.contacts);
   }
 
   return (

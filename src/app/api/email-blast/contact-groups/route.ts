@@ -21,6 +21,7 @@ export async function GET() {
         id: contact.id,
         email: contact.email,
         full_name: contact.full_name,
+        company: contact.company || "",
         verification_status: contact.verification_status || "unchecked",
         verification_detail: contact.verification_detail || "",
         verified_at: contact.verified_at || null,

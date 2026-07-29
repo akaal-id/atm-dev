@@ -133,6 +133,13 @@ summary::-webkit-details-marker {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* .input sets its own (unlayered) padding shorthand, which otherwise beats Tailwind's
+   layered pl-* utilities regardless of source order — so icon-prefixed inputs need an
+   explicit override here to actually get the extra left inset. */
+.input.pl-9 {
+  padding-left: 2.25rem;
+}
+
 input[type="date"].input,
 input[type="number"].input,
 input[type="time"].input {

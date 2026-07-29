@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   const rawContacts = Array.isArray(payload.contacts)
     ? payload.contacts
     : payload.email
-      ? [{ email: payload.email, full_name: payload.full_name }]
+      ? [{ email: payload.email, full_name: payload.full_name, company: payload.company }]
       : [];
 
   const contacts = rawContacts
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       return {
         email: String(row.email ?? "").trim().toLowerCase(),
         fullName: String(row.full_name ?? row.fullName ?? "").trim(),
+        company: String(row.company ?? "").trim(),
       };
     })
     .filter((contact) => contact.email);

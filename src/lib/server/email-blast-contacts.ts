@@ -36,6 +36,7 @@ export type ContactRecord = {
   group_id: string;
   email: string;
   full_name: string;
+  company: string;
   created_at?: string;
   verification_status?: ContactVerificationStatus;
   verification_detail?: string;
@@ -110,7 +111,7 @@ export async function deleteContactGroup(userId: string, groupId: string) {
 
 export async function addContactsToGroup(
   groupId: string,
-  contacts: Array<{ email: string; fullName?: string }>,
+  contacts: Array<{ email: string; fullName?: string; company?: string }>,
 ): Promise<ContactRecord[]> {
   const baseUrl = supabaseUrl();
   const key = supabaseKey();
@@ -121,6 +122,7 @@ export async function addContactsToGroup(
     group_id: groupId,
     email: contact.email.trim().toLowerCase(),
     full_name: (contact.fullName || "").trim(),
+    company: (contact.company || "").trim(),
     verification_status: "unchecked",
     verification_detail: "",
     verified_at: null,

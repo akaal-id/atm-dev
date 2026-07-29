@@ -3,6 +3,7 @@
 import { Paperclip, X } from "lucide-react";
 import { useRef } from "react";
 
+import { MAX_ATTACHMENT_TOTAL_BYTES } from "@/components/app/email-blast/email-blast-form-validation";
 import { Button } from "@/components/ui/button";
 
 const ACCEPT =
@@ -22,11 +23,14 @@ function formatFileSize(bytes: number) {
 interface EmailBlastAttachmentFieldProps {
   attachments: EmailBlastAttachment[];
   onChange: (attachments: EmailBlastAttachment[]) => void;
+  error?: string;
 }
 
-/** File picker + list for blast attachments (uploaded to storage on send). */
-export function EmailBlastAttachmentField({ attachments, onChange }: EmailBlastAttachmentFieldProps) {
+/** File picker + list for blast attachments (sent as real email attachments, not links). */
+export function EmailBlastAttachmentField({ attachments, onChange, error }: EmailBlastAttachmentFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const totalBytes = attachments.reduce((sum, item) => sum + item.file.size, 0);
+  const overLimit = totalBytes > MAX_ATTACHMENT_TOTAL_BYTES;
 
   function addFiles(fileList: FileList | null) {
     if (!fileList?.length) return;
@@ -51,11 +55,20 @@ export function EmailBlastAttachmentField({ attachments, onChange }: EmailBlastA
           <p className="text-sm font-normal text-foreground">Attachments</p>
           <p className="mt-0.5 text-xs font-normal text-muted-foreground">Flyer, proposal, atau dokumen promosi (opsional).</p>
         </div>
-        <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => inputRef.current?.click()}>
-          <Paperclip className="h-4 w-4" />
-          Add files
-        </Button>
+        <div className="flex items-center gap-3">
+          {attachments.length > 0 ? (
+            <span className={`text-xs font-normal ${overLimit ? "text-red-600" : "text-muted-foreground"}`}>
+              Total: {formatFileSize(totalBytes)} / {formatFileSize(MAX_ATTACHMENT_TOTAL_BYTES)}
+            </span>
+          ) : null}
+          <Button type="button" variant="outline" size="lg" className="h-10" onClick={() => inputRef.current?.click()}>
+            <Paperclip className="h-4 w-4" />
+            Add files
+          </Button>
+        </div>
       </div>
+
+      {error ? <p className="text-xs font-normal text-red-600">{error}</p> : null}
 
       <input
         ref={inputRef}

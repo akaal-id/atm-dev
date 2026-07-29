@@ -4,6 +4,7 @@ export type MockContact = {
   id: string;
   email: string;
   fullName: string;
+  company: string;
   verificationStatus?: ContactVerificationStatus;
   verificationDetail?: string;
 };
@@ -22,9 +23,9 @@ export const mockContactGroups: MockContactGroup[] = [
     groupName: "Prospek B2B",
     createdAt: "2026-07-01T10:00:00+07:00",
     contacts: [
-      { id: "c-001", email: "buyer@enterprise.com", fullName: "Andi Buyer" },
-      { id: "c-002", email: "procurement@enterprise.com", fullName: "Siti Procurement" },
-      { id: "c-003", email: "cto@client.id", fullName: "Budi CTO" },
+      { id: "c-001", email: "buyer@enterprise.com", fullName: "Andi Buyer", company: "Enterprise Corp" },
+      { id: "c-002", email: "procurement@enterprise.com", fullName: "Siti Procurement", company: "Enterprise Corp" },
+      { id: "c-003", email: "cto@client.id", fullName: "Budi CTO", company: "Client ID" },
     ],
   },
   {
@@ -32,10 +33,10 @@ export const mockContactGroups: MockContactGroup[] = [
     groupName: "Newsletter aktif",
     createdAt: "2026-06-20T09:15:00+07:00",
     contacts: [
-      { id: "c-004", email: "a@newsletter.test", fullName: "Alex Newsletter" },
-      { id: "c-005", email: "b@newsletter.test", fullName: "Bella Newsletter" },
-      { id: "c-006", email: "c@newsletter.test", fullName: "Cahya Newsletter" },
-      { id: "c-007", email: "d@newsletter.test", fullName: "Dina Newsletter" },
+      { id: "c-004", email: "a@newsletter.test", fullName: "Alex Newsletter", company: "Newsletter Inc" },
+      { id: "c-005", email: "b@newsletter.test", fullName: "Bella Newsletter", company: "Newsletter Inc" },
+      { id: "c-006", email: "c@newsletter.test", fullName: "Cahya Newsletter", company: "Newsletter Inc" },
+      { id: "c-007", email: "d@newsletter.test", fullName: "Dina Newsletter", company: "Newsletter Inc" },
     ],
   },
   {
@@ -43,8 +44,8 @@ export const mockContactGroups: MockContactGroup[] = [
     groupName: "Partner sales",
     createdAt: "2026-05-12T14:30:00+07:00",
     contacts: [
-      { id: "c-008", email: "sales@partner.co", fullName: "Eko Partner" },
-      { id: "c-009", email: "lead@startup.id", fullName: "Fajar Lead" },
+      { id: "c-008", email: "sales@partner.co", fullName: "Eko Partner", company: "Partner Co" },
+      { id: "c-009", email: "lead@startup.id", fullName: "Fajar Lead", company: "Startup ID" },
     ],
   },
 ];

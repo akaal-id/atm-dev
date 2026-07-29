@@ -23,6 +23,10 @@ function isEmailHeader(header: string) {
   return header === "email" || header === "emailaddress" || header === "mail" || header === "alamatemail";
 }
 
+function isCompanyHeader(header: string) {
+  return header === "company" || header === "perusahaan" || header === "companyname";
+}
+
 export type ParseContactExcelResult = {
   contacts: NewContactInput[];
   skipped: number;
@@ -39,6 +43,7 @@ export function parseContactSheetRows(rows: unknown[][]): ParseContactExcelResul
   const headers = headerRow.map(normalizeHeader);
   const nameIndex = headers.findIndex(isNameHeader);
   const emailIndex = headers.findIndex(isEmailHeader);
+  const companyIndex = headers.findIndex(isCompanyHeader);
 
   if (emailIndex < 0) {
     throw new Error('Header "email" tidak ditemukan di baris pertama. Format: nama | email');
@@ -56,6 +61,7 @@ export function parseContactSheetRows(rows: unknown[][]): ParseContactExcelResul
     const row = rows[index] || [];
     const email = cellText(row[emailIndex]).toLowerCase();
     const fullName = cellText(row[nameIndex]);
+    const company = companyIndex >= 0 ? cellText(row[companyIndex]) : "";
 
     if (!email && !fullName) {
       skipped += 1;
@@ -74,7 +80,7 @@ export function parseContactSheetRows(rows: unknown[][]): ParseContactExcelResul
     }
 
     seen.add(email);
-    contacts.push({ email, fullName });
+    contacts.push({ email, fullName, company });
   }
 
   if (contacts.length === 0) {
