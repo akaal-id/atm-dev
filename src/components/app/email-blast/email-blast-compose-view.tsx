@@ -107,31 +107,55 @@ export function EmailBlastComposeView() {
   const formValid = isEmailBlastFormValid(formValues);
 
   async function handleSend() {
-    const form = new FormData();
-    form.append("subject", subject);
-    form.append("body", body);
-    form.append(
-      "recipients",
-      JSON.stringify(
-        recipients.map((recipient) => ({
+    let attachmentPath = "";
+    const file = attachments[0]?.file;
+    if (file) {
+      const urlResponse = await fetch("/api/email-blast/upload-url", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileSize: file.size, contentType: file.type }),
+      });
+      const urlPayload = await urlResponse.json().catch(() => null);
+      if (!urlResponse.ok) {
+        throw new Error(urlPayload?.error || "Gagal menyiapkan unggahan lampiran.");
+      }
+
+      const uploadResponse = await fetch(`${urlPayload.data.uploadUrl}?token=${urlPayload.data.token}`, {
+        method: "PUT",
+        headers: { "content-type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      if (!uploadResponse.ok) {
+        throw new Error("Gagal mengunggah lampiran ke storage.");
+      }
+      attachmentPath = urlPayload.data.path;
+    }
+
+    const response = await fetch("/api/email-blast/send", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        subject,
+        body,
+        recipients: recipients.map((recipient) => ({
           email: recipient.email,
           contact_id: recipient.contactId,
           full_name: recipient.fullName,
           company: recipient.company,
         })),
-      ),
-    );
-    for (const item of attachments) {
-      form.append("attachments", item.file, item.file.name);
-    }
-
-    const response = await fetch("/api/email-blast/send", {
-      method: "POST",
-      body: form,
+        attachmentPath,
+      }),
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
       throw new Error(payload?.error || "Gagal mengirim blast.");
+    }
+    if (!payload?.ok) {
+      const failed = (payload?.results ?? []).filter((item: { status: string }) => item.status === "failed");
+      const detail = failed[0]?.error ? `${failed[0].email}: ${failed[0].error}` : "Semua penerima gagal dikirim.";
+      throw new Error(
+        failed.length > 0 ? `${failed.length} dari ${payload.recipient_count} penerima gagal. ${detail}` : detail,
+      );
     }
   }
 

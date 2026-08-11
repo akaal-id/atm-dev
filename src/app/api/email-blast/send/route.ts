@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { MAX_ATTACHMENT_TOTAL_BYTES } from "@/components/app/email-blast/email-blast-form-validation";
 import { createEmailLog } from "@/lib/server/email-blast-logs";
 import { createEmailBlastWithRecipients } from "@/lib/server/email-blasts";
 import { listContactsByIdsForUser } from "@/lib/server/email-blast-contacts";
 import { getCurrentUser } from "@/lib/server/auth";
 import { isResendConfigured, sendBlastEmail, type BlastRecipient, type EmailAttachment } from "@/lib/server/resend";
-import { archiveEmailBlastAttachment, UploadError } from "@/lib/server/uploads";
+import { fetchEmailBlastAttachment } from "@/lib/server/uploads";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,20 +15,13 @@ export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const form = await request.formData().catch(() => null);
-  if (!form) return NextResponse.json({ error: "Invalid form data." }, { status: 400 });
+  const body_ = await request.json().catch(() => null);
+  if (!body_) return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
 
-  const subject = String(form.get("subject") ?? "").trim();
-  const body = String(form.get("body") ?? "").trim();
-  const rawRecipients: RawRecipient[] = (() => {
-    try {
-      const parsed = JSON.parse(String(form.get("recipients") ?? "[]"));
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  })();
-  const files = form.getAll("attachments").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const subject = String(body_.subject ?? "").trim();
+  const body = String(body_.body ?? "").trim();
+  const rawRecipients: RawRecipient[] = Array.isArray(body_.recipients) ? body_.recipients : [];
+  const attachmentPath = String(body_.attachmentPath ?? "").trim();
 
   if (!subject || !body) {
     return NextResponse.json({ error: "Subject and body are required." }, { status: 400 });
@@ -74,14 +66,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "At least one valid recipient is required." }, { status: 400 });
   }
 
-  const totalAttachmentBytes = files.reduce((sum, file) => sum + file.size, 0);
-  if (totalAttachmentBytes > MAX_ATTACHMENT_TOTAL_BYTES) {
-    return NextResponse.json(
-      { error: `Total attachment size exceeds ${Math.round(MAX_ATTACHMENT_TOTAL_BYTES / 1024 / 1024)}MB.` },
-      { status: 400 },
-    );
-  }
-
   if (!isResendConfigured()) {
     return NextResponse.json(
       {
@@ -93,23 +77,12 @@ export async function POST(request: NextRequest) {
   }
 
   let attachments: EmailAttachment[] = [];
-  let attachmentArchivePath = "";
-  try {
-    attachments = await Promise.all(
-      files.map(async (file) => {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        return { filename: file.name, content: buffer.toString("base64") };
-      }),
-    );
-    if (files[0]) {
-      attachmentArchivePath = await archiveEmailBlastAttachment(files[0]);
+  if (attachmentPath) {
+    const fetched = await fetchEmailBlastAttachment(attachmentPath);
+    if (!fetched) {
+      return NextResponse.json({ error: "Failed to load attachment from storage." }, { status: 502 });
     }
-  } catch (error) {
-    if (error instanceof UploadError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    console.error("email-blast attachment processing failed", error);
-    return NextResponse.json({ error: "Failed to process attachment(s)." }, { status: 502 });
+    attachments = [{ filename: fetched.filename, content: fetched.buffer.toString("base64") }];
   }
 
   const result = await sendBlastEmail({
@@ -126,7 +99,7 @@ export async function POST(request: NextRequest) {
       userId: user.user_id,
       subject,
       body,
-      attachmentUrl: attachmentArchivePath,
+      attachmentUrl: attachmentPath,
       results: result.results,
       ok: result.ok,
     });
@@ -139,7 +112,7 @@ export async function POST(request: NextRequest) {
       userId: user.user_id,
       subject,
       body,
-      attachmentUrl: attachmentArchivePath,
+      attachmentUrl: attachmentPath,
       results: result.results,
       ok: result.ok,
     });

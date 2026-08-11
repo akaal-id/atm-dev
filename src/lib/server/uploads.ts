@@ -211,6 +211,65 @@ export async function archiveEmailBlastAttachment(file: File) {
   return uploadFormFile(file, "email_blast_attachment");
 }
 
+const EMAIL_BLAST_ATTACHMENT_MAX_BYTES = 30 * 1024 * 1024;
+
+/**
+ * Issue a signed upload URL so the browser can upload directly to Supabase Storage, bypassing the
+ * Next.js API route entirely (Vercel serverless functions cap request bodies at ~4.5MB, well under
+ * what email attachments need — direct-to-storage upload has no such limit).
+ */
+export async function createEmailBlastUploadUrl(fileName: string, fileSize: number, contentType: string) {
+  if (fileSize > EMAIL_BLAST_ATTACHMENT_MAX_BYTES) {
+    throw new UploadError(`File is too large. Maximum size is ${Math.round(EMAIL_BLAST_ATTACHMENT_MAX_BYTES / 1024 / 1024)}MB.`);
+  }
+  if (!attachmentMimeTypes.includes(contentType)) {
+    throw new UploadError("Unsupported file type. Upload a JPG, PNG, WebP, GIF, PDF, or Word document.");
+  }
+
+  const bucket = emailBlastBucketName();
+  await ensureUploadBucket(bucket, attachmentMimeTypes, false);
+
+  const baseUrl = supabaseUrl();
+  const extension = fileName.toLowerCase().includes(".") ? fileName.toLowerCase().split(".").pop() : extensionByMimeType[contentType];
+  const path = `email-blast/${new Date().toISOString().slice(0, 10)}/${makeId("upl")}.${extension || "bin"}`;
+
+  const response = await fetch(`${baseUrl}/storage/v1/object/upload/sign/${bucket}/${path}`, {
+    method: "POST",
+    headers: uploadHeaders(),
+    body: JSON.stringify({}),
+  });
+  if (!response.ok) {
+    throw new UploadError(`Could not create signed upload URL. Status ${response.status}.`);
+  }
+  const payload = (await response.json().catch(() => null)) as { url?: string; token?: string } | null;
+  if (!payload?.url || !payload?.token) {
+    throw new UploadError("Signed upload URL response was missing a token.");
+  }
+
+  return {
+    path,
+    token: payload.token,
+    uploadUrl: `${baseUrl}/storage/v1${payload.url}`,
+  };
+}
+
+/** Fetch an email-blast attachment's bytes from the private bucket for attaching to an outbound email. */
+export async function fetchEmailBlastAttachment(path: string): Promise<{ buffer: Buffer; filename: string } | null> {
+  const baseUrl = supabaseUrl();
+  const key = supabaseKey();
+  if (!baseUrl || !key) return null;
+
+  const bucket = emailBlastBucketName();
+  const response = await fetch(`${baseUrl}/storage/v1/object/${bucket}/${path}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  return { buffer, filename: path.split("/").pop() || "attachment" };
+}
+
 function parseStoredAttachmentRef(value: string): { bucket: string; path: string } | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
