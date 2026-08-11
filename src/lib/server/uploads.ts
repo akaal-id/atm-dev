@@ -104,8 +104,13 @@ function resolveMimeType(file: File, allowedMimeTypes: string[]) {
 
 const bucketPromises = new Map<string, Promise<void>>();
 
-async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = attachmentMimeTypes, isPublic = true) {
-  const cacheKey = `${bucket}:${isPublic}`;
+async function ensureUploadBucket(
+  bucket = bucketName(),
+  allowedMimeTypes = attachmentMimeTypes,
+  isPublic = true,
+  fileSizeLimit = 10 * 1024 * 1024,
+) {
+  const cacheKey = `${bucket}:${isPublic}:${fileSizeLimit}`;
   const existing = bucketPromises.get(cacheKey);
   if (existing) return existing;
 
@@ -117,23 +122,22 @@ async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = atta
     });
 
     if (check.ok) {
-      const current = (await check.json().catch(() => null)) as { public?: boolean } | null;
-      if (current && current.public !== isPublic) {
-        // Bucket exists but its visibility drifted from what this field requires (e.g. was created
-        // public before this field switched to private) — correct it in place rather than leaving
-        // files under the wrong access policy.
+      const current = (await check.json().catch(() => null)) as { public?: boolean; file_size_limit?: number } | null;
+      if (current && (current.public !== isPublic || current.file_size_limit !== fileSizeLimit)) {
+        // Bucket exists but its visibility or size limit drifted from what this field requires
+        // (e.g. created before the field's limit changed) — correct it in place.
         const update = await fetch(`${baseUrl}/storage/v1/bucket/${encodeURIComponent(bucket)}`, {
           method: "PUT",
           headers: uploadHeaders(),
           body: JSON.stringify({
             id: bucket,
             public: isPublic,
-            file_size_limit: 10 * 1024 * 1024,
+            file_size_limit: fileSizeLimit,
             allowed_mime_types: allowedMimeTypes,
           }),
         });
         if (!update.ok) {
-          throw new UploadError(`Could not update Supabase Storage bucket visibility. Status ${update.status}.`);
+          throw new UploadError(`Could not update Supabase Storage bucket settings. Status ${update.status}.`);
         }
       }
       return;
@@ -150,7 +154,7 @@ async function ensureUploadBucket(bucket = bucketName(), allowedMimeTypes = atta
         id: bucket,
         name: bucket,
         public: isPublic,
-        file_size_limit: 10 * 1024 * 1024,
+        file_size_limit: fileSizeLimit,
         allowed_mime_types: allowedMimeTypes,
       }),
     });
@@ -179,7 +183,7 @@ export async function uploadFormFile(file: File, fieldName: string) {
     throw new UploadError("Unsupported file type. Upload a JPG, PNG, WebP, GIF, PDF, or Word document.");
   }
 
-  await ensureUploadBucket(config.bucket, config.allowedMimeTypes, config.public);
+  await ensureUploadBucket(config.bucket, config.allowedMimeTypes, config.public, config.maxBytes);
 
   const baseUrl = supabaseUrl();
   const bucket = config.bucket;
@@ -227,7 +231,7 @@ export async function createEmailBlastUploadUrl(fileName: string, fileSize: numb
   }
 
   const bucket = emailBlastBucketName();
-  await ensureUploadBucket(bucket, attachmentMimeTypes, false);
+  await ensureUploadBucket(bucket, attachmentMimeTypes, false, EMAIL_BLAST_ATTACHMENT_MAX_BYTES);
 
   const baseUrl = supabaseUrl();
   const extension = fileName.toLowerCase().includes(".") ? fileName.toLowerCase().split(".").pop() : extensionByMimeType[contentType];

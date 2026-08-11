@@ -120,7 +120,7 @@ export function EmailBlastComposeView() {
         throw new Error(urlPayload?.error || "Gagal menyiapkan unggahan lampiran.");
       }
 
-      const uploadResponse = await fetch(`${urlPayload.data.uploadUrl}?token=${urlPayload.data.token}`, {
+      const uploadResponse = await fetch(urlPayload.data.uploadUrl, {
         method: "PUT",
         headers: { "content-type": file.type || "application/octet-stream" },
         body: file,
