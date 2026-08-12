@@ -1,0 +1,35 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.filterBar {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+.filterselect {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.field {
+  background-color: var(--card);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+  box-shadow: none;
+}
+.field:hover {
+  background-color: var(--card);
+}
+
+.select {
+  width: 100%;
+}
+
+.wauto {
+  width: auto;
+  min-width: 11rem;
+}

@@ -1,3 +1,4 @@
+import styles from "./id.module.css";
 import { EmailBlastGroupDetailView } from "@/components/app/email-blast/email-blast-group-detail-view";
 
 export default async function EmailBlastContactGroupDetailPage({
@@ -6,5 +7,9 @@ export default async function EmailBlastContactGroupDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <EmailBlastGroupDetailView groupId={id} />;
+  return (
+    <div className={styles.page}>
+      <EmailBlastGroupDetailView groupId={id} />
+    </div>
+  );
 }

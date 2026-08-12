@@ -1,0 +1,47 @@
+.layout {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+    align-items: start;
+  }
+}
+
+.group {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.identityGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .identityGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.identityCard {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-inset, color-mix(in srgb, var(--muted) 80%, var(--card)));
+  padding: 1rem;
+}
+
+.noteCard {
+  position: sticky;
+  top: 1rem;
+}
+
+@media (max-width: 1023px) {
+  .noteCard {
+    position: static;
+  }
+}

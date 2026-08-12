@@ -1,0 +1,2 @@
+export { DashboardView, TaskListView, TaskDetailView, ProjectFilesView, ProjectsView, CalendarView, AttendanceView, LeaveRequestView, AnnouncementsView, EmployeesView, EmployeeProfileView, LeaderboardView, NotificationsView, AdminView, SettingsView, DepartmentsManagerView, RolesView, AttendanceSettingsView, GamificationSettingsView, InviteView, StatusCatalogView } from "./views";
+export type { AppData } from "./views";

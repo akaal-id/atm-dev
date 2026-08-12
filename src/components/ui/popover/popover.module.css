@@ -1,0 +1,35 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.isolate {
+  z-index: 50;
+}
+
+.popup {
+  z-index: 50;
+  display: flex;
+  width: 18rem;
+  flex-direction: column;
+  gap: 0.625rem;
+  border-radius: 2px;
+  background-color: var(--popover);
+  padding: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--popover-foreground);
+}
+
+.popoverheader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.title {
+  font-weight: 400;
+}
+
+.description {
+  color: var(--muted-foreground);
+}

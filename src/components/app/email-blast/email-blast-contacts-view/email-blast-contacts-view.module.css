@@ -1,0 +1,145 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.actions {
+  position: relative;
+  min-width: 14rem;
+  flex: 1 1 0%;
+}
+
+.noPointer {
+  pointer-events: none;
+  position: absolute;
+  left: 0.75rem;
+  height: 1rem;
+  width: 1rem;
+  color: var(--muted-foreground);
+}
+
+.input {
+  height: 2.75rem;
+  padding-left: 2.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.body {
+  padding: 0;
+}
+
+.emptyText {
+  padding: 2rem;
+  text-align: center;
+}
+
+.bodyUsers {
+  margin-inline: auto;
+  height: 2rem;
+  width: 2rem;
+}
+
+.emptyText {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.bodyUsers {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.emptystate {
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.emptystateDiv {
+  margin-inline: calc(0.25rem * -1);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-inline: 0.25rem;
+}
+@media (min-width: 640px) {
+  .emptystateDiv {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+.table {
+  min-width: 100%;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.headercell {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  padding-inline: 0.75rem;
+  padding-block: 0.75rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.filterBar {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+
+.cell {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  padding-inline: 0.75rem;
+  padding-block: 0.75rem;
+}
+
+.link {
+  font-weight: 400;
+  color: var(--foreground);
+}
+.link:hover {
+  color: var(--primary);
+}
+
+.tableCell {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  padding-inline: 0.75rem;
+  padding-block: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.button {
+  color: var(--muted-foreground);
+}
+.button:hover {
+  color: #dc2626;
+}
+
+.item {
+  color: var(--muted-foreground);
+}

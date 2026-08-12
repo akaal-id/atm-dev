@@ -1,0 +1,124 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.button {
+  height: 2.5rem;
+  font-weight: 400;
+}
+
+.checklisttoggle {
+  color: #047857;
+}
+
+.control {
+  color: var(--muted-foreground);
+}
+
+.caption {
+  display: grid;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+}
+
+.captionSpan {
+  border-color: #059669;
+  background-color: #059669;
+  color: #ffffff;
+}
+
+.captionPrimary {
+  border-color: var(--border);
+  background-color: var(--card);
+}
+
+.icon {
+  width: 0.625rem;
+  height: 0.625rem;
+  stroke-width: 3;
+}
+
+.panel {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  padding: 1rem;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.content {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.input {
+  width: 100%;
+}
+
+.itemDescription {
+  overflow-wrap: break-word;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.text {
+  color: var(--muted-foreground);
+  text-decoration-line: line-through;
+}
+
+.textP {
+  color: var(--foreground);
+}
+
+.textPrimary {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.glyph {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rowButton {
+  font-weight: 400;
+}
+
+.iconPrimary {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.deleteSubtask {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: #dc2626;
+}
+
+.region {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

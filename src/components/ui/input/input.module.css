@@ -1,0 +1,34 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.field {
+  height: 2rem;
+  width: 100%;
+  min-width: 0;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--input);
+  background-color: transparent;
+  padding-inline: 0.625rem;
+  padding-block: 0.25rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+  outline: none;
+}
+.field:focus-visible {
+  border-color: var(--ring);
+}
+.field:disabled {
+  pointer-events: none;
+  cursor: not-allowed;
+  background-color: color-mix(in srgb, var(--input) 50%, transparent);
+  opacity: 0.5;
+}
+@media (min-width: 768px) {
+  .field {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}

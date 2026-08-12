@@ -1,0 +1,229 @@
+/* Plain CSS button variants — no @apply / no Tailwind utilities */
+
+.root {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  background-clip: padding-box;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  white-space: nowrap;
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+  outline: none;
+  user-select: none;
+}
+
+.root:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent);
+}
+
+.root:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.root[aria-invalid="true"] {
+  border-color: var(--destructive);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 20%, transparent);
+}
+
+.root :is(svg) {
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.root :is(svg):not([class*="size-"]) {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Variants */
+.default {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+}
+
+.default:hover {
+  background-color: color-mix(in srgb, var(--primary) 14%, white);
+}
+
+.outline {
+  border-color: var(--border);
+  background-color: var(--card);
+}
+
+.outline:hover,
+.outline[aria-expanded="true"] {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.secondary:hover,
+.secondary[aria-expanded="true"] {
+  background-color: color-mix(in srgb, var(--secondary) 80%, transparent);
+  color: var(--secondary-foreground);
+}
+
+.ghost:hover,
+.ghost[aria-expanded="true"] {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.destructive {
+  background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+}
+
+.destructive:hover {
+  background-color: color-mix(in srgb, var(--destructive) 20%, transparent);
+}
+
+.destructive:focus-visible {
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 20%, transparent);
+}
+
+.destructiveOutline {
+  border-color: color-mix(in srgb, var(--destructive) 30%, transparent);
+  background-color: var(--card);
+  color: var(--destructive);
+}
+
+.destructiveOutline:hover {
+  background-color: color-mix(in srgb, var(--destructive) 10%, transparent);
+}
+
+.destructiveSolid {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.destructiveSolid:hover {
+  background-color: #b91c1c;
+}
+
+.success {
+  background-color: #059669;
+  color: #ffffff;
+}
+
+.success:hover {
+  background-color: #047857;
+}
+
+.warning {
+  border-color: #fde68a;
+  background-color: #fffbeb;
+  color: #92400e;
+}
+
+.warning:hover {
+  background-color: #fef3c7;
+}
+
+.link {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--primary);
+  text-underline-offset: 4px;
+}
+
+.link:hover {
+  text-decoration-line: underline;
+}
+
+/* Sizes */
+.sizeDefault {
+  height: 2rem;
+  gap: 0.375rem;
+  border-radius: 2px;
+  padding-inline: 0.625rem;
+}
+
+.sizeXs {
+  height: 1.5rem;
+  gap: 0.25rem;
+  border-radius: 2px;
+  padding-inline: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.sizeXs :is(svg):not([class*="size-"]) {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.sizeSm {
+  height: 1.75rem;
+  gap: 0.25rem;
+  border-radius: 2px;
+  padding-inline: 0.625rem;
+  font-size: 0.8rem;
+}
+
+.sizeSm :is(svg):not([class*="size-"]) {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.sizeLg {
+  height: 2.25rem;
+  gap: 0.375rem;
+  border-radius: 2px;
+  padding-inline: 0.625rem;
+}
+
+.sizeXl {
+  height: 2.75rem;
+  gap: 0.5rem;
+  border-radius: 2px;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.sizeIcon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 2px;
+}
+
+.sizeIconXs {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 2px;
+}
+
+.sizeIconXs :is(svg):not([class*="size-"]) {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.sizeIconSm {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 2px;
+}
+
+.sizeIconLg {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 2px;
+}

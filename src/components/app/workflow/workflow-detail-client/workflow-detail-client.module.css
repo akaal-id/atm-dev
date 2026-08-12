@@ -1,0 +1,7 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.workflowdetailclient {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}

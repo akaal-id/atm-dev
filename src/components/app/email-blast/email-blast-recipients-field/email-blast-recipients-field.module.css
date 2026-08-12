@@ -1,0 +1,126 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.group {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding: 1rem;
+}
+.group > * + * {
+  margin-block-start: 0.75rem;
+}
+
+.region {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.text {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.textP {
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.layout {
+  display: grid;
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .block {
+    flex-direction: row;
+  }
+}
+
+.input {
+  flex: 1 1 0%;
+}
+
+.button {
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+.icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: #dc2626;
+}
+
+.emptystate {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: dashed;
+  border-color: var(--border);
+  padding-inline: 1rem;
+  padding-block: 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.item {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  padding-block: 0.375rem;
+  padding-left: 0.625rem;
+  padding-right: 0.25rem;
+}
+
+.meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.glyph {
+  height: 0.875rem;
+  width: 0.875rem;
+}

@@ -1,3 +1,4 @@
+import styles from "./id.module.css";
 import { notFound } from "next/navigation";
 
 import { TaskDetailView } from "@/components/app/views";
@@ -10,5 +11,9 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   if (!task) notFound();
 
-  return <TaskDetailView data={data} task={task} />;
+  return (
+    <div className={styles.page}>
+      <TaskDetailView data={data} task={task} />
+    </div>
+  );
 }

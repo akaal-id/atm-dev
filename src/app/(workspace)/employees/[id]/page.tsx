@@ -1,3 +1,4 @@
+import styles from "./id.module.css";
 import { notFound } from "next/navigation";
 
 import { EmployeeProfileView } from "@/components/app/views";
@@ -12,5 +13,9 @@ export default async function EmployeeProfilePage({ params }: { params: Promise<
 
   if (!employee) notFound();
 
-  return <EmployeeProfileView data={data} employee={employee} />;
+  return (
+    <div className={styles.page}>
+      <EmployeeProfileView data={data} employee={employee} />
+    </div>
+  );
 }

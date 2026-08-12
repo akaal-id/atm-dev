@@ -1,0 +1,118 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.heading {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.region {
+  flex-shrink: 0;
+}
+
+.label {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: #dc2626;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon {
+  margin-right: 0.25rem;
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.item {
+  height: 2.5rem;
+}
+
+.glyph {
+  height: 1rem;
+  width: 1rem;
+}
+
+.body {
+}
+.body > * + * {
+  margin-block-start: 1.25rem;
+}
+
+.itemDescription {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.bodyDiv {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.bodyPrimary {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding: 1rem;
+}
+.bodyPrimary > * + * {
+  margin-block-start: 1rem;
+}
+
+.input {
+  min-height: 10rem;
+}
+
+.errortext {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.code {
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  padding-inline: 0.25rem;
+  padding-block: 0.125rem;
+}
+
+.text {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: #dc2626;
+}

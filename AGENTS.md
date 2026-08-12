@@ -4,6 +4,55 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# Component & CSS modules
+
+Full guide: [`docs/component-css-modules.md`](docs/component-css-modules.md).
+
+## `src/app` vs `src/components/app`
+
+| Path | Role |
+|------|------|
+| `src/app` | Next.js App Router — URL routes (`page.tsx`, `layout.tsx`), API handlers (`route.ts`) |
+| `src/components/app` | ATM product UI (shell, views, forms) mounted by those routes |
+| `src/components/ui` | Shared UI primitives |
+| `src/components/hub` | Landing hub UI |
+
+Keep pages thin: auth/data in `page.tsx`, UI in `components/app`.
+
+## Folder shape
+
+Every component lives in its own folder with a co-located CSS module and a stable `index.ts` re-export:
+
+```
+src/components/app/app-shell/
+  app-shell.tsx
+  app-shell.module.css
+  index.ts   # export { AppShell } from "./app-shell"
+```
+
+Public imports stay `@/components/app/app-shell` (via `index.ts`), not deep file paths.
+
+## Route CSS modules
+
+Each route segment with a `page.tsx` has a sibling `<segment>.module.css` (not `page.module.css`):
+
+```
+src/app/(workspace)/admin/approval/
+  page.tsx
+  approval.module.css
+```
+
+Import: `import styles from "./approval.module.css"`.
+
+## CSS rules
+
+- Modules use **plain CSS only** (`display`, `gap`, `color: var(--…)`, `@media`, etc.).
+- **Forbidden in `.module.css`:** `@apply`, Tailwind utility lists, empty scaffold files.
+- After migrating a component/page, do not leave Tailwind utility `className`s for layout/visual styling — use `styles.foo` / `cn(styles.a, styles.b)`.
+- Prefer theme tokens from `src/app/globals.css` (`var(--border)`, `var(--foreground)`, …).
+- Responsive layout: `@media` breakpoints, not `sm:` / `md:` class prefixes.
+- `globals.css` may keep Tailwind/theme imports for base tokens; components and pages must not rely on utility classes once migrated.
+
 <!-- ngodingpakeai:skill:start -->
 # NgodingPakeAI — Codebase Sync
 

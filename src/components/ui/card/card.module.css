@@ -1,0 +1,49 @@
+.card {
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 1rem;
+}
+
+.body {
+  padding: 1rem;
+}
+
+.bodyFlush,
+.body.bodyFlush {
+  padding: 0;
+}
+
+.section {
+  background: var(--surface-inset);
+  box-shadow: none;
+}
+
+.flush {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+@media (min-width: 640px) {
+  .header,
+  .body {
+    padding-right: 1.25rem;
+    padding-left: 1.25rem;
+  }
+
+  .bodyFlush,
+  .body.bodyFlush {
+    padding: 0;
+  }
+}

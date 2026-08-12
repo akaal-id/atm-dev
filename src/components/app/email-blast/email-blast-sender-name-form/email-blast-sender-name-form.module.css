@@ -1,0 +1,43 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.label {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.form {
+}
+.form > * + * {
+  margin-block-start: 1rem;
+}
+
+.itemDescription {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.meta {
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.submit {
+  height: 2.5rem;
+}

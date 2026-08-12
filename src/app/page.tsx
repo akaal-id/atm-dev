@@ -1,3 +1,4 @@
+import styles from "./home.module.css";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -36,5 +37,9 @@ export default async function Home() {
     }
   }
 
-  return <HubPage />;
+  return (
+    <div className={styles.page}>
+      <HubPage />
+    </div>
+  );
 }

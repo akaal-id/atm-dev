@@ -1,3 +1,4 @@
+import styles from "./new.module.css";
 import { WorkflowCreateForm } from "@/components/app/workflow/workflow-create-form";
 import { getAppData } from "@/lib/server/app-data";
 
@@ -9,5 +10,9 @@ export default async function NewWorkflowPage() {
     ticket_id_prefix: project.ticket_id_prefix || "",
   }));
 
-  return <WorkflowCreateForm projects={projects} />;
+  return (
+    <div className={styles.page}>
+      <WorkflowCreateForm projects={projects} />
+    </div>
+  );
 }

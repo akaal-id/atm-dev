@@ -1,0 +1,5 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.badge {
+  flex-shrink: 0;
+}

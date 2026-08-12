@@ -1,3 +1,4 @@
+import styles from "./id.module.css";
 import { WorkflowDetailClient } from "@/components/app/workflow/workflow-detail-client";
 import { DEFAULT_WORKFLOW_COLUMNS, tasksForWorkflow } from "@/lib/data/workflow-templates-mock";
 import { getAppData } from "@/lib/server/app-data";
@@ -28,7 +29,8 @@ export default async function WorkflowDetailPage({ params }: { params: Promise<{
   const tasks = tasksForWorkflow(workflow, data.tasks ?? []);
 
   return (
-    <WorkflowDetailClient
+    <div className={styles.page}>
+      <WorkflowDetailClient
       workflow={workflow}
       tasks={tasks}
       users={data.users ?? []}
@@ -41,5 +43,6 @@ export default async function WorkflowDetailPage({ params }: { params: Promise<{
         project_id: item.project_id || null,
       }))}
     />
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+import styles from "./dashboard.module.css";
 import { DashboardView } from "@/components/app/views";
 import { getAppData } from "@/lib/server/app-data";
 import { listResourceByField } from "@/lib/server/store";
@@ -16,5 +17,9 @@ export default async function DashboardPage() {
     orderBy: "created_at",
   });
 
-  return <DashboardView {...data} />;
+  return (
+    <div className={styles.page}>
+      <DashboardView {...data} />
+    </div>
+  );
 }

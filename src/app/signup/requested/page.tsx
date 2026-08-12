@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import styles from "../signup.module.css";
+import styles from "./requested.module.css";
 
 export default async function SignupRequestedPage({
   searchParams,

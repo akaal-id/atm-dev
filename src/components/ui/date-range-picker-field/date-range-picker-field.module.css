@@ -1,0 +1,175 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.weekdays {
+  display: flex;
+  height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--input);
+  background-color: var(--card);
+  padding-inline: 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+  box-shadow: none;
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+  outline: none;
+}
+.weekdays:hover {
+  background-color: var(--card);
+}
+.weekdays:focus-visible {
+  border-color: var(--ring);
+}
+.weekdays:disabled {
+  cursor: not-allowed;
+  background-color: color-mix(in srgb, var(--input) 50%, transparent);
+  opacity: 0.5;
+}
+
+.modalpanel {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+.caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.dialogPanel {
+  color: var(--muted-foreground);
+}
+
+.dialogpanelCalendardays {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+}
+
+.content {
+  min-width: 0;
+  flex: 1 1 0%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.icon {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  color: var(--muted-foreground);
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+.icon:hover {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.dialogpanelX {
+  width: 1rem;
+  height: 1rem;
+}
+
+.dialogpanelPopovercontent {
+  width: 18.5rem;
+  padding: 0.75rem;
+}
+
+.dialogpanelDiv {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.itemDescription {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.nextMonth {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.panel {
+  margin-top: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.025em;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+}
+
+.item {
+  padding-block: 0.25rem;
+}
+
+.emptystate {
+  margin-top: 0.25rem;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.25rem;
+}
+
+.captionSpan {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 2px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.control {
+  background-color: var(--primary-subtle);
+  color: var(--primary);
+}
+.control:hover {
+  background-color: var(--primary-subtle);
+}
+
+.region {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: var(--border);
+  padding-top: 0.75rem;
+}

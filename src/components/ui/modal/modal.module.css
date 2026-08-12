@@ -1,0 +1,75 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.modalpanel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  padding: 0;
+}
+@media (min-width: 640px) {
+  .modalpanel {
+    place-items: center;
+    padding: 1.5rem;
+  }
+}
+
+.dialogPanel {
+  max-height: 92dvh;
+  width: 100%;
+  overflow-y: auto;
+  background-color: var(--card);
+}
+@media (min-width: 640px) {
+  .dialogPanel {
+    border-radius: 2px;
+  }
+}
+
+.dialogpanelDiv {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding-inline: 1.25rem;
+  padding-block: 1rem;
+}
+
+.content {
+  min-width: 0;
+}
+
+.itemDescription {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--primary);
+}
+
+.heading {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.dialogpanelPrimary {
+  padding: 1.25rem;
+}

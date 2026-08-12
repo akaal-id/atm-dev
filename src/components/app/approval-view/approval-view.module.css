@@ -1,0 +1,557 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+@media (min-width: 640px) {
+  .toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.statusTabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  border-radius: 2px;
+  background-color: var(--muted);
+  padding: 0.25rem;
+}
+
+.statusTab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 2px;
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  white-space: nowrap;
+  transition-property: all;
+  transition-duration: 150ms;
+  outline: none;
+}
+
+.statusTabActive {
+  background-color: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.statusTabIdle {
+  color: var(--muted-foreground);
+}
+.statusTabIdle:hover {
+  color: var(--foreground);
+}
+
+.statusTabCount {
+  border-radius: 9999px;
+  padding-inline: 0.375rem;
+  padding-block: 0.125rem;
+  font-size: 10px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusTabCountActive {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.statusTabCountIdle {
+  background-color: color-mix(in srgb, var(--muted) 60%, transparent);
+  color: var(--muted-foreground);
+}
+
+.projectFilter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.projectFilterIcon {
+  height: 1rem;
+  width: 1rem;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+}
+
+.projectSelect {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding-inline: 0.75rem;
+  padding-block: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--foreground);
+  outline: none;
+}
+.projectSelect:focus {
+  border-color: var(--primary);
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  border-width: 2px;
+  border-style: dashed;
+  border-color: var(--border);
+  padding: 3rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  height: 2.5rem;
+  width: 2.5rem;
+  color: var(--muted-foreground);
+}
+
+.emptyTitle {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.emptyText {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--muted-foreground);
+}
+
+.taskList {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.taskCard {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding: 1.25rem;
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+.taskCard:hover {
+  border-color: var(--border);
+  background-color: color-mix(in srgb, var(--muted) 50%, transparent);
+}
+@media (min-width: 640px) {
+  .taskCard {
+    padding: 1.5rem;
+  }
+}
+
+.taskCardGrid {
+  display: grid;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+@media (min-width: 640px) {
+  .taskCardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .taskCardGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: center;
+  }
+}
+
+.taskDetails {
+  min-width: 0;
+}
+@media (min-width: 640px) {
+  .taskDetails {
+    grid-column: span 2 / span 2;
+  }
+}
+@media (min-width: 1280px) {
+  .taskDetails {
+    grid-column: span 2 / span 2;
+  }
+}
+
+.taskIdRow {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.taskId {
+  border-radius: 2px;
+  background-color: var(--muted);
+  padding-inline: 0.375rem;
+  padding-block: 0.125rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.taskTitle {
+  overflow-wrap: break-word;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--foreground);
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+.taskTitle:hover {
+  color: var(--primary);
+}
+
+.taskDescription {
+  margin-top: 0.25rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.metaField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: var(--border);
+  padding-top: 0.5rem;
+}
+@media (min-width: 640px) {
+  .metaField {
+    border-top-width: 0;
+    padding-top: 0;
+  }
+}
+
+.metaLabel {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.metaValue {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaValueMuted {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.assigneeAvatars {
+  display: flex;
+  column-gap: calc(0.375rem * -1);
+  overflow: hidden;
+}
+
+.statusField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: var(--border);
+  padding-top: 0.5rem;
+  align-items: flex-start;
+}
+@media (min-width: 640px) {
+  .statusField {
+    border-top-width: 0;
+    padding-top: 0;
+  }
+}
+
+.checklistSection {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: var(--border);
+  display: grid;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+@media (min-width: 768px) {
+  .checklistSection {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.checklistHeaderStack {
+}
+.checklistHeaderStack > * + * {
+  margin-block-start: 1rem;
+}
+
+.checklistHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.checklistList {
+  max-height: 15rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.checklistList > * + * {
+  margin-block-start: 0.75rem;
+}
+
+.checklistItem {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 2px;
+  background-color: color-mix(in srgb, var(--muted) 50%, transparent);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+}
+@media (min-width: 640px) {
+  .checklistItem {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.checklistItemText {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  overflow-wrap: break-word;
+  flex: 1 1 0%;
+  transition-property: all;
+  transition-duration: 150ms;
+}
+
+.checklistItemTextDone {
+  color: var(--muted-foreground);
+  text-decoration-line: line-through;
+}
+
+.checklistItemTextTodo {
+  color: var(--foreground);
+}
+
+.checklistActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.assigneeToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  outline: none;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkBox {
+  display: grid;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  transition-property: all;
+  transition-duration: 150ms;
+}
+
+.checkBoxDone {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.checkBoxIdle {
+  border-color: var(--border);
+  background-color: var(--card);
+}
+
+.checkBoxDisabled {
+  opacity: 0.5;
+}
+
+.checkIcon {
+  width: 0.625rem;
+  height: 0.625rem;
+  stroke-width: 3;
+}
+
+.checkLabel {
+  transition-property: color, background-color, border-color;
+  transition-duration: 150ms;
+}
+
+.checkLabelDone {
+  color: var(--primary);
+}
+
+.checkLabelMuted {
+  color: var(--muted-foreground);
+}
+
+.leaderToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  outline: none;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+}
+
+.leaderToggleReady {
+  cursor: pointer;
+}
+
+.leaderToggleLocked {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.checkBoxLeaderDone {
+  color: #ffffff;
+}
+
+.hintText {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+.approvalBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  height: 100%;
+}
+
+.approvalBannerText {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+}
+
+.approvalBannerIcon {
+  flex: 1 1 0%;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: color-mix(in srgb, var(--muted) 50%, transparent);
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.625;
+  color: var(--foreground);
+  white-space: pre-wrap;
+}
+
+.cardActions {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: var(--border);
+  display: grid;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+@media (min-width: 768px) {
+  .cardActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.actionButton {
+  width: 100%;
+  height: 2.5rem;
+  font-weight: 400;
+}
+
+.spinner {
+  height: 1rem;
+  width: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+.approveIcon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.warning {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  font-weight: 400;
+}
+
+.warningIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+}

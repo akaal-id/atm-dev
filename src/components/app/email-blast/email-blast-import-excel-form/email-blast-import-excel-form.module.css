@@ -1,0 +1,95 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.icon {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  padding: 0.75rem;
+}
+.icon > * + * {
+  margin-block-start: 0.75rem;
+}
+
+.glyph {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.iconFilespreadsheet {
+  height: 1rem;
+  width: 1rem;
+  color: var(--muted-foreground);
+}
+
+.errortext {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.text {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--muted-foreground);
+}
+
+.meta {
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.code {
+  border-radius: 0.25rem;
+  background-color: var(--card);
+  padding-inline: 0.25rem;
+  padding-block: 0.125rem;
+}
+
+.sronly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.itemDescription {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.textP {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: #dc2626;
+}
+
+.textPrimary {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 400;
+  color: #047857;
+}
+
+.button {
+  height: 2.5rem;
+  width: 100%;
+}
+
+.iconUpload {
+  height: 1rem;
+  width: 1rem;
+}

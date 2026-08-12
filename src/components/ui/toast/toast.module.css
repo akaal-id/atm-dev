@@ -1,0 +1,105 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.noPointer {
+  pointer-events: none;
+  position: fixed;
+  bottom: 5rem;
+  right: 1rem;
+  display: flex;
+  width: min(22rem,calc(100vw-2rem));
+  flex-direction: column;
+  gap: 0.5rem;
+}
+@media (min-width: 768px) {
+  .noPointer {
+    bottom: 1.5rem;
+  }
+}
+
+.autoPointer {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.autoPointerAlt {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.pointereventsautoPrimary {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+  color: var(--foreground);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.icon {
+  margin-top: 0.125rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+  color: #059669;
+}
+
+.xcircle {
+  margin-top: 0.125rem;
+  height: 1.25rem;
+  width: 1.25rem;
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+.content {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.itemDescription {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.errortext {
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.button {
+  flex-shrink: 0;
+  color: currentColor;
+}
+.button:hover {
+  background-color: color-mix(in srgb, #000000 5%, transparent);
+}
+
+.dismissNotification {
+  height: 1rem;
+  width: 1rem;
+}

@@ -1,0 +1,361 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.shell {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--card);
+}
+
+.shellRoomOpen {
+  height: 100%;
+}
+
+.shellListOnly {
+  height: 100%;
+}
+@media (min-width: 768px) {
+  .shellListOnly {
+    border-radius: 2px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--border);
+    height: calc(100dvh-7rem);
+  }
+}
+
+.sidebar {
+  width: 100%;
+  flex-shrink: 0;
+  flex-direction: column;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-color: var(--border);
+}
+@media (min-width: 768px) {
+  .sidebar {
+    display: flex;
+    width: 20rem;
+  }
+}
+
+.sidebarExpanded {
+  display: flex;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  padding-inline: 1rem;
+  padding-block: 0.75rem;
+}
+
+.sidebarTitle {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.iconButton {
+  display: grid;
+  height: 2.25rem;
+  width: 2.25rem;
+  place-items: center;
+  border-radius: 2px;
+  color: var(--primary);
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+.iconButton:hover {
+  background-color: var(--primary-subtle);
+}
+
+.iconSm {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.searchBar {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  padding: 0.625rem;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  padding-inline: 0.625rem;
+}
+
+.searchIcon {
+  height: 1rem;
+  width: 1rem;
+  color: var(--muted-foreground);
+}
+
+.searchInput {
+  height: 2.25rem;
+  width: 100%;
+  background-color: transparent;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  outline: none;
+}
+
+.roomList {
+  min-height: 0;
+  flex: 1 1 0%;
+  overflow-y: auto;
+}
+
+.emptyRooms {
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.roomLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-inline: 0.75rem;
+  padding-block: 0.625rem;
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+
+.selected {
+  background-color: var(--primary-subtle);
+}
+
+.groupAvatar {
+  display: grid;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 9999px;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.roomInfo {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+
+.roomInfoTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roomName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.roomTime {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+
+.roomSubtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--muted-foreground);
+}
+
+.mainPane {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+}
+
+.mainPaneVisible {
+  display: flex;
+  height: 100%;
+}
+
+.mainPaneInner {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  flex: 1 1 0%;
+  flex-direction: column;
+}
+
+.dialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  padding: 0;
+}
+@media (min-width: 640px) {
+  .dialogBackdrop {
+    place-items: center;
+    padding: 1.5rem;
+  }
+}
+
+.dialogCard {
+  display: flex;
+  max-height: 85dvh;
+  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--card);
+}
+@media (min-width: 640px) {
+  .dialogCard {
+    border-radius: 2px;
+  }
+}
+
+.dialogTitle {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.dialogClose {
+  border-radius: 2px;
+  padding: 0.25rem;
+  color: var(--muted-foreground);
+}
+.dialogClose:hover {
+  background-color: var(--muted);
+}
+
+.dialogCloseIcon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.dialogField {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: var(--border);
+  padding: 0.75rem;
+}
+
+.groupNameInput {
+  height: 2.25rem;
+  width: 100%;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  padding-inline: 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  outline: none;
+}
+.groupNameInput:focus {
+  border-color: var(--primary);
+}
+
+.peopleList {
+  min-height: 0;
+  flex: 1 1 0%;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.personRow {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 2px;
+  padding-inline: 0.5rem;
+  padding-block: 0.5rem;
+  text-align: left;
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+
+.personName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--foreground);
+}
+
+.personCheck {
+  margin-left: auto;
+  display: grid;
+  height: 1.25rem;
+  width: 1.25rem;
+  place-items: center;
+  border-radius: 9999px;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.personCheckOn {
+  border-color: var(--primary);
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.personCheckOff {
+  border-color: var(--border);
+}
+
+.dialogFooter {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-color: var(--border);
+  padding: 0.75rem;
+}
+
+.dialogSubmit {
+  height: 2.5rem;
+  width: 100%;
+  border-radius: 2px;
+  background-color: var(--primary);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: #ffffff;
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-duration: 150ms;
+}
+.dialogSubmit:hover {
+  background-color: var(--primary);
+}
+.dialogSubmit:disabled {
+  opacity: 0.5;
+}

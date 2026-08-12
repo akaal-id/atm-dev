@@ -1,0 +1,50 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.heading {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.filterBar {
+  flex-shrink: 0;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filterbarHistory {
+  margin-right: 0.25rem;
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.item {
+  height: 2.5rem;
+}
+
+.icon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.body {
+  padding: 0;
+}

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/server/auth";
-import styles from "../signup/signup.module.css";
+import styles from "./verify.module.css";
 
 export default async function VerifyPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await getCurrentUser();

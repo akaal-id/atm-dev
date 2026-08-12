@@ -1,3 +1,4 @@
+import styles from "./roomId.module.css";
 import { notFound } from "next/navigation";
 
 import { ChatLayout } from "@/components/app/chat/chat-layout";
@@ -32,7 +33,8 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
     room.type === "private" ? other?.author?.full_name || room.name || "Direct message" : room.name || "Group";
 
   return (
-    <ChatLayout rooms={rooms} directory={directory} activeRoomId={roomId}>
+    <div className={styles.page}>
+      <ChatLayout rooms={rooms} directory={directory} activeRoomId={roomId}>
       <ChatWindow
         currentUser={{
           user_id: me.user_id,
@@ -49,5 +51,6 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
         canRemoveOthers={canRemoveOthers}
       />
     </ChatLayout>
+    </div>
   );
 }

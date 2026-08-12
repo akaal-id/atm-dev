@@ -1,0 +1,22 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.content {
+  min-width: 0;
+}
+
+.field {
+  background-color: var(--card);
+  box-shadow: none;
+}
+.field:hover {
+  background-color: var(--card);
+}
+
+.select {
+  width: 100%;
+}
+
+.wauto {
+  width: auto;
+  min-width: 11rem;
+}

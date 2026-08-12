@@ -1,0 +1,9 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.link {
+  font-weight: 400;
+  color: var(--primary);
+}
+.link:hover {
+  text-decoration-line: underline;
+}

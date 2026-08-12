@@ -1,0 +1,62 @@
+/* Activity feed — plain CSS, no @apply */
+
+.title {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.empty {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.body > * + * {
+  margin-block-start: 0.75rem;
+}
+
+.item {
+  display: flex;
+  gap: 0.75rem;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  padding: 0.75rem;
+}
+
+.marker {
+  margin-top: 0.25rem;
+  height: 0.5rem;
+  width: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background-color: var(--primary);
+}
+
+.itemBody {
+  min-width: 0;
+}
+
+.itemDescription {
+  overflow-wrap: break-word;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.itemMeta {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--muted-foreground);
+}
+
+.showMore {
+  height: 2.5rem;
+  width: 100%;
+  font-weight: 400;
+}

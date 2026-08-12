@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/server/auth";
 
 import { SignupForm } from "../signup-form";
-import styles from "../signup.module.css";
+import styles from "./organization.module.css";
 import { OrgOwnerSignupFields } from "./org-owner-signup-fields";
 
 export const dynamic = "force-dynamic";

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/server/auth";
 import { getActiveCompanyContext } from "@/lib/server/company-context";
 import { buildTenantPath, TENANT_ALL } from "@/lib/tenant-path";
-import styles from "../tenant-notice.module.css";
+import styles from "./tenant-access-denied.module.css";
 
 export default async function TenantAccessDeniedPage() {
   const user = await requireUser();

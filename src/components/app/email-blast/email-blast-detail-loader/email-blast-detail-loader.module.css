@@ -1,0 +1,42 @@
+/* Migrated from Tailwind utilities: plain CSS only, no @apply */
+
+.panel {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding: 1.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.group {
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+  background-color: var(--card);
+  padding: 1.5rem;
+}
+.group > * + * {
+  margin-block-start: 0.75rem;
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+  color: var(--foreground);
+}
+
+.emptytextP {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.link {
+  height: 2.5rem;
+}
