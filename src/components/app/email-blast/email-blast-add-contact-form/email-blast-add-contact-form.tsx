@@ -98,7 +98,7 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
             if (error) setError("");
             if (success) setSuccess("");
           }}
-          className={styles.input}
+          className="input"
           placeholder="Nama lengkap"
           autoComplete="name"
           disabled={busy}
@@ -115,7 +115,7 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
             if (error) setError("");
             if (success) setSuccess("");
           }}
-          className={styles.input}
+          className="input"
           placeholder="Nama perusahaan"
           autoComplete="organization"
           disabled={busy}
@@ -132,7 +132,7 @@ export function EmailBlastAddContactForm({ groupName, busy = false, onAdd }: Ema
             if (error) setError("");
             if (success) setSuccess("");
           }}
-          className={styles.input}
+          className="input"
           placeholder="email@contoh.com atau beberapa email dipisah koma"
           autoComplete="email"
           disabled={busy}

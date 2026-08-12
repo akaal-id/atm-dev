@@ -71,7 +71,8 @@
   color: var(--muted-foreground);
 }
 
-.input {
+/* Icon inset on FormSelect trigger (global/base styling lives on the primitive). */
+.picker [data-slot="select-trigger"] {
   padding-left: 2.25rem;
 }
 

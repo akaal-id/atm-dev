@@ -309,7 +309,7 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className={styles.input}
+            className={cn("input", styles.searchField)}
             placeholder="Cari nama, email, atau company"
           />
         </div>

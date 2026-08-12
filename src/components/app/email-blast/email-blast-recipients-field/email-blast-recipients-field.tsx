@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -133,7 +134,7 @@ export function EmailBlastRecipientsField({ recipients, onChange }: EmailBlastRe
           onBlur={() => {
             if (emailDraft.trim()) addEmails(emailDraft);
           }}
-          className={styles.input}
+          className={cn("input", styles.emailField)}
           placeholder="nama@perusahaan.com, lain@akaal.id"
           autoComplete="off"
           inputMode="email"

@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormSelect } from "@/components/ui/form-select";
 import type { MockContact, MockContactGroup } from "@/lib/data/email-blast-contacts-mock";
 
 interface EmailBlastGroupPickerProps {
@@ -22,6 +23,17 @@ export function EmailBlastGroupPicker({ groups, onApplyGroup }: EmailBlastGroupP
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
+  );
+
+  const groupOptions = useMemo(
+    () =>
+      groups.map((group) => ({
+        value: group.id,
+        label: `${group.groupName} (${group.contacts.length})${
+          group.createdBy?.fullName ? ` · ${group.createdBy.fullName}` : ""
+        }`,
+      })),
+    [groups],
   );
 
   function handleApply() {
@@ -51,20 +63,14 @@ export function EmailBlastGroupPicker({ groups, onApplyGroup }: EmailBlastGroupP
         <>
           <div className={styles.emptystate}>
             <Users className={styles.noPointer} aria-hidden />
-            <select
-              className={styles.input}
+            <FormSelect
+              name="contact_group"
+              className={styles.picker}
               value={selectedGroupId}
-              onChange={(event) => setSelectedGroupId(event.target.value)}
-              aria-label="Pilih grup kontak"
-            >
-              <option value="">Pilih grup…</option>
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.groupName} ({group.contacts.length})
-                  {group.createdBy?.fullName ? ` · ${group.createdBy.fullName}` : ""}
-                </option>
-              ))}
-            </select>
+              onValueChange={setSelectedGroupId}
+              options={groupOptions}
+              placeholder="Pilih grup…"
+            />
           </div>
 
           {selectedGroup ? (

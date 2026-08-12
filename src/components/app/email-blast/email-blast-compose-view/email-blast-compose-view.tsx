@@ -220,7 +220,7 @@ export function EmailBlastComposeView() {
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   onBlur={() => setTouched((current) => ({ ...current, body: true }))}
-                  className={styles.input}
+                  className={cn("input", styles.bodyField)}
                   placeholder="Tulis isi pesan email di sini…"
                   rows={8}
                   aria-invalid={touched.body && Boolean(errors.body)}

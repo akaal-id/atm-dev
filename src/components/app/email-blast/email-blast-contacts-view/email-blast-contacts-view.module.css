@@ -15,12 +15,10 @@
   color: var(--muted-foreground);
 }
 
-.input {
+/* Incremental on global `.input` — icon inset for toolbar search. */
+.searchField {
   height: 2.75rem;
   padding-left: 2.25rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 400;
 }
 
 .icon {

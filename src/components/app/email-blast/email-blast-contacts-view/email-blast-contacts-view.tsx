@@ -169,7 +169,7 @@ export function EmailBlastContactsView() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className={styles.input}
+            className={cn("input", styles.searchField)}
             placeholder="Cari nama grup, kontak, atau company"
           />
         </div>

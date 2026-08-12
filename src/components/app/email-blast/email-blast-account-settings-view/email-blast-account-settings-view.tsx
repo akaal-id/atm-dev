@@ -67,7 +67,7 @@ export function EmailBlastAccountSettingsView({ user }: EmailBlastAccountSetting
                 <div className={styles.identityCard}>
                   <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Role</p>
                   <p className="mt-1 text-sm font-normal text-foreground">{user.role.role_name}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{user.employment_status || "â€”"}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{user.employment_status || "—"}</p>
                 </div>
               </div>
             </CardBody>
@@ -90,7 +90,7 @@ export function EmailBlastAccountSettingsView({ user }: EmailBlastAccountSetting
             <p className="text-sm leading-6 text-muted-foreground">
               Email Blast memakai login dashboard ATM yang sudah ada. Resend memakai{" "}
               <code className="rounded bg-muted px-1.5 py-0.5 text-xs">RESEND_API_KEY</code> di
-              environment server â€” tidak ada setup auth atau key per-user terpisah.
+              environment server — tidak ada setup auth atau key per-user terpisah.
             </p>
           </CardBody>
         </Card>

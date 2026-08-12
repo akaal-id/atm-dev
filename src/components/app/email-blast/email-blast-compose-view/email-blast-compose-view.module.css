@@ -91,8 +91,10 @@
   margin-block-start: 1rem;
 }
 
-.input {
+/* Incremental on global `.input` — tall compose body. */
+.bodyField {
   min-height: 10rem;
+  resize: vertical;
 }
 
 .errortext {
