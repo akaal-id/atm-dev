@@ -1,6 +1,13 @@
 import "server-only";
 
 import { appDatabaseSchema } from "@/lib/data/schema";
+import {
+  applySupabaseAuthHeaders,
+  getSupabaseSecretKey,
+  getSupabaseUrl,
+  isJwtIssuedAtFutureError,
+  isSupabaseRestConfigured,
+} from "@/lib/server/supabase-rest";
 
 export type SupabaseResourceName = keyof typeof appDatabaseSchema;
 
@@ -27,7 +34,13 @@ export const supabaseTables: Record<SupabaseResourceName, string> = {
 };
 
 export interface SupabaseReadOptions {
+  /** PostgREST select list. Defaults to `*`. */
+  select?: string;
   filters?: Record<string, string | number | boolean>;
+  /** `field=in.(a,b,c)` filters. */
+  inFilters?: Record<string, Array<string | number>>;
+  /** Raw PostgREST `or=(...)` body, without the outer `or=` key. */
+  or?: string;
   limit?: number;
   orderBy?: string;
   ascending?: boolean;
@@ -80,25 +93,13 @@ function canRetryWithoutOptionalFields(resource: SupabaseResourceName, error: un
   return optionalFields.some((field) => field in record && error.preview?.includes(field));
 }
 
-function supabaseUrl() {
-  const explicitUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (explicitUrl) return explicitUrl.replace(/\/$/, "");
-
-  const projectId = process.env.SUPABASE_PROJECT_ID;
-  return projectId ? `https://${projectId}.supabase.co` : "";
-}
-
-function supabaseKey() {
-  return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-}
-
 export function isSupabaseConfigured() {
-  return Boolean(supabaseUrl() && supabaseKey());
+  return isSupabaseRestConfigured();
 }
 
 function assertSupabaseConfig() {
-  const url = supabaseUrl();
-  const key = supabaseKey();
+  const url = getSupabaseUrl();
+  const key = getSupabaseSecretKey();
 
   if (!url || !key) {
     throw new SupabaseStoreError("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY.");
@@ -107,11 +108,9 @@ function assertSupabaseConfig() {
   return { url, key };
 }
 
-async function requestSupabase<T>(path: string, init: RequestInit = {}) {
-  const { url, key } = assertSupabaseConfig();
+async function requestSupabaseOnce<T>(url: string, key: string, path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
-  headers.set("apikey", key);
-  headers.set("Authorization", `Bearer ${key}`);
+  applySupabaseAuthHeaders(headers, key);
   headers.set("Content-Type", "application/json");
 
   const response = await fetch(`${url}${path}`, {
@@ -121,8 +120,12 @@ async function requestSupabase<T>(path: string, init: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const preview = await response.text();
-    throw new SupabaseStoreError(`Supabase request failed for ${path}`, response.status, preview.slice(0, 500));
+    const preview = (await response.text()).slice(0, 500);
+    throw new SupabaseStoreError(
+      `Supabase request failed for ${path} (${response.status}): ${preview}`,
+      response.status,
+      preview,
+    );
   }
 
   if (response.status === 204) return undefined as T;
@@ -130,6 +133,26 @@ async function requestSupabase<T>(path: string, init: RequestInit = {}) {
   const text = await response.text();
   if (!text) return undefined as T;
   return JSON.parse(text) as T;
+}
+
+async function requestSupabase<T>(path: string, init: RequestInit = {}) {
+  const { url, key } = assertSupabaseConfig();
+
+  try {
+    return await requestSupabaseOnce<T>(url, key, path, init);
+  } catch (error) {
+    // Transient gateway/PostgREST clock skew when minting role JWTs from opaque keys.
+    if (
+      error instanceof SupabaseStoreError &&
+      typeof error.status === "number" &&
+      typeof error.preview === "string" &&
+      isJwtIssuedAtFutureError(error.status, error.preview)
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return requestSupabaseOnce<T>(url, key, path, init);
+    }
+    throw error;
+  }
 }
 
 function tableFor(resource: SupabaseResourceName) {
@@ -155,25 +178,34 @@ export async function testSupabaseConnection() {
   };
 }
 
-export async function readSupabaseResource(resource: SupabaseResourceName) {
-  const table = tableFor(resource);
-  try {
-    return await requestSupabase<Record<string, unknown>[]>(
-      `/rest/v1/${table}?select=*&order=created_at.desc.nullslast`,
-    );
-  } catch (error) {
-    if (optionalSupabaseResources.has(resource) && isMissingTableError(error)) return [];
-    throw error;
-  }
+export async function readSupabaseResource(resource: SupabaseResourceName, options: SupabaseReadOptions = {}) {
+  return readSupabaseResourceWhere(resource, {
+    orderBy: options.orderBy ?? "created_at",
+    ascending: options.ascending ?? false,
+    ...options,
+  });
 }
 
 export async function readSupabaseResourceWhere(resource: SupabaseResourceName, options: SupabaseReadOptions) {
   const table = tableFor(resource);
-  const params = new URLSearchParams({ select: "*" });
+  const params = new URLSearchParams({ select: options.select?.trim() || "*" });
 
   Object.entries(options.filters ?? {}).forEach(([field, value]) => {
     params.set(field, `eq.${String(value)}`);
   });
+
+  Object.entries(options.inFilters ?? {}).forEach(([field, values]) => {
+    if (values.length === 0) {
+      // Force empty result set without downloading the table.
+      params.set(field, "eq.__no_match__");
+      return;
+    }
+    params.set(field, `in.(${values.map((value) => String(value)).join(",")})`);
+  });
+
+  if (options.or?.trim()) {
+    params.set("or", `(${options.or.trim().replace(/^\(/, "").replace(/\)$/, "")})`);
+  }
 
   if (options.orderBy) {
     params.set("order", `${options.orderBy}.${options.ascending ? "asc" : "desc"}.nullslast`);

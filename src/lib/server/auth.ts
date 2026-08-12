@@ -10,7 +10,7 @@ import { cache } from "react";
 import { departments as seedDepartments, roles as seedRoles } from "@/lib/data/seed";
 import { hasPermission } from "@/lib/permissions";
 import { authOptions } from "@/lib/server/next-auth-options";
-import { listResourceByFieldUnscoped, listResourceUnscoped } from "@/lib/server/store";
+import { listResourceByFieldUnscoped } from "@/lib/server/store";
 import type { CurrentUser, Permission, RoleKey, User } from "@/lib/types";
 
 export const sessionCookieName = "atm_session";
@@ -92,17 +92,16 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Cur
   const session = await getSession();
   if (!session) return null;
 
-  const [users, departments, roles] = await Promise.all([
-    listResourceByFieldUnscoped("Users", "user_id", session.userId, { limit: 1 }),
-    listResourceUnscoped("Departments"),
-    listResourceUnscoped("Roles"),
-  ]);
+  const users = await listResourceByFieldUnscoped("Users", "user_id", session.userId, { limit: 1 });
   const user = users.find((candidate) => candidate.user_id === session.userId && candidate.is_active);
   if (!user) return null;
 
-  const role = roles.find((candidate) => candidate.role_id === user.role_id) ?? seedRoles[seedRoles.length - 1];
-  const department =
-    departments.find((candidate) => candidate.department_id === user.department_id) ?? seedDepartments[0];
+  const [roles, departments] = await Promise.all([
+    listResourceByFieldUnscoped("Roles", "role_id", user.role_id, { limit: 1 }),
+    listResourceByFieldUnscoped("Departments", "department_id", user.department_id, { limit: 1 }),
+  ]);
+  const role = roles[0] ?? seedRoles[seedRoles.length - 1];
+  const department = departments[0] ?? seedDepartments[0];
   const { password_hash_or_auth_id: passwordHash, ...safeUser } = user;
   void passwordHash;
 

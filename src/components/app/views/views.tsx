@@ -584,14 +584,14 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
     .sort((left, right) => right.created_at.localeCompare(left.created_at));
 
   return (
-    <div className={styles.filterBar}>
+    <div className={styles.taskDetail}>
       <div className={styles.listBody}>
         <Card>
           <CardHeader>
             <div className={styles.card}>
               <TicketId id={task.task_id} />
               <h2 className={styles.breakwords}>{task.title}</h2>
-              <LinkifiedText text={task.description} className={styles.linkLinkifiedtext} />
+              <LinkifiedText text={task.description} className={styles.taskDescription} />
             </div>
           </CardHeader>
           <CardBody className={styles.emptyText}>
@@ -658,7 +658,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
                     <p className={styles.textPrimary}>{userName(data.users, comment.user_id)}</p>
                     <p className={styles.textSecondary}>{formatDate(comment.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
                   </div>
-                      <LinkifiedText text={comment.comment} className={styles.linkPrimary} />
+                      <LinkifiedText text={comment.comment} className={styles.commentBody} />
                 </div>
               </div>
             ))}
@@ -779,7 +779,7 @@ export function ProjectFilesView({ data, projectId }: { data: AppData; projectId
       <div className={styles.projectfiles}>
         <div className={styles.card}>
           <h2 className={styles.heading}>
-            {project ? `${project.project_name} â€” Project Files` : "All Project Files"}
+            {project ? `${project.project_name} — Project Files` : "All Project Files"}
           </h2>
           <p className={styles.text}>{files.length} file{files.length === 1 ? "" : "s"}</p>
         </div>
@@ -791,7 +791,7 @@ export function ProjectFilesView({ data, projectId }: { data: AppData; projectId
 
       {files.length === 0 ? (
         <div className={styles.emptystateDiv}>
-          No project files uploaded yet. Upload one from a task&apos;s â€œProject Fileâ€ panel.
+          No project files uploaded yet. Upload one from a task&apos;s &ldquo;Project File&rdquo; panel.
         </div>
       ) : (
         <div className={styles.bodyCardbody}>
@@ -832,12 +832,12 @@ export function ProjectsView(data: AppData) {
     <Page>
       <DataToolbar tabs={["All", "Active", "Review", "Completed"]} action={createProjectAction} />
 
-      <div className={styles.dialogPanel}>
+      <div className={styles.projectGrid}>
         {data.projects.map((project) => (
           <Card key={project.project_id}>
             <CardHeader>
-              <div className={styles.linkLink}>
-                <div className={styles.card}>
+              <div className={styles.projectCardHeader}>
+                <div className={styles.projectCardTitle}>
                   <TicketId id={project.ticket_id_prefix || project.project_id} />
                   <p className={styles.itemMeta}>{project.project_name}</p>
                   <p className={styles.text}>Owner: {userName(data.users, project.owner_user_id)}</p>
@@ -845,11 +845,11 @@ export function ProjectsView(data: AppData) {
                 <StatusPill status={project.status} />
               </div>
             </CardHeader>
-            <CardBody className={styles.bodyPrimary}>
-              <p className={styles.textInner}>{project.description}</p>
+            <CardBody className={styles.projectCardBody}>
+              <p className={styles.projectDescription}>{project.description}</p>
               <Progress value={clampProgress(project.progress)} label={`Deadline ${formatShortDate(project.deadline)}`} />
-              <div className={styles.bodyDiv}>
-                <div className={styles.bodyCardbody}>
+              <div className={styles.projectCardMeta}>
+                <div className={styles.projectAvatars}>
                   {project.members.slice(0, 4).map((id) => (
                     <Avatar key={id} name={userName(data.users, id)} size="sm" />
                   ))}
@@ -858,7 +858,7 @@ export function ProjectsView(data: AppData) {
               </div>
               <Link
                 href={`/project-files?project=${project.project_id}`}
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), styles.itemDiv)}
+                className={cn(buttonVariants({ variant: "outline", size: "lg" }), styles.projectFilesLink)}
               >
                 <FolderOpen className={styles.icon} />
                 Project Files
@@ -1063,12 +1063,12 @@ export function CalendarView(data: AppData) {
           </CardHeader>
           <CardBody className={styles.bodyCardbody}>
             {typeCounts.map(([type, events]) => (
-              <div key={type} className={styles.bodyPrimary}>
+              <div key={type} className={styles.calendarTypeRow}>
                 <div className={styles.card}>
                   <Badge tone={statusTone(type)}>{type}</Badge>
                   <p className={styles.itemDescription}>{events.length} item{events.length === 1 ? "" : "s"}</p>
                 </div>
-                <span className={styles.badge}>{events.length}</span>
+                <span className={styles.calendarTypeCount}>{events.length}</span>
               </div>
             ))}
             {typeCounts.length === 0 ? <EmptyState label="No activities this month." /> : null}
@@ -1080,9 +1080,9 @@ export function CalendarView(data: AppData) {
             <SectionTitle title="Monthly activity" action={<Badge>Current month</Badge>} />
           </CardHeader>
           <CardBody className={styles.bodyPrimary}>
-            <div className={styles.bodyDiv}>
-              <div className={styles.bodyCardbody}>
-                <div className={styles.bodySecondary}>
+            <div className={styles.calendarScroll}>
+              <div className={styles.calendarMonthInner}>
+                <div className={styles.calendarWeekdays}>
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                     <span key={day}>{day}</span>
                   ))}
@@ -1098,7 +1098,7 @@ export function CalendarView(data: AppData) {
                             <p className={styles.header}>{Number(date.slice(8, 10))}</p>
                             <div className={styles.emptystateAside}>
                               {events.slice(0, 3).map((event) => (
-                                <Link key={event.id} href={event.href} className={styles.linkLink}>
+                                <Link key={event.id} href={event.href} className={styles.calendarEventLink}>
                                   <span className={styles.captionSpan}>{event.title}</span>
                                   <span className={styles.captionPrimary}>{event.type}</span>
                                 </Link>
@@ -1717,7 +1717,7 @@ export function SettingsView(data: AppData) {
           </CardHeader>
           <CardBody className={styles.list}>
             <p className={styles.emptyText}>
-              Atur papan workflow untuk mengelompokkan task. Saat membuat workflow, project opsional â€” task project
+              Atur papan workflow untuk mengelompokkan task. Saat membuat workflow, project opsional — task project
               yang terhubung ikut tampil di board tersebut.
             </p>
             <Link href="/workflows" className={styles.linkAside}>

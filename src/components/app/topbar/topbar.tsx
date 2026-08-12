@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
-import { CreateTaskModal, type TaskModalProject, type TaskModalUser, type TaskModalWorkflow } from "@/components/app/create-task-modal";
+import { CreateTaskModal } from "@/components/app/create-task-modal";
 import { CompanySwitcher } from "@/components/app/company-switcher";
 import { OrganizationSwitcher } from "@/components/app/organization-switcher";
 import { NotificationLink } from "@/components/app/notification-actions";
 import { AppIcon } from "@/components/app/icons";
+import { NOTIFICATIONS_POLL_EVENT, type NotificationsPollDetail } from "@/components/app/live-refresh";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { isChatRoomPath } from "@/lib/navigation";
@@ -21,9 +23,6 @@ interface TopbarProps {
   unreadCount: number;
   recentNotifications: AppNotification[];
   canCreateTasks: boolean;
-  taskModalUsers: TaskModalUser[];
-  taskModalProjects: TaskModalProject[];
-  taskModalWorkflows?: TaskModalWorkflow[];
 }
 
 export function Topbar({
@@ -31,17 +30,41 @@ export function Topbar({
   unreadCount,
   recentNotifications,
   canCreateTasks,
-  taskModalUsers,
-  taskModalProjects,
-  taskModalWorkflows,
 }: TopbarProps) {
   const pathname = usePathname();
   const tenant = useTenant();
+  const [liveUnreadCount, setLiveUnreadCount] = useState(unreadCount);
+  const [liveRecent, setLiveRecent] = useState(recentNotifications);
+
+  useEffect(() => {
+    setLiveUnreadCount(unreadCount);
+    setLiveRecent(recentNotifications);
+  }, [unreadCount, recentNotifications]);
+
+  useEffect(() => {
+    const onPoll = (event: Event) => {
+      const detail = (event as CustomEvent<NotificationsPollDetail>).detail;
+      const unread = detail?.unread ?? [];
+      setLiveUnreadCount(unread.length);
+      if (unread.length === 0) return;
+      setLiveRecent((previous) => {
+        const byId = new Map(previous.map((item) => [item.notification_id, item]));
+        unread.forEach((item) => byId.set(item.notification_id, item));
+        return Array.from(byId.values()).sort(
+          (left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+        );
+      });
+    };
+
+    window.addEventListener(NOTIFICATIONS_POLL_EVENT, onPoll);
+    return () => window.removeEventListener(NOTIFICATIONS_POLL_EVENT, onPoll);
+  }, []);
+
   if (isChatRoomPath(pathname)) return null;
 
   const breadcrumbs = getBreadcrumbs(pathname, tenant);
   const tenantHref = tenant.href;
-  const previewNotifications = [...recentNotifications]
+  const previewNotifications = [...liveRecent]
     .sort((left, right) => Number(left.is_read) - Number(right.is_read) || new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
     .slice(0, 3);
 
@@ -77,9 +100,6 @@ export function Topbar({
           {canCreateTasks ? (
             <CreateTaskModal
               currentUser={user}
-              users={taskModalUsers}
-              projects={taskModalProjects}
-              workflows={taskModalWorkflows}
               title="Create ticket"
               triggerVariant="outline"
               triggerClassName={styles.createTask}
@@ -88,7 +108,7 @@ export function Topbar({
 
           <Link href={tenantHref("/notifications")} className={styles.notificationButton} aria-label="Open notifications">
             <AppIcon name="Bell" className={styles.icon} />
-            {unreadCount > 0 ? <span className={styles.count}>{unreadCount}</span> : null}
+            {liveUnreadCount > 0 ? <span className={styles.count}>{liveUnreadCount}</span> : null}
           </Link>
 
           <details className={styles.details}>

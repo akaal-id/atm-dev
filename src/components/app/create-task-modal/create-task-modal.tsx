@@ -380,17 +380,17 @@ export function TaskFormModal({
 
 export function CreateTaskModal({
   currentUser,
-  users,
-  projects,
-  workflows,
+  users: usersProp,
+  projects: projectsProp,
+  workflows: workflowsProp,
   defaultWorkflowId,
   title = "Create ticket",
   triggerVariant = "default",
   triggerClassName,
 }: {
   currentUser: CurrentUser;
-  users: TaskModalUser[];
-  projects: TaskModalProject[];
+  users?: TaskModalUser[];
+  projects?: TaskModalProject[];
   workflows?: TaskModalWorkflow[];
   defaultWorkflowId?: string;
   title?: string;
@@ -398,6 +398,56 @@ export function CreateTaskModal({
   triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [users, setUsers] = useState<TaskModalUser[]>(usersProp ?? []);
+  const [projects, setProjects] = useState<TaskModalProject[]>(projectsProp ?? []);
+  const [workflows, setWorkflows] = useState<TaskModalWorkflow[]>(workflowsProp ?? []);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+
+  useEffect(() => {
+    setUsers(usersProp ?? []);
+  }, [usersProp]);
+
+  useEffect(() => {
+    setProjects(projectsProp ?? []);
+  }, [projectsProp]);
+
+  useEffect(() => {
+    setWorkflows(workflowsProp ?? []);
+  }, [workflowsProp]);
+
+  useEffect(() => {
+    if (!open) return;
+    if ((usersProp?.length ?? 0) > 0 && (projectsProp?.length ?? 0) > 0) return;
+
+    let cancelled = false;
+    setOptionsLoading(true);
+
+    void fetch("/api/tasks/create-options", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Failed to load create-task options");
+        return (await response.json()) as {
+          users?: TaskModalUser[];
+          projects?: TaskModalProject[];
+          workflows?: TaskModalWorkflow[];
+        };
+      })
+      .then((payload) => {
+        if (cancelled) return;
+        setUsers(payload.users ?? []);
+        setProjects(payload.projects ?? []);
+        setWorkflows(payload.workflows ?? []);
+      })
+      .catch((error) => {
+        console.error("create-task options failed", error);
+      })
+      .finally(() => {
+        if (!cancelled) setOptionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, usersProp, projectsProp]);
 
   return (
     <>
@@ -407,6 +457,7 @@ export function CreateTaskModal({
         size="lg"
         className={cn(styles.rowButton, triggerClassName)}
         onClick={() => setOpen(true)}
+        disabled={optionsLoading && open}
       >
         <Plus className={styles.icon} />
         {title}

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 import { sessionCookieName, verifySessionToken } from "@/lib/server/auth";
 import {
@@ -11,6 +12,7 @@ import {
   listOrganizationIdsForUser,
   type CompanyScope,
 } from "@/lib/server/company-context";
+import type { SupabaseReadOptions } from "@/lib/server/supabase-store";
 import { activeOrganizationCookieName } from "@/lib/tenant-path";
 
 /**
@@ -19,8 +21,10 @@ import { activeOrganizationCookieName } from "@/lib/tenant-path";
  * - super_admin + cookie `__all__` → every company (platform-wide)
  * - org_owner + cookie `__all__` → every company inside their organization(s)
  * - otherwise → single active company id from cookie (defaults to Akaal)
+ *
+ * Cached per React request so parallel listResource calls share one scope resolution.
  */
-export async function resolveCompanyScope(): Promise<CompanyScope> {
+export const resolveCompanyScope = cache(async function resolveCompanyScope(): Promise<CompanyScope> {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
   const session = token ? await verifySessionToken(token) : null;
@@ -76,6 +80,34 @@ export async function resolveCompanyScope(): Promise<CompanyScope> {
     isSuperAdmin: Boolean(isSuperAdmin),
     allowedCompanyIds: null,
   };
+});
+
+/** Legacy rows may store Akaal as empty/`null` company_id — include those when scoped to default. */
+function akaalLegacyCompanyOr(companyIds: string[]) {
+  const inList = companyIds.join(",");
+  return `company_id.in.(${inList}),company_id.eq.,company_id.is.null`;
+}
+
+/**
+ * Push tenant scope into PostgREST so list reads do not download every company's rows.
+ * Returns empty options for platform-wide (`all`) scope.
+ */
+export function companyScopeToSupabaseOptions(scope: CompanyScope): Pick<SupabaseReadOptions, "filters" | "inFilters" | "or"> {
+  if (scope.mode === "all") return {};
+
+  if (scope.mode === "single") {
+    if (scope.companyId === DEFAULT_COMPANY_ID) {
+      return { or: akaalLegacyCompanyOr([scope.companyId]) };
+    }
+    return { filters: { company_id: scope.companyId } };
+  }
+
+  const ids = Array.from(new Set(scope.allowedCompanyIds.filter(Boolean)));
+  if (ids.length === 0) return { filters: { company_id: "__no_match__" } };
+  if (ids.includes(DEFAULT_COMPANY_ID)) {
+    return { or: akaalLegacyCompanyOr(ids) };
+  }
+  return { inFilters: { company_id: ids } };
 }
 
 export function recordMatchesCompanyScope(

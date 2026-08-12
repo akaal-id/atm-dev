@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { seedResources } from "@/lib/data/seed";
 import { googleSheetsDatabaseSchema, type SheetName } from "@/lib/data/schema";
 import { appendAppsScriptRow, deleteAppsScriptRow, isAppsScriptConfigured, readAppsScriptSheet, updateAppsScriptRow } from "@/lib/server/apps-script";
@@ -12,6 +14,7 @@ import {
   isSupabaseConfigured,
   readSupabaseResource,
   readSupabaseResourceWhere,
+  type SupabaseReadOptions,
   updateSupabaseResource,
 } from "@/lib/server/supabase-store";
 import type { AppNotification, User } from "@/lib/types";
@@ -121,11 +124,36 @@ const companyScopedResources = new Set<ResourceName>([
   "Settings",
 ]);
 
+export type ListResourceOptions = {
+  select?: string;
+  limit?: number;
+  orderBy?: string;
+  ascending?: boolean;
+};
+
 async function applyCompanyScopeToRows<R extends ResourceName>(resource: R, rows: ResourceItem<R>[]) {
   if (!companyScopedResources.has(resource)) return rows;
   const { resolveCompanyScope, filterRowsByCompanyScope } = await import("@/lib/server/company-scope");
   const scope = await resolveCompanyScope();
   return filterRowsByCompanyScope(rows as unknown as Array<Record<string, unknown>>, scope) as unknown as ResourceItem<R>[];
+}
+
+async function supabaseOptionsForScopedRead(
+  resource: ResourceName,
+  options: ListResourceOptions = {},
+): Promise<SupabaseReadOptions> {
+  const read: SupabaseReadOptions = {
+    select: options.select,
+    limit: options.limit,
+    orderBy: options.orderBy ?? "created_at",
+    ascending: options.ascending ?? false,
+  };
+
+  if (!companyScopedResources.has(resource)) return read;
+
+  const { resolveCompanyScope, companyScopeToSupabaseOptions } = await import("@/lib/server/company-scope");
+  const scope = await resolveCompanyScope();
+  return { ...read, ...companyScopeToSupabaseOptions(scope) };
 }
 
 async function stampCompanyIdOnCreate(resource: ResourceName, record: Record<string, unknown>) {
@@ -143,9 +171,17 @@ async function stampCompanyIdOnCreate(resource: ResourceName, record: Record<str
   return record;
 }
 
-async function listResourceRaw<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
+async function listResourceRaw<R extends ResourceName>(
+  resource: R,
+  options: ListResourceOptions = {},
+): Promise<ResourceItem<R>[]> {
   if (shouldUseSupabase()) {
-    const raw = await readSupabaseResource(resource);
+    const raw = await readSupabaseResource(resource, {
+      select: options.select,
+      limit: options.limit,
+      orderBy: options.orderBy,
+      ascending: options.ascending,
+    });
     return normalizeSupabaseRecords(resource, raw) as unknown as ResourceItem<R>[];
   }
   if (shouldUseAppsScript()) {
@@ -157,25 +193,62 @@ async function listResourceRaw<R extends ResourceName>(resource: R): Promise<Res
   return store[resource] as ResourceItem<R>[];
 }
 
+const listResourceCached = cache(async function listResourceCached(
+  resource: ResourceName,
+  select = "",
+  limitKey = "",
+  orderBy = "",
+  ascendingKey = "",
+): Promise<ResourceItem<ResourceName>[]> {
+  const options: ListResourceOptions = {
+    select: select || undefined,
+    limit: limitKey ? Number(limitKey) : undefined,
+    orderBy: orderBy || undefined,
+    ascending: ascendingKey === "1" ? true : ascendingKey === "0" ? false : undefined,
+  };
+
+  if (shouldUseSupabase()) {
+    const raw = await readSupabaseResourceWhere(resource, await supabaseOptionsForScopedRead(resource, options));
+    const normalized = normalizeSupabaseRecords(resource, raw) as unknown as ResourceItem<ResourceName>[];
+    return applyCompanyScopeToRows(resource, normalized);
+  }
+
+  const rows = await listResourceRaw(resource, options);
+  return applyCompanyScopeToRows(resource, rows);
+});
+
 /** Tenant-filtered list (default for app data). */
-export async function listResource<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
-  const rows = await listResourceRaw(resource);
-  return (await applyCompanyScopeToRows(resource, rows)) as ResourceItem<R>[];
+export async function listResource<R extends ResourceName>(
+  resource: R,
+  options: ListResourceOptions = {},
+): Promise<ResourceItem<R>[]> {
+  const rows = await listResourceCached(
+    resource,
+    options.select ?? "",
+    typeof options.limit === "number" ? String(options.limit) : "",
+    options.orderBy ?? "",
+    typeof options.ascending === "boolean" ? (options.ascending ? "1" : "0") : "",
+  );
+  return rows as ResourceItem<R>[];
 }
 
 /** Unscoped list — for auth/identity lookups that must not depend on active company. */
-export async function listResourceUnscoped<R extends ResourceName>(resource: R): Promise<ResourceItem<R>[]> {
-  return listResourceRaw(resource);
+export async function listResourceUnscoped<R extends ResourceName>(
+  resource: R,
+  options: ListResourceOptions = {},
+): Promise<ResourceItem<R>[]> {
+  return listResourceRaw(resource, options);
 }
 
 export async function listResourceByFieldUnscoped<R extends ResourceName>(
   resource: R,
   field: string,
   value: string | number | boolean,
-  options: { limit?: number; orderBy?: string; ascending?: boolean } = {},
+  options: ListResourceOptions = {},
 ): Promise<ResourceItem<R>[]> {
   if (shouldUseSupabase()) {
     const rows = await readSupabaseResourceWhere(resource, {
+      select: options.select,
       filters: { [field]: value },
       limit: options.limit,
       orderBy: options.orderBy,
@@ -205,14 +278,18 @@ export async function listResourceByField<R extends ResourceName>(
   resource: R,
   field: string,
   value: string | number | boolean,
-  options: { limit?: number; orderBy?: string; ascending?: boolean } = {},
+  options: ListResourceOptions = {},
 ): Promise<ResourceItem<R>[]> {
   if (shouldUseSupabase()) {
-    const rows = await readSupabaseResourceWhere(resource, {
-      filters: { [field]: value },
+    const scopeOptions = await supabaseOptionsForScopedRead(resource, {
+      select: options.select,
       limit: options.limit,
       orderBy: options.orderBy,
       ascending: options.ascending,
+    });
+    const rows = await readSupabaseResourceWhere(resource, {
+      ...scopeOptions,
+      filters: { ...(scopeOptions.filters ?? {}), [field]: value },
     });
     const normalized = normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
     const scoped = await applyCompanyScopeToRows(resource, normalized);
@@ -237,6 +314,19 @@ export async function listResourceByField<R extends ResourceName>(
 
 export async function getResourceById<R extends ResourceName>(resource: R, id: string): Promise<ResourceItem<R> | undefined> {
   const idField = idFields[resource];
+
+  if (shouldUseSupabase()) {
+    const scopeOptions = await supabaseOptionsForScopedRead(resource, { limit: 1 });
+    const rows = await readSupabaseResourceWhere(resource, {
+      ...scopeOptions,
+      filters: { ...(scopeOptions.filters ?? {}), [idField]: id },
+      limit: 1,
+    });
+    const normalized = normalizeSupabaseRecords(resource, rows) as unknown as ResourceItem<R>[];
+    const scoped = await applyCompanyScopeToRows(resource, normalized);
+    return scoped[0];
+  }
+
   const items = await listResource(resource);
   return items.find((item) => String(item[idField as keyof ResourceItem<R>]) === id);
 }

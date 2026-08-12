@@ -225,6 +225,18 @@
   gap: 1.25rem;
 }
 
+/* Task detail: main column + 24rem sidebar (matches pre-migration xl layout) */
+.taskDetail {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+}
+@media (min-width: 1280px) {
+  .taskDetail {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+  }
+}
+
 .listBody {
   min-width: 0;
 }
@@ -240,10 +252,11 @@
   color: var(--foreground);
 }
 
-.linkLinkifiedtext {
+.taskDescription {
   margin-top: 0.5rem;
+  max-width: 48rem;
   font-size: 0.875rem;
-  line-height: 1.25rem;
+  line-height: 1.5rem;
   color: var(--muted-foreground);
 }
 
@@ -327,6 +340,7 @@
 .bodySecondary {
   flex: 1 1 0%;
   border-radius: 2px;
+  background-color: var(--surface-inset);
   padding: 0.75rem;
 }
 
@@ -354,7 +368,14 @@
 .linkPrimary {
   margin-top: 0.5rem;
   font-size: 0.875rem;
-  line-height: 1.25rem;
+  line-height: 1.5rem;
+  color: var(--muted-foreground);
+}
+
+.commentBody {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
   color: var(--muted-foreground);
 }
 
@@ -549,31 +570,56 @@
   }
 }
 
-.linkLink {
+/* ProjectsView — unique names so Calendar overrides can't smash the card stack */
+.projectGrid {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 1024px) {
+  .projectGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.projectCardHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
-.textInner {
+.projectCardTitle {
+  min-width: 0;
+}
+
+.projectCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.projectDescription {
   font-size: 0.875rem;
   line-height: 1.25rem;
   color: var(--muted-foreground);
 }
 
-.bodyDiv {
+.projectCardMeta {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.bodyCardbody {
+.projectAvatars {
   display: flex;
-  column-gap: calc(0.5rem * -1);
 }
 
-.itemDiv {
+.projectAvatars > * + * {
+  margin-inline-start: -0.5rem;
+}
+
+.projectFilesLink {
   height: 2.5rem;
   width: 100%;
 }
@@ -673,7 +719,7 @@
   gap: 1.25rem;
 }
 
-.bodyPrimary {
+.calendarTypeRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -696,7 +742,7 @@
   color: var(--foreground);
 }
 
-.badge {
+.calendarTypeCount {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-size: 1.125rem;
   line-height: 1.75rem;
@@ -705,23 +751,23 @@
   color: var(--foreground);
 }
 
-.bodyDiv {
+.calendarScroll {
   margin-inline: calc(0.25rem * -1);
   overflow-x: auto;
   padding-inline: 0.25rem;
 }
 @media (min-width: 640px) {
-  .bodyDiv {
+  .calendarScroll {
     margin-inline: 0;
     padding-inline: 0;
   }
 }
 
-.bodyCardbody {
+.calendarMonthInner {
   min-width: 44rem;
 }
 
-.bodySecondary {
+.calendarWeekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.5rem;
@@ -769,7 +815,7 @@
   margin-block-start: 0.25rem;
 }
 
-.linkLink {
+.calendarEventLink {
   display: block;
   min-width: 0;
   border-radius: 2px;
@@ -778,7 +824,7 @@
   transition-property: color, background-color, border-color, opacity, box-shadow, transform;
   transition-duration: 150ms;
 }
-.linkLink:hover {
+.calendarEventLink:hover {
   background-color: var(--muted);
 }
 

@@ -1,23 +1,28 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { startTransition, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
-import { isUserEditing, markNavigation, scheduleRouterRefresh } from "@/lib/safe-router-refresh";
+import { isUserEditing, markNavigation } from "@/lib/safe-router-refresh";
+import type { AppNotification } from "@/lib/types";
+
+export const NOTIFICATIONS_POLL_EVENT = "atm:notifications-poll";
+
+export type NotificationsPollDetail = {
+  unread: AppNotification[];
+};
 
 /** Prevent stacked intervals when the shell remounts during refresh/HMR. */
 let liveRefreshTimer: number | null = null;
 let liveRefreshOwners = 0;
 
+/**
+ * Lightweight poll for unread notifications only.
+ * Avoids full RSC `router.refresh()` which re-fetched every workspace table every 30s.
+ */
 export function LiveRefresh({ interval = 30000 }: { interval?: number }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const routerRef = useRef(router);
-  const refreshingRef = useRef(false);
-
-  useEffect(() => {
-    routerRef.current = router;
-  }, [router]);
+  const pollingRef = useRef(false);
 
   useEffect(() => {
     markNavigation();
@@ -27,19 +32,27 @@ export function LiveRefresh({ interval = 30000 }: { interval?: number }) {
     const refreshInterval = process.env.NODE_ENV === "development" ? Math.max(interval, 120000) : interval;
     liveRefreshOwners += 1;
 
-    const refresh = () => {
-      if (document.visibilityState !== "visible" || refreshingRef.current || isUserEditing()) return;
-      refreshingRef.current = true;
-      startTransition(() => {
-        scheduleRouterRefresh(routerRef.current);
-      });
-      window.setTimeout(() => {
-        refreshingRef.current = false;
-      }, 5000);
+    const poll = async () => {
+      if (document.visibilityState !== "visible" || pollingRef.current || isUserEditing()) return;
+      pollingRef.current = true;
+      try {
+        const response = await fetch("/api/notifications/unread", { cache: "no-store" }).catch(() => null);
+        if (!response?.ok) return;
+        const payload = (await response.json()) as { data?: AppNotification[] };
+        window.dispatchEvent(
+          new CustomEvent<NotificationsPollDetail>(NOTIFICATIONS_POLL_EVENT, {
+            detail: { unread: payload.data ?? [] },
+          }),
+        );
+      } finally {
+        window.setTimeout(() => {
+          pollingRef.current = false;
+        }, 2000);
+      }
     };
 
     if (liveRefreshTimer == null) {
-      liveRefreshTimer = window.setInterval(refresh, refreshInterval);
+      liveRefreshTimer = window.setInterval(() => void poll(), refreshInterval);
     }
 
     return () => {

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { AiAssistantWidget } from "@/components/app/ai-assistant/ai-assistant-widget";
 import { BottomNav } from "@/components/app/bottom-nav";
 import { DeviceNotifications } from "@/components/app/device-notifications";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -19,8 +20,7 @@ import {
   readActiveOrganizationIdCookie,
 } from "@/lib/server/company-context";
 import { assertTenantAccess } from "@/lib/server/tenant-access";
-import { listResource, listResourceByField } from "@/lib/server/store";
-import type { Workflow } from "@/lib/types";
+import { listResourceByField } from "@/lib/server/store";
 import { cookieToCompanyId, TENANT_ALL } from "@/lib/tenant-path";
 import styles from "./app-shell.module.css";
 
@@ -58,12 +58,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   const notifications = await listResourceByField("Notifications", "user_id", user.user_id, {
     limit: 20,
     orderBy: "created_at",
+    select: "notification_id,user_id,title,description,related_link,is_read,created_at,company_id",
   });
-  const [users, projects, workflows] = await Promise.all([
-    listResource("Users"),
-    listResource("Projects"),
-    listResource("Workflows"),
-  ]);
   const visiblePrimary = primaryNavigation
     .filter((item) => hasPermission(user.role_id, item.permission))
     .map((item) =>
@@ -83,21 +79,6 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
     hasPermission(user.role_id, "tasks:own") ||
     hasPermission(user.role_id, "tasks:team") ||
     hasPermission(user.role_id, "tasks:manage");
-  const taskModalUsers = users.map((entry) => ({
-    user_id: entry.user_id,
-    full_name: entry.full_name,
-    is_active: entry.is_active,
-  }));
-  const taskModalProjects = projects.map((project) => ({
-    project_id: project.project_id,
-    project_name: project.project_name,
-    ticket_id_prefix: project.ticket_id_prefix || "",
-  }));
-  const taskModalWorkflows = (workflows as Workflow[]).map((workflow) => ({
-    id: workflow.workflow_id,
-    name: workflow.name,
-    project_id: workflow.project_id || null,
-  }));
 
   return (
     <WorkspaceProviders orgId={tenantOrgId} companyId={tenantCompanyId}>
@@ -112,14 +93,12 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               unreadCount={notifications.filter((notification) => !notification.is_read).length}
               recentNotifications={notifications}
               canCreateTasks={canCreateTasks}
-              taskModalUsers={taskModalUsers}
-              taskModalProjects={taskModalProjects}
-              taskModalWorkflows={taskModalWorkflows}
             />
             <MainContent>{children}</MainContent>
           </ContentArea>
         </div>
         <BottomNav items={visibleBottom} />
+        <AiAssistantWidget />
       </div>
     </WorkspaceProviders>
   );

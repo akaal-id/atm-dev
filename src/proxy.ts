@@ -82,7 +82,9 @@ export function proxy(request: NextRequest) {
 
     const tenant = tenantFromRequestCookies(request.cookies);
     const destination = buildTenantPath({ ...tenant, path: pathname });
-    return NextResponse.redirect(new URL(destination, request.url));
+    const redirectUrl = new URL(destination, request.url);
+    redirectUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(redirectUrl);
   }
 
   return NextResponse.next();
