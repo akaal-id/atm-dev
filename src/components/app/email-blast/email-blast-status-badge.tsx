@@ -8,22 +8,41 @@ const OVERALL_STATUS_TONE: Record<string, BlastStatusTone> = {
   Partial: "yellow",
   Pending: "blue",
   Failed: "red",
+  Skipped: "neutral",
 };
 
 const RECIPIENT_STATUS_TONE: Record<BlastRecipientStatus, BlastStatusTone> = {
   delivered: "green",
+  opened: "green",
+  clicked: "green",
   sent: "blue",
+  queued: "blue",
+  scheduled: "blue",
   pending: "yellow",
+  delivery_delayed: "yellow",
   bounced: "red",
   failed: "red",
+  complained: "red",
+  canceled: "neutral",
+  suppressed: "red",
+  skipped: "neutral",
 };
 
 const RECIPIENT_STATUS_LABEL: Record<BlastRecipientStatus, string> = {
   delivered: "Delivered",
+  opened: "Opened",
+  clicked: "Clicked",
   sent: "Sent",
+  queued: "Queued",
+  scheduled: "Scheduled",
   pending: "Pending",
+  delivery_delayed: "Delayed",
   bounced: "Bounced",
   failed: "Failed",
+  complained: "Spam",
+  canceled: "Canceled",
+  suppressed: "Suppressed",
+  skipped: "Skipped",
 };
 
 export function blastOverallStatusTone(status: string): BlastStatusTone {
@@ -41,5 +60,5 @@ export function EmailBlastStatusBadge({ status }: { status: string }) {
 
 /** Colored pill for per-recipient delivery status. */
 export function EmailBlastRecipientStatusBadge({ status }: { status: BlastRecipientStatus }) {
-  return <Badge tone={blastRecipientStatusTone(status)}>{RECIPIENT_STATUS_LABEL[status]}</Badge>;
+  return <Badge tone={blastRecipientStatusTone(status)}>{RECIPIENT_STATUS_LABEL[status] ?? status}</Badge>;
 }

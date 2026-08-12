@@ -1,4 +1,23 @@
-export type BlastRecipientStatus = "sent" | "delivered" | "bounced" | "failed" | "pending";
+export type BlastRecipientStatus =
+  | "sent"
+  | "delivered"
+  | "bounced"
+  | "failed"
+  | "pending"
+  | "opened"
+  | "clicked"
+  | "complained"
+  | "delivery_delayed"
+  | "queued"
+  | "scheduled"
+  | "canceled"
+  | "suppressed"
+  | "skipped";
+
+export type MockCreatedBy = {
+  userId: string;
+  fullName: string;
+};
 
 export type MockBlastRecipient = {
   id: string;
@@ -13,6 +32,7 @@ export type MockEmailBlast = {
   attachmentName: string | null;
   attachmentUrl: string | null;
   createdAt: string;
+  createdBy?: MockCreatedBy;
   recipients: MockBlastRecipient[];
 };
 
@@ -25,6 +45,7 @@ export const mockEmailBlasts: MockEmailBlast[] = [
     attachmentName: "katalog-q3-2026.pdf",
     attachmentUrl: "#",
     createdAt: "2026-07-18T09:30:00+07:00",
+    createdBy: { userId: "usr_demo", fullName: "Demo User" },
     recipients: [
       { id: "r-001", email: "prospek1@contoh.com", status: "delivered" },
       { id: "r-002", email: "prospek2@contoh.com", status: "delivered" },
@@ -39,6 +60,7 @@ export const mockEmailBlasts: MockEmailBlast[] = [
     attachmentName: null,
     attachmentUrl: null,
     createdAt: "2026-07-15T14:05:00+07:00",
+    createdBy: { userId: "usr_demo", fullName: "Demo User" },
     recipients: [
       { id: "r-005", email: "cto@client.id", status: "delivered" },
       { id: "r-006", email: "ops@client.id", status: "delivered" },
@@ -52,6 +74,7 @@ export const mockEmailBlasts: MockEmailBlast[] = [
     attachmentName: "proposal-b2b.docx",
     attachmentUrl: "#",
     createdAt: "2026-07-10T11:20:00+07:00",
+    createdBy: { userId: "usr_demo", fullName: "Demo User" },
     recipients: [
       { id: "r-008", email: "buyer@enterprise.com", status: "delivered" },
       { id: "r-009", email: "procurement@enterprise.com", status: "pending" },
@@ -64,6 +87,7 @@ export const mockEmailBlasts: MockEmailBlast[] = [
     attachmentName: null,
     attachmentUrl: null,
     createdAt: "2026-07-02T08:00:00+07:00",
+    createdBy: { userId: "usr_demo", fullName: "Demo User" },
     recipients: [
       { id: "r-010", email: "a@newsletter.test", status: "delivered" },
       { id: "r-011", email: "b@newsletter.test", status: "delivered" },
@@ -76,12 +100,42 @@ export const mockEmailBlasts: MockEmailBlast[] = [
 
 export function blastOverallStatus(blast: MockEmailBlast): string {
   const statuses = blast.recipients.map((recipient) => recipient.status);
-  if (statuses.some((status) => status === "failed" || status === "bounced")) return "Partial";
-  if (statuses.every((status) => status === "delivered" || status === "sent")) return "Sent";
-  if (statuses.some((status) => status === "pending")) return "Pending";
+  if (statuses.length === 0) return "Sent";
+  if (statuses.every((status) => status === "skipped")) return "Skipped";
+  const failedLike = statuses.some((status) =>
+    ["failed", "bounced", "complained", "canceled", "suppressed"].includes(status),
+  );
+  const successLike = statuses.some((status) =>
+    ["sent", "delivered", "opened", "clicked", "queued", "scheduled", "delivery_delayed"].includes(status),
+  );
+  if (failedLike && successLike) return "Partial";
+  if (failedLike && !successLike) return "Failed";
+  if (statuses.some((status) => ["pending", "queued", "delivery_delayed"].includes(status))) return "Pending";
   return "Sent";
 }
 
 export function getMockEmailBlast(id: string) {
   return mockEmailBlasts.find((blast) => blast.id === id);
+}
+
+export function normalizeRecipientStatus(status: string): BlastRecipientStatus {
+  const known: BlastRecipientStatus[] = [
+    "sent",
+    "delivered",
+    "bounced",
+    "failed",
+    "pending",
+    "opened",
+    "clicked",
+    "complained",
+    "delivery_delayed",
+    "queued",
+    "scheduled",
+    "canceled",
+    "suppressed",
+    "skipped",
+  ];
+  if (known.includes(status as BlastRecipientStatus)) return status as BlastRecipientStatus;
+  if (status === "skipped") return "skipped";
+  return "sent";
 }

@@ -2,24 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { Eye } from "lucide-react";
 
 import { EmailBlastHistoryEmpty } from "@/components/app/email-blast/email-blast-history-empty";
 import { EmailBlastStatusBadge } from "@/components/app/email-blast/email-blast-status-badge";
+import { buttonVariants } from "@/components/ui/button";
 import { blastOverallStatus, type MockEmailBlast } from "@/lib/data/email-blast-mock";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
-const HEADERS = ["Subject", "Sent at", "Recipients", "Attachment", "Status", ""] as const;
+const HEADERS = ["Subject", "Sent at", "Created by", "Recipients", "Attachment", "Status", "Actions"] as const;
 
 interface EmailBlastHistoryTableProps {
   blasts: MockEmailBlast[];
+  /** True when the filtered list is empty (not just the current page). */
+  empty?: boolean;
 }
 
 /** Reusable table for email blast send history — rows navigate to detail. */
-export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) {
+export function EmailBlastHistoryTable({ blasts, empty = false }: EmailBlastHistoryTableProps) {
   const router = useRouter();
 
-  if (blasts.length === 0) {
+  if (empty || blasts.length === 0) {
     return <EmailBlastHistoryEmpty />;
   }
 
@@ -28,11 +31,8 @@ export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) 
       <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
         <thead>
           <tr>
-            {HEADERS.map((header, index) => (
-              <th
-                key={`${header}-${index}`}
-                className="border-b border-border px-3 py-3 font-normal text-muted-foreground"
-              >
+            {HEADERS.map((header) => (
+              <th key={header} className="border-b border-border px-3 py-3 font-normal text-muted-foreground">
                 {header}
               </th>
             ))}
@@ -68,6 +68,9 @@ export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) 
                 <td className="whitespace-nowrap border-b border-border px-3 py-3 align-middle text-muted-foreground">
                   {formatDate(blast.createdAt, { hour: "2-digit", minute: "2-digit" })}
                 </td>
+                <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
+                  {blast.createdBy?.fullName ? `Created by ${blast.createdBy.fullName}` : "—"}
+                </td>
                 <td className="border-b border-border px-3 py-3 align-middle font-mono tabular-nums text-foreground">
                   {blast.recipients.length}
                 </td>
@@ -77,9 +80,17 @@ export function EmailBlastHistoryTable({ blasts }: EmailBlastHistoryTableProps) 
                 <td className="border-b border-border px-3 py-3 align-middle">
                   <EmailBlastStatusBadge status={blastOverallStatus(blast)} />
                 </td>
-                <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
-                  <ChevronRight className="h-4 w-4" aria-hidden />
-                  <span className="sr-only">Open detail</span>
+                <td className="border-b border-border px-3 py-3 align-middle">
+                  <div className="flex items-center justify-end">
+                    <Link
+                      href={href}
+                      className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "text-muted-foreground")}
+                      aria-label={`View blast ${blast.subject}`}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </td>
               </tr>
             );

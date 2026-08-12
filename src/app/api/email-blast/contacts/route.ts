@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getCurrentUser } from "@/lib/server/auth";
+import { getActiveCompanyContext } from "@/lib/server/company-context";
 import {
   addContactsToGroup,
   deleteContact,
-  getContactGroupForUser,
+  getContactGroupForCompany,
 } from "@/lib/server/email-blast-contacts";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
   const groupId = String(payload.group_id ?? "").trim();
   if (!groupId) return NextResponse.json({ error: "group_id is required." }, { status: 400 });
 
-  const group = await getContactGroupForUser(user.user_id, groupId);
+  const companyContext = await getActiveCompanyContext(user.user_id);
+  const group = await getContactGroupForCompany(companyContext.company.id, groupId);
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
 
   const rawContacts = Array.isArray(payload.contacts)
@@ -66,7 +68,8 @@ export async function DELETE(request: NextRequest) {
   if (!contactId) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
   try {
-    await deleteContact(user.user_id, contactId);
+    const companyContext = await getActiveCompanyContext(user.user_id);
+    await deleteContact(companyContext.company.id, contactId);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);

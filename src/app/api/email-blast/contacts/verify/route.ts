@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getCurrentUser } from "@/lib/server/auth";
+import { getActiveCompanyContext } from "@/lib/server/company-context";
 import {
   getContactGroupWithContacts,
-  listContactsByIdsForUser,
+  listContactsByIdsForCompany,
   updateContactVerification,
 } from "@/lib/server/email-blast-contacts";
 import { verifyEmailAddress } from "@/lib/server/email-verify";
@@ -15,15 +16,18 @@ export async function POST(request: NextRequest) {
   const payload = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!payload) return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
 
+  const companyContext = await getActiveCompanyContext(user.user_id);
+  const companyId = companyContext.company.id;
+
   const groupId = String(payload.group_id ?? "").trim();
   const rawIds = Array.isArray(payload.contact_ids)
     ? payload.contact_ids.map((id) => String(id ?? "").trim()).filter(Boolean)
     : [];
 
-  let contacts = rawIds.length > 0 ? await listContactsByIdsForUser(user.user_id, rawIds) : [];
+  let contacts = rawIds.length > 0 ? await listContactsByIdsForCompany(companyId, rawIds) : [];
 
   if (contacts.length === 0 && groupId) {
-    const group = await getContactGroupWithContacts(user.user_id, groupId);
+    const group = await getContactGroupWithContacts(companyId, groupId);
     if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
     contacts = group.contacts;
   }

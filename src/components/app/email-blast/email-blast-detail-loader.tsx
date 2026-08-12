@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { EmailBlastDetailView } from "@/components/app/email-blast/email-blast-detail-view";
 import { buttonVariants } from "@/components/ui/button";
-import type { MockEmailBlast } from "@/lib/data/email-blast-mock";
+import { normalizeRecipientStatus, type MockEmailBlast } from "@/lib/data/email-blast-mock";
 import { cn } from "@/lib/utils";
 
 function mapBlast(row: unknown): MockEmailBlast | null {
@@ -17,6 +17,7 @@ function mapBlast(row: unknown): MockEmailBlast | null {
     attachment_url?: string;
     attachment_name?: string;
     created_at: string;
+    created_by?: { user_id?: string; full_name?: string };
     recipients?: Array<{ id: string; email: string; status: string }>;
   };
   if (!blast.id) return null;
@@ -27,14 +28,16 @@ function mapBlast(row: unknown): MockEmailBlast | null {
     attachmentName: blast.attachment_name || (blast.attachment_url ? "attachment" : null),
     attachmentUrl: blast.attachment_url || null,
     createdAt: blast.created_at,
+    createdBy: blast.created_by?.user_id
+      ? {
+          userId: blast.created_by.user_id,
+          fullName: blast.created_by.full_name || blast.created_by.user_id,
+        }
+      : undefined,
     recipients: (blast.recipients || []).map((recipient) => ({
       id: recipient.id,
       email: recipient.email,
-      status: (["sent", "delivered", "bounced", "failed", "pending"].includes(recipient.status)
-        ? recipient.status
-        : recipient.status === "skipped"
-          ? "pending"
-          : "sent") as MockEmailBlast["recipients"][number]["status"],
+      status: normalizeRecipientStatus(recipient.status),
     })),
   };
 }

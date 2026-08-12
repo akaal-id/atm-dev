@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createEmailLog } from "@/lib/server/email-blast-logs";
 import { createEmailBlastWithRecipients } from "@/lib/server/email-blasts";
-import { listContactsByIdsForUser } from "@/lib/server/email-blast-contacts";
+import { listContactsByIdsForCompany } from "@/lib/server/email-blast-contacts";
 import { getCurrentUser } from "@/lib/server/auth";
+import { getActiveCompanyContext } from "@/lib/server/company-context";
 import { isResendConfigured, sendBlastEmail, type BlastRecipient, type EmailAttachment } from "@/lib/server/resend";
 import { fetchEmailBlastAttachment } from "@/lib/server/uploads";
 
@@ -39,8 +40,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Invalid recipient email(s): ${invalidManual.join(", ")}` }, { status: 400 });
   }
 
+  const companyContext = await getActiveCompanyContext(user.user_id);
+  const companyId = companyContext.company.id;
+
   const contactIds = [...new Set(contactRecipients.map((entry) => String(entry.contact_id ?? "").trim()))];
-  const contacts = contactIds.length > 0 ? await listContactsByIdsForUser(user.user_id, contactIds) : [];
+  const contacts = contactIds.length > 0 ? await listContactsByIdsForCompany(companyId, contactIds) : [];
   const contactById = new Map(contacts.map((contact) => [contact.id, contact]));
 
   const resolved = new Map<string, BlastRecipient>();
@@ -110,6 +114,7 @@ export async function POST(request: NextRequest) {
   try {
     const saved = await createEmailBlastWithRecipients({
       userId: user.user_id,
+      companyId,
       subject,
       body,
       attachmentUrl: attachmentPath,

@@ -15,6 +15,7 @@ import type { MockContactGroup } from "@/lib/data/email-blast-contacts-mock";
 import { cn, formatDate } from "@/lib/utils";
 
 const PAGE_SIZE = 10;
+const ALL_CREATORS = "all";
 
 type SortMode = "newest" | "oldest" | "name";
 
@@ -30,18 +31,26 @@ function mapGroups(rows: unknown[]): MockContactGroup[] {
       id: string;
       group_name: string;
       created_at: string;
+      created_by?: { user_id?: string; full_name?: string };
       contacts?: Array<{ id: string; email: string; full_name: string; company?: string; verification_status?: string }>;
     };
     return {
       id: group.id,
       groupName: group.group_name,
       createdAt: group.created_at,
+      createdBy: group.created_by?.user_id
+        ? {
+            userId: group.created_by.user_id,
+            fullName: group.created_by.full_name || group.created_by.user_id,
+          }
+        : undefined,
       contacts: (group.contacts || []).map((contact) => ({
         id: contact.id,
         email: contact.email,
         fullName: contact.full_name,
         company: contact.company || "",
-        verificationStatus: (contact.verification_status as MockContactGroup["contacts"][number]["verificationStatus"]) || "unchecked",
+        verificationStatus:
+          (contact.verification_status as MockContactGroup["contacts"][number]["verificationStatus"]) || "unchecked",
       })),
     };
   });
@@ -54,12 +63,13 @@ function sortGroups(groups: MockContactGroup[], sort: SortMode) {
   return sort === "oldest" ? sorted : sorted.reverse();
 }
 
-/** Contact groups index — table of groups, opens detail pages to manage members. */
+/** Contact groups index — company-shared table of groups. */
 export function EmailBlastContactsView() {
   const [groups, setGroups] = useState<MockContactGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("newest");
+  const [createdByFilter, setCreatedByFilter] = useState(ALL_CREATORS);
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -110,22 +120,40 @@ export function EmailBlastContactsView() {
     await refresh();
   }
 
+  const creatorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of groups) {
+      if (!group.createdBy?.userId) continue;
+      map.set(group.createdBy.userId, group.createdBy.fullName);
+    }
+    return [
+      { value: ALL_CREATORS, label: "Created by: All" },
+      ...[...map.entries()]
+        .sort((left, right) => left[1].localeCompare(right[1], undefined, { sensitivity: "base" }))
+        .map(([userId, fullName]) => ({ value: userId, label: `Created by: ${fullName}` })),
+    ];
+  }, [groups]);
+
   const filteredGroups = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
-    const filtered = trimmed
-      ? groups.filter((group) => {
-          const haystack = [group.groupName, ...group.contacts.map((c) => `${c.fullName} ${c.email} ${c.company}`)]
-            .join(" ")
-            .toLowerCase();
-          return haystack.includes(trimmed);
-        })
-      : groups;
+    const filtered = groups.filter((group) => {
+      if (createdByFilter !== ALL_CREATORS && group.createdBy?.userId !== createdByFilter) return false;
+      if (!trimmed) return true;
+      const haystack = [
+        group.groupName,
+        group.createdBy?.fullName || "",
+        ...group.contacts.map((c) => `${c.fullName} ${c.email} ${c.company}`),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(trimmed);
+    });
     return sortGroups(filtered, sort);
-  }, [groups, query, sort]);
+  }, [groups, query, sort, createdByFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, sort]);
+  }, [query, sort, createdByFilter]);
 
   const pageCount = Math.max(1, Math.ceil(filteredGroups.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -143,6 +171,12 @@ export function EmailBlastContactsView() {
             placeholder="Cari nama grup, kontak, atau company"
           />
         </div>
+        <FilterSelect
+          value={createdByFilter}
+          options={creatorOptions}
+          onValueChange={setCreatedByFilter}
+          fullWidth={false}
+        />
         <FilterSelect
           value={sort}
           options={SORT_OPTIONS}
@@ -168,13 +202,13 @@ export function EmailBlastContactsView() {
               <p className="mt-1 text-sm text-muted-foreground">Buat grup pertama untuk mempercepat blast berulang.</p>
             </div>
           ) : filteredGroups.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Tidak ada grup yang cocok dengan pencarian.</div>
+            <div className="p-8 text-center text-sm text-muted-foreground">Tidak ada grup yang cocok dengan filter.</div>
           ) : (
             <div className="-mx-1 overflow-x-auto overscroll-x-contain px-1 sm:mx-0 sm:px-0">
               <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
                 <thead>
                   <tr>
-                    {["Group", "Contacts", "Verified", "Created", ""].map((header) => (
+                    {["Group", "Contacts", "Verified", "Created by", "Created", ""].map((header) => (
                       <th key={header} className="border-b border-border px-3 py-3 font-normal text-muted-foreground">
                         {header}
                       </th>
@@ -194,6 +228,9 @@ export function EmailBlastContactsView() {
                         <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">{group.contacts.length}</td>
                         <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
                           {verifiedCount}/{group.contacts.length}
+                        </td>
+                        <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">
+                          {group.createdBy?.fullName ? `Created by ${group.createdBy.fullName}` : "—"}
                         </td>
                         <td className="border-b border-border px-3 py-3 align-middle text-muted-foreground">{formatDate(group.createdAt)}</td>
                         <td className="border-b border-border px-3 py-3 align-middle">

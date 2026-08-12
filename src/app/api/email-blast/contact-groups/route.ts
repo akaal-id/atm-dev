@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getCurrentUser } from "@/lib/server/auth";
+import { getActiveCompanyContext } from "@/lib/server/company-context";
 import {
   createContactGroup,
   deleteContactGroup,
@@ -11,12 +12,15 @@ export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const groups = await listContactGroupsWithContacts(user.user_id);
+  const context = await getActiveCompanyContext(user.user_id);
+  const groups = await listContactGroupsWithContacts(context.company.id);
   return NextResponse.json({
     data: groups.map((group) => ({
       id: group.id,
       group_name: group.group_name,
       created_at: group.created_at,
+      user_id: group.user_id,
+      created_by: group.created_by ?? { user_id: group.user_id, full_name: group.user_id },
       contacts: group.contacts.map((contact) => ({
         id: contact.id,
         email: contact.email,
@@ -39,8 +43,18 @@ export async function POST(request: NextRequest) {
   if (!groupName) return NextResponse.json({ error: "group_name is required." }, { status: 400 });
 
   try {
-    const group = await createContactGroup(user.user_id, groupName);
-    return NextResponse.json({ data: { ...group, contacts: [] } }, { status: 201 });
+    const context = await getActiveCompanyContext(user.user_id);
+    const group = await createContactGroup(user.user_id, context.company.id, groupName);
+    return NextResponse.json(
+      {
+        data: {
+          ...group,
+          contacts: [],
+          created_by: { user_id: user.user_id, full_name: user.full_name || user.user_id },
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to create contact group." }, { status: 502 });
@@ -56,7 +70,8 @@ export async function DELETE(request: NextRequest) {
   if (!groupId) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
   try {
-    await deleteContactGroup(user.user_id, groupId);
+    const context = await getActiveCompanyContext(user.user_id);
+    await deleteContactGroup(context.company.id, groupId);
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);

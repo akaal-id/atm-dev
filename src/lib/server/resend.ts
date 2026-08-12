@@ -41,6 +41,45 @@ export function isResendConfigured() {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
+/** Resend `last_event` values from GET /emails/:id */
+export type ResendLastEvent =
+  | "bounced"
+  | "canceled"
+  | "clicked"
+  | "complained"
+  | "delivered"
+  | "delivery_delayed"
+  | "failed"
+  | "opened"
+  | "queued"
+  | "scheduled"
+  | "sent"
+  | "suppressed"
+  | string;
+
+export type ResendEmailRecord = {
+  id: string;
+  last_event?: ResendLastEvent;
+  to?: string[];
+  subject?: string;
+};
+
+/** Retrieve a sent email's latest delivery event. */
+export async function getResendEmail(emailId: string): Promise<ResendEmailRecord | null> {
+  if (!isResendConfigured() || !emailId.trim()) return null;
+
+  const response = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId.trim())}`, {
+    method: "GET",
+    headers: {
+      authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) return null;
+  return (await response.json().catch(() => null)) as ResendEmailRecord | null;
+}
+
 export async function sendEmail({ to, subject, html, text, from, attachments }: TransactionalEmail): Promise<ResendResult> {
   if (!isResendConfigured()) return { ok: true, skipped: true };
 

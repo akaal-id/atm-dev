@@ -21,30 +21,30 @@ export function EmailBlastContentCard({
   attachmentUrl = null,
 }: EmailBlastContentCardProps) {
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
         <SectionTitle title="Email content" />
       </CardHeader>
       <CardBody className="space-y-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Subject</p>
-          <h1 className="mt-1 text-lg font-normal tracking-normal text-foreground">{subject}</h1>
+          <p className="mt-1 break-words text-base font-normal tracking-normal text-foreground">{subject}</p>
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-normal uppercase tracking-wide text-muted-foreground">Body</p>
-          <pre className="mt-2 whitespace-pre-wrap rounded-[2px] border border-border bg-surface-inset p-4 font-sans text-sm leading-6 text-foreground">
+          <pre className="mt-2 max-h-[22rem] overflow-y-auto whitespace-pre-wrap break-words rounded-[2px] border border-border bg-surface-inset p-4 font-sans text-sm leading-6 text-foreground">
             {body}
           </pre>
         </div>
         {attachmentName ? (
-          <div className="flex items-center gap-2 rounded-[2px] border border-border bg-card px-3 py-2.5">
+          <div className="flex min-w-0 items-center gap-2 rounded-[2px] border border-border bg-surface-inset px-3 py-2.5">
             <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             {attachmentUrl ? (
-              <a href={attachmentUrl} className="truncate text-sm font-normal text-primary hover:underline">
+              <a href={attachmentUrl} className="min-w-0 truncate text-sm font-normal text-primary hover:underline">
                 {attachmentName}
               </a>
             ) : (
-              <span className="truncate text-sm font-normal text-neutral-800">{attachmentName}</span>
+              <span className="min-w-0 truncate text-sm font-normal text-foreground">{attachmentName}</span>
             )}
           </div>
         ) : (

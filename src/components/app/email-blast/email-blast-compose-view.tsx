@@ -62,12 +62,19 @@ function mapGroups(rows: unknown[]): MockContactGroup[] {
       id: string;
       group_name: string;
       created_at: string;
+      created_by?: { user_id?: string; full_name?: string };
       contacts?: Array<{ id: string; email: string; full_name: string; company?: string }>;
     };
     return {
       id: group.id,
       groupName: group.group_name,
       createdAt: group.created_at,
+      createdBy: group.created_by?.user_id
+        ? {
+            userId: group.created_by.user_id,
+            fullName: group.created_by.full_name || group.created_by.user_id,
+          }
+        : undefined,
       contacts: (group.contacts || []).map((contact) => ({
         id: contact.id,
         email: contact.email,

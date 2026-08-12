@@ -59,6 +59,7 @@ export function EmailBlastGroupPicker({ groups, onApplyGroup }: EmailBlastGroupP
               {groups.map((group) => (
                 <option key={group.id} value={group.id}>
                   {group.groupName} ({group.contacts.length})
+                  {group.createdBy?.fullName ? ` · ${group.createdBy.fullName}` : ""}
                 </option>
               ))}
             </select>

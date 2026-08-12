@@ -48,6 +48,7 @@ function mapGroup(row: unknown): MockContactGroup | null {
     id: string;
     group_name: string;
     created_at: string;
+    created_by?: { user_id?: string; full_name?: string };
     contacts?: Array<{
       id: string;
       email: string;
@@ -62,6 +63,12 @@ function mapGroup(row: unknown): MockContactGroup | null {
     id: group.id,
     groupName: group.group_name,
     createdAt: group.created_at,
+    createdBy: group.created_by?.user_id
+      ? {
+          userId: group.created_by.user_id,
+          fullName: group.created_by.full_name || group.created_by.user_id,
+        }
+      : undefined,
     contacts: (group.contacts || []).map((contact) => ({
       id: contact.id,
       email: contact.email,
@@ -268,7 +275,10 @@ export function EmailBlastGroupDetailView({ groupId }: { groupId: string }) {
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-normal tracking-normal text-foreground">{group.groupName}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Dibuat {formatDate(group.createdAt)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Dibuat {formatDate(group.createdAt)}
+            {group.createdBy?.fullName ? ` · Created by ${group.createdBy.fullName}` : ""}
+          </p>
         </div>
         <Badge tone="blue" className="h-11 px-3">
           <Users className="mr-1 inline h-3.5 w-3.5" />
