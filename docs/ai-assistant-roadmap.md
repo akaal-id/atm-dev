@@ -3,6 +3,16 @@
 Living doc. Urutan bukan final — sesuaikan kalau prioritas berubah.
 Pasangan doc: [ai-assistant-status.md](./ai-assistant-status.md) untuk yang sudah selesai.
 
+## 0. Catatan eksplorasi: 2-layer database (offline-first) — belum diputuskan
+
+Ide dari diskusi: layer lokal di device user (bukan cuma Supabase di internet). Belum tentu relevan buat AI Assistant, lebih ke arsitektur data ATM ERP secara umum — dicatat di sini biar gak hilang.
+
+- **Layer internet**: Supabase (sudah jalan).
+- **Layer lokal device**: kandidat IndexedDB (browser), disinkron pakai sync engine.
+- **Kandidat sync engine**: PowerSync atau ElectricSQL — punya integrasi resmi ke Supabase, urusin sync + conflict resolution otomatis (dibanding bikin sendiri pakai IndexedDB + queue manual, yang gampang buggy).
+- **Tradeoff**: nambah dependency + service baru (PowerSync butuh service tambahan); perlu desain skema yang sync-friendly — gak semua tabel cocok disinkron ke device.
+- **Belum diputuskan**: apakah ini kebutuhan nyata (offline capability, latency, device storage limit) atau sekadar eksplorasi arah. Perlu klarifikasi kebutuhan user sebelum masuk ke roadmap teknis konkret. Kalau jadi jalan, bisa berdampak ke #1 (route refactor chat) — cek dulu sebelum implementasi #1 kalau keputusan ini sudah matang duluan.
+
 ## 1. Chat jadi halaman sendiri, bukan modal (prioritas — akar masalah render)
 
 **Masalah**: chat sekarang modal/drawer yang di-mount di dalam `AiAssistantWidget`, satu instance yang dipakai ulang terus untuk conversation manapun. Bug `useChat` id-race yang baru diperbaiki ([status doc](./ai-assistant-status.md#3-bug-yang-sudah-diperbaiki)) itu **gejala**, bukan penyebab tunggal — akar masalahnya: modal ini gak pernah benar-benar remount, jadi state chat (messages, composer, tool-result yang lagi expand, dst.) harus di-*juggle* manual tiap ganti conversation atau tiap render lain nyerempet. Pola ini rawan bug serupa muncul lagi di tempat lain (bukan cuma di `useChat`).

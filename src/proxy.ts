@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   isLegacyWorkspacePath,
   isProtectedPath,
-  safeNextPath,
   tenantFromRequestCookies,
 } from "@/lib/auth-routes";
 import {
@@ -16,6 +15,13 @@ import {
 } from "@/lib/tenant-path";
 
 const sessionCookieName = "atm_session";
+// getSession() also accepts a next-auth session (Google/Apple). If the proxy ignored it,
+// an OAuth user would bounce /login ↔ /dashboard forever.
+const sessionCookieNames = [
+  sessionCookieName,
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+];
 
 function cookieOptions(maxAge = 60 * 60 * 24 * 30) {
   return {
@@ -29,22 +35,12 @@ function cookieOptions(maxAge = 60 * 60 * 24 * 30) {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hasSession = Boolean(request.cookies.get(sessionCookieName)?.value);
+  const hasSession = sessionCookieNames.some((name) => Boolean(request.cookies.get(name)?.value));
 
-  if (pathname === "/" && hasSession) {
-    const tenant = tenantFromRequestCookies(request.cookies);
-    return NextResponse.redirect(new URL(buildTenantPath({ ...tenant, path: "/dashboard" }), request.url));
-  }
-
-  if (pathname === "/login" && hasSession) {
-    const requested = safeNextPath(request.nextUrl.searchParams.get("next"));
-    const destination = isTenantPath(requested)
-      ? requested
-      : isLegacyWorkspacePath(requested) || requested === "/dashboard"
-        ? buildTenantPath({ ...tenantFromRequestCookies(request.cookies), path: requested })
-        : requested;
-    return NextResponse.redirect(new URL(destination, request.url));
-  }
+  // `/` and `/login` are deliberately NOT handled here. A cookie only *looks* like a
+  // session; only the page can verify it. When the proxy redirected those two away on
+  // cookie presence alone, a stale cookie ping-ponged /login ↔ tenant path forever.
+  // Both pages already redirect an authenticated visitor themselves.
 
   if (isProtectedPath(pathname) && !hasSession) {
     const login = new URL("/login", request.url);
@@ -92,7 +88,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
     "/org/:path*",
     "/dashboard/:path*",
     "/tasks/:path*",
@@ -109,7 +104,6 @@ export const config = {
     "/chat/:path*",
     "/admin/:path*",
     "/invite",
-    "/login",
     "/billing",
     "/tenant-access-denied",
   ],
