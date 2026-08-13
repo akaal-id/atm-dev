@@ -4,9 +4,11 @@
   --shell-bg: #ffffff;
   --shell-fg: var(--foreground);
   position: relative;
-  min-height: 100dvh;
+  display: flex;
+  height: 100dvh;
   max-width: 100%;
-  overflow-x: clip;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--shell-bg);
   color: var(--shell-fg);
 }
@@ -16,11 +18,19 @@
   z-index: 1;
   display: block;
   min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .content {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #ffffff;
   padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
 }
@@ -28,7 +38,7 @@
 .contentChatRoom {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  overflow: hidden;
   padding-bottom: 0;
 }
 
@@ -72,8 +82,7 @@
   }
 
   .contentChatRoom {
-    height: auto;
-    min-height: 0;
+    overflow: hidden;
   }
 
   .main {

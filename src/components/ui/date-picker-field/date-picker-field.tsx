@@ -70,10 +70,10 @@ function yearDecadeStart(year: number) {
 }
 
 const filterControlClassName =
-  styles.filterBar;
+  styles.filterTrigger;
 
 const formControlClassName =
-  styles.input;
+  styles.formTrigger;
 
 export function DatePickerField({
   label,
@@ -148,16 +148,16 @@ export function DatePickerField({
 
   return (
     <div className={cn(styles.layout, className)}>
-      {label ? <span className={styles.caption}>{label}</span> : null}
+      {label ? <span className={styles.label}>{label}</span> : null}
       {name ? <input type="hidden" name={name} value={value} required={required} /> : null}
       <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
         <PopoverTrigger
           type="button"
           disabled={disabled}
-          className={cn(triggerClassName, !value && styles.modalpanel)}
+          className={cn(triggerClassName, !value && styles.placeholder)}
         >
-          <CalendarDays className={styles.emptystate} />
-          <span className={styles.captionSpan}>
+          <CalendarDays className={styles.triggerIcon} />
+          <span className={styles.value}>
             {value ? formatShortDate(value) : emptyLabel}
           </span>
           {value && canClear && !disabled ? (
@@ -177,49 +177,49 @@ export function DatePickerField({
                   setValue("");
                 }
               }}
-              className={styles.icon}
+              className={styles.clearButton}
             >
-              <X className={styles.dialogPanel} />
+              <X className={styles.glyph} />
             </span>
           ) : (
-            <ChevronDown aria-hidden="true" className={styles.emptystate} />
+            <ChevronDown aria-hidden="true" className={styles.triggerIcon} />
           )}
         </PopoverTrigger>
 
-        <PopoverContent side="bottom" align="start" sideOffset={4} className={styles.emptystatePopovercontent}>
-          <div className={styles.emptystateDiv}>
+        <PopoverContent side="bottom" align="start" sideOffset={4} className={styles.popover}>
+          <div className={styles.popoverHeader}>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Previous" onClick={goPrev}>
-              <ChevronLeft className={styles.dialogPanel} />
+              <ChevronLeft className={styles.glyph} />
             </Button>
             <button
               type="button"
-              className={styles.previous}
+              className={styles.monthTitle}
               onClick={advanceView}
               aria-label={view === "days" ? "Choose month" : view === "months" ? "Choose year" : "Year range"}
               disabled={view === "years"}
             >
               <span className="truncate">{headerLabel}</span>
-              {view !== "years" ? <ChevronDown className={styles.iconChevrondown} /> : null}
+              {view !== "years" ? <ChevronDown className={styles.monthChevron} /> : null}
             </button>
             <Button type="button" variant="ghost" size="icon-sm" aria-label="Next" onClick={goNext}>
-              <ChevronRight className={styles.dialogPanel} />
+              <ChevronRight className={styles.glyph} />
             </Button>
           </div>
 
           {view === "days" ? (
             <>
-              <div className={styles.next}>
+              <div className={styles.weekdays}>
                 {WEEKDAYS.map((day) => (
-                  <span key={day} className={styles.item}>
+                  <span key={day} className={styles.weekday}>
                     {day}
                   </span>
                 ))}
               </div>
 
-              <div className={styles.emptystate}>
+              <div className={styles.dayGrid}>
                 {cells.map((date, index) => {
                   if (!date) {
-                    return <span key={`empty-${index}`} className={styles.captionPrimary} aria-hidden="true" />;
+                    return <span key={`empty-${index}`} className={styles.daySpacer} aria-hidden="true" />;
                   }
 
                   const isSelected = value === date;
@@ -233,8 +233,8 @@ export function DatePickerField({
                       size="icon-sm"
                       onClick={() => selectDate(date)}
                       className={cn(
-                        styles.previous,
-                        !isSelected && isToday && styles.control,
+                        styles.dayButton,
+                        !isSelected && isToday && styles.today,
                       )}
                     >
                       {Number(date.slice(8, 10))}
@@ -246,7 +246,7 @@ export function DatePickerField({
           ) : null}
 
           {view === "months" ? (
-            <div className={styles.panel}>
+            <div className={styles.monthGrid}>
               {MONTH_SHORT.map((label, index) => {
                 const nextMonth = index + 1;
                 const isSelected = month === nextMonth;
@@ -256,7 +256,7 @@ export function DatePickerField({
                     type="button"
                     variant={isSelected ? "default" : "ghost"}
                     size="sm"
-                    className={styles.dialogPanel}
+                    className={styles.monthButton}
                     onClick={() => {
                       setMonthKey(toMonthKey(year, nextMonth));
                       setView("days");
@@ -270,7 +270,7 @@ export function DatePickerField({
           ) : null}
 
           {view === "years" ? (
-            <div className={styles.panel}>
+            <div className={styles.monthGrid}>
               {Array.from({ length: 12 }, (_, index) => decadeStart + index).map((nextYear) => {
                 const isSelected = year === nextYear;
                 return (
@@ -279,7 +279,7 @@ export function DatePickerField({
                     type="button"
                     variant={isSelected ? "default" : "ghost"}
                     size="sm"
-                    className={styles.dialogPanel}
+                    className={styles.monthButton}
                     onClick={() => {
                       setMonthKey(toMonthKey(nextYear, month));
                       setView("months");
@@ -292,7 +292,7 @@ export function DatePickerField({
             </div>
           ) : null}
 
-          <div className={styles.region}>
+          <div className={styles.footer}>
             <Button
               type="button"
               variant="link"
@@ -310,7 +310,7 @@ export function DatePickerField({
                 type="button"
                 variant="link"
                 size="sm"
-                className={styles.modalpanel}
+                className={styles.clearLink}
                 onClick={() => {
                   setValue("");
                   setOpen(false);

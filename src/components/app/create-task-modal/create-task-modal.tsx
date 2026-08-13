@@ -175,9 +175,9 @@ export function TaskFormModal({
   return (
     <>
       <ModalPortal>
-        <div className={styles.modalpanel}>
-          <div className={styles.dialogPanel}>
-            <div className={styles.dialogpanelDiv}>
+        <div className={styles.overlay}>
+          <div className={styles.panel}>
+            <div className={styles.header}>
               <div>
                 <h2 className={styles.heading}>{heading}</h2>
               </div>
@@ -215,7 +215,7 @@ export function TaskFormModal({
                 <textarea
                   name="description"
                   required
-                  className={styles.input}
+                  className={cn("input", styles.textarea)}
                   placeholder="Brief, references, links, and expected output"
                   defaultValue={isEdit ? task.description : undefined}
                 />
@@ -224,8 +224,8 @@ export function TaskFormModal({
               <div className={styles.layout}>
                 {isEdit ? (
                   <Field label="Project">
-                    <div className={styles.panel}>{projectLabel}</div>
-                    <p className={styles.itemDescription}>
+                    <div className={styles.readonlyValue}>{projectLabel}</div>
+                    <p className={styles.hint}>
                       Project cannot be changed because the ticket ID prefix is set at creation.
                     </p>
                   </Field>
@@ -271,30 +271,30 @@ export function TaskFormModal({
                 aria-pressed={needLeaderApproval}
                 onClick={() => setNeedLeaderApproval((current) => !current)}
                 className={cn(
-                  styles.hauto,
-                  needLeaderApproval ? styles.button : styles.control,
+                  styles.approvalToggle,
+                  needLeaderApproval ? styles.approvalOn : styles.approvalOff,
                 )}
               >
-                <span className={styles.caption}>
+                <span className={styles.approvalRow}>
                   <span
                     className={cn(
-                      styles.captionSpan,
-                      needLeaderApproval ? styles.captionPrimary : styles.caption,
+                      styles.approvalIcon,
+                      needLeaderApproval ? styles.approvalIconActive : undefined,
                     )}
                   >
                     <ShieldCheck className={styles.icon} />
                   </span>
-                  <span className={styles.content}>
-                    <span className={styles.captionSpan}>Need Leader Approval</span>
-                    <span className={styles.captionPrimary}>
+                  <span className={styles.approvalCopy}>
+                    <span className={styles.approvalTitle}>Need Leader Approval</span>
+                    <span className={styles.approvalHint}>
                       Show Leader approval checkboxes for Manager, Admin, or Super Admin review.
                     </span>
                   </span>
                 </span>
                 <span
                   className={cn(
-                    styles.caption,
-                    needLeaderApproval ? styles.captionPrimary : styles.caption,
+                    styles.approvalBadge,
+                    needLeaderApproval ? styles.approvalBadgeOn : undefined,
                   )}
                 >
                   {needLeaderApproval ? "On" : "Off"}
@@ -302,7 +302,7 @@ export function TaskFormModal({
               </Button>
 
               <Field label="Assignees">
-                <div className={styles.block}>
+                <div className={styles.assigneeGrid}>
                   {activeUsers.map((user) => {
                     const checked = isEdit
                       ? task.assigned_to.includes(user.user_id)
@@ -312,8 +312,8 @@ export function TaskFormModal({
                       <label
                         key={user.user_id}
                         className={cn(
-                          styles.label,
-                          checked && styles.labelLabel,
+                          styles.assignee,
+                          checked && styles.assigneeChecked,
                         )}
                       >
                         <input
@@ -321,9 +321,9 @@ export function TaskFormModal({
                           type="checkbox"
                           defaultChecked={checked}
                           value={user.user_id}
-                          className={styles.assignedToinput}
+                          className={styles.checkbox}
                         />
-                        <span className={styles.captionSpan}>{user.full_name}</span>
+                        <span className={styles.assigneeName}>{user.full_name}</span>
                       </label>
                     );
                   })}
@@ -335,7 +335,7 @@ export function TaskFormModal({
                   <textarea
                     name="checklist_titles"
                     required
-                    className={styles.checklistTitlesfield}
+                    className={cn("input", styles.subtasksField)}
                     placeholder={"Copywriting\nDesign\nStakeholder review"}
                   />
                 </Field>
@@ -350,7 +350,7 @@ export function TaskFormModal({
                 />
               </Field>
 
-              <div className={styles.glyph}>
+              <div className={styles.actions}>
                 <Button type="button" variant="outline" size="xl" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
@@ -455,7 +455,7 @@ export function CreateTaskModal({
         type="button"
         variant={triggerVariant}
         size="lg"
-        className={cn(styles.rowButton, triggerClassName)}
+        className={cn(styles.trigger, triggerClassName)}
         onClick={() => setOpen(true)}
         disabled={optionsLoading && open}
       >

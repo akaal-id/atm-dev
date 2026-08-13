@@ -12,9 +12,10 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const path = appPathname(pathname);
   const isChatRoom = isChatRoomPath(pathname);
+  const isAiChat = path === "/ai-chat";
   const isWorkflowDetail = /^\/workflows\/(?!new(?:\/|$))[^/]+/.test(path);
   const isNewWorkflow = path === "/workflows/new" || path.startsWith("/workflows/new/");
-  const showPageHeader = !isChatRoom && path !== "/dashboard" && !isWorkflowDetail && !isNewWorkflow;
+  const showPageHeader = !isChatRoom && !isAiChat && path !== "/dashboard" && !isWorkflowDetail && !isNewWorkflow;
 
   return (
     <main className={cn(styles.main, isChatRoom && styles.mainChatRoom)}>

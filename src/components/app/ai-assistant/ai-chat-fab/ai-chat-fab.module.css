@@ -1,0 +1,47 @@
+.fabWrap {
+  position: fixed;
+  z-index: 70;
+  right: 1.5rem;
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .fabWrap {
+    bottom: 1.5rem;
+  }
+}
+
+.fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--primary) 28%, transparent),
+    0 1px 2px rgb(0 0 0 / 0.06);
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.fab:hover {
+  background: color-mix(in srgb, var(--primary) 88%, #000);
+}
+
+.fab:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ring) 28%, transparent),
+    0 8px 24px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.fabIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+}

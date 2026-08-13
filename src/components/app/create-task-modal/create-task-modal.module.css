@@ -1,44 +1,45 @@
 /* Migrated from Tailwind utilities: plain CSS only, no @apply */
 
-.modalpanel {
+.overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
   display: grid;
   padding: 0;
+  background-color: color-mix(in srgb, var(--foreground) 40%, transparent);
 }
 @media (min-width: 640px) {
-  .modalpanel {
+  .overlay {
     place-items: center;
     padding: 1.5rem;
   }
 }
 
-.dialogPanel {
+.panel {
   max-height: 92dvh;
   width: 100%;
+  max-width: 42rem;
   overflow-y: auto;
   background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 @media (min-width: 640px) {
-  .dialogPanel {
+  .panel {
     border-radius: 2px;
   }
 }
 
-.dialogpanelDiv {
+.header {
   position: sticky;
   top: 0;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-color: var(--border);
+  border-bottom: 1px solid var(--border);
   background-color: var(--card);
-  padding-inline: 1.25rem;
-  padding-block: 1rem;
+  padding: 1rem 1.25rem;
 }
 
 .heading {
@@ -60,10 +61,6 @@
   margin-block-start: 1.25rem;
 }
 
-.modalpanel {
-  display: none;
-}
-
 .layout {
   display: grid;
   gap: 1rem;
@@ -74,11 +71,17 @@
   }
 }
 
-.input {
+.textarea {
   min-height: 6rem;
+  resize: vertical;
 }
 
-.panel {
+.subtasksField {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.readonlyValue {
   display: flex;
   min-height: 2.75rem;
   align-items: center;
@@ -88,14 +91,14 @@
   color: var(--foreground);
 }
 
-.itemDescription {
+.hint {
   font-size: 0.75rem;
   line-height: 1rem;
   font-weight: 400;
   color: var(--muted-foreground);
 }
 
-.hauto {
+.approvalToggle {
   height: auto;
   width: 100%;
   justify-content: space-between;
@@ -105,56 +108,54 @@
   font-weight: 400;
 }
 
-.button {
+.approvalOn {
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
   background-color: var(--primary-subtle);
   color: var(--primary);
 }
-.button:hover {
+.approvalOn:hover {
   background-color: var(--primary-subtle);
 }
 
-.control {
+.approvalOff {
   color: var(--foreground);
 }
 
-.caption {
+.approvalRow {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 0.75rem;
 }
 
-.captionSpan {
+.approvalIcon {
   display: grid;
   height: 2.25rem;
   width: 2.25rem;
+  flex-shrink: 0;
   place-items: center;
   border-radius: 2px;
-}
-
-.captionPrimary {
-  background-color: var(--primary);
-  color: #ffffff;
-}
-
-.caption {
   background-color: var(--muted);
   color: var(--muted-foreground);
 }
 
-.content {
+.approvalIconActive {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.approvalCopy {
   min-width: 0;
 }
 
-.captionSpan {
+.approvalTitle {
   display: block;
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 400;
 }
 
-.captionPrimary {
+.approvalHint {
   margin-top: 0.25rem;
   display: block;
   font-size: 0.75rem;
@@ -163,87 +164,83 @@
   color: var(--muted-foreground);
 }
 
-.caption {
+.approvalBadge {
+  flex-shrink: 0;
   border-radius: 9999px;
-  padding-inline: 0.625rem;
-  padding-block: 0.25rem;
+  padding: 0.25rem 0.625rem;
   font-size: 0.75rem;
   line-height: 1rem;
   font-weight: 400;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
 }
 
-.block {
+.approvalBadgeOn {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.assigneeGrid {
   display: grid;
   max-height: 14rem;
   gap: 0.5rem;
   overflow-y: auto;
   border-radius: 2px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: var(--border);
+  border: 1px solid var(--border);
   padding: 0.5rem;
 }
 @media (min-width: 640px) {
-  .block {
+  .assigneeGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.label {
+.assignee {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 0.5rem;
   border-radius: 2px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #ffffff;
+  border: 1px solid var(--border);
   background-color: var(--card);
-  padding-inline: 0.75rem;
-  padding-block: 0.5rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 400;
   color: var(--foreground);
 }
 
-.labelLabel {
+.assigneeChecked {
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
   background-color: var(--primary-subtle);
   color: var(--primary);
 }
 
-.assignedToinput {
+.checkbox {
   height: 1rem;
   width: 1rem;
 }
 
-.captionSpan {
+.assigneeName {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.checklistTitlesfield {
-  min-height: 7rem;
-}
-
-.glyph {
+.actions {
   display: flex;
   gap: 0.5rem;
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-color: var(--border);
+  border-top: 1px solid var(--border);
   padding-top: 1rem;
 }
 @media (min-width: 640px) {
-  .glyph {
+  .actions {
     flex-direction: row;
     justify-content: flex-end;
   }
 }
 
-.rowButton {
+.trigger {
   height: 2.5rem;
   gap: 0.5rem;
   padding-inline: 0.75rem;

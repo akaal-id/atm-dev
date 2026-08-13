@@ -1,37 +1,39 @@
 /* Migrated from Tailwind utilities: plain CSS only, no @apply */
 
-.taskconfirm {
+.overlay {
   position: fixed;
   inset: 0;
+  z-index: 50;
   display: grid;
   padding: 0;
+  background-color: color-mix(in srgb, var(--foreground) 40%, transparent);
 }
 @media (min-width: 640px) {
-  .taskconfirm {
+  .overlay {
     place-items: center;
     padding: 1.5rem;
   }
 }
 
-.modalpanel {
+.panel {
   width: 100%;
+  max-width: 28rem;
   background-color: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 @media (min-width: 640px) {
-  .modalpanel {
+  .panel {
     border-radius: 2px;
   }
 }
 
-.dialogPanel {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-color: var(--border);
-  padding-inline: 1.25rem;
-  padding-block: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.25rem;
 }
 
 .heading {
@@ -41,15 +43,15 @@
   color: var(--foreground);
 }
 
-.closeConfirmation {
+.closeIcon {
   height: 1rem;
   width: 1rem;
 }
 
-.closeButton {
+.body {
   padding: 1.25rem;
 }
-.closeButton > * + * {
+.body > * + * {
   margin-block-start: 1.25rem;
 }
 
@@ -59,16 +61,14 @@
   color: var(--muted-foreground);
 }
 
-.closeConfirmationCloseConfirmation {
+.actions {
   display: flex;
   gap: 0.5rem;
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-color: var(--border);
+  border-top: 1px solid var(--border);
   padding-top: 1rem;
 }
 @media (min-width: 640px) {
-  .closeConfirmationCloseConfirmation {
+  .actions {
     flex-direction: row;
     justify-content: flex-end;
   }

@@ -13,33 +13,28 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   eyebrow?: string;
-  widthClassName?: string;
+  className?: string;
   children: React.ReactNode;
 }
 
 /** Generic modal frame (portal + overlay + sticky header with close button). */
-export function Modal({ open, onClose, title, eyebrow, widthClassName = "sm:max-w-lg", children }: ModalProps) {
+export function Modal({ open, onClose, title, eyebrow, className, children }: ModalProps) {
   if (!open) return null;
 
   return (
     <ModalPortal>
-      <div className={styles.modalpanel}>
-        <div
-          className={cn(
-            styles.dialogPanel,
-            widthClassName,
-          )}
-        >
-          <div className={styles.dialogpanelDiv}>
+      <div className={styles.overlay}>
+        <div className={cn(styles.panel, className)}>
+          <div className={styles.header}>
             <div className={styles.content}>
-              {eyebrow ? <p className={styles.itemDescription}>{eyebrow}</p> : null}
+              {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
               <h2 className={styles.heading}>{title}</h2>
             </div>
             <Button type="button" variant="outline" size="icon-sm" onClick={onClose} aria-label={`Close ${title}`}>
               <X className={styles.icon} />
             </Button>
           </div>
-          <div className={styles.dialogpanelPrimary}>{children}</div>
+          <div className={styles.body}>{children}</div>
         </div>
       </div>
     </ModalPortal>

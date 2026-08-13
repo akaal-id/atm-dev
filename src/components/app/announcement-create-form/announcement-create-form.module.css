@@ -20,12 +20,9 @@
   margin-block-start: 1rem;
 }
 
-.slotPrimary {
-  display: none;
-}
-
-.input {
+.textarea {
   min-height: 7rem;
+  resize: vertical;
 }
 
 .bodylabel {

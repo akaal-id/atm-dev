@@ -129,11 +129,11 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
 
       {open ? (
         <ModalPortal>
-          <div className={styles.modalpanel}>
-            <div className={styles.dialogPanel}>
-              <div className={styles.dialogpanelDiv}>
+          <div className={styles.overlay}>
+            <div className={styles.panel}>
+              <div className={styles.header}>
                 <div>
-                  <p className={styles.text}>Workflow</p>
+                  <p className={styles.eyebrow}>Workflow</p>
                   <h2 className={styles.heading}>
                     {confirmDelete ? "Delete workflow" : "Edit workflow"}
                   </h2>
@@ -157,8 +157,8 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
                     longer belong to this workflow.
                   </p>
                   <label className={styles.label}>
-                    <span className={styles.caption}>
-                      Type <span className={styles.caption}>{requiredDeletePhrase}</span> to confirm
+                    <span className={styles.labelText}>
+                      Type <span className={styles.confirmPhrase}>{requiredDeletePhrase}</span> to confirm
                     </span>
                     <input
                       className="input"
@@ -170,7 +170,7 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
                       spellCheck={false}
                     />
                   </label>
-                  <div className={styles.group}>
+                  <div className={styles.actions}>
                     <Button
                       type="button"
                       variant="outline"
@@ -199,7 +199,7 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
               ) : (
                 <form onSubmit={onSubmit} className={styles.form}>
                   <label className={styles.label}>
-                    <span className={styles.caption}>Workflow name</span>
+                    <span className={styles.labelText}>Workflow name</span>
                     <input
                       className="input"
                       value={name}
@@ -211,8 +211,8 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
                   </label>
 
                   <label className={styles.label}>
-                    <span className={styles.caption}>
-                      Description <span className={styles.captionSpan}>optional</span>
+                    <span className={styles.labelText}>
+                      Description <span className={styles.muted}>optional</span>
                     </span>
                     <textarea
                       className="input"
@@ -223,11 +223,11 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
                     />
                   </label>
 
-                  <p className={styles.captionSpan}>
+                  <p className={styles.muted}>
                     Status is calculated from tasks on this board (Not Started → In Progress → Completed).
                   </p>
 
-                  <div className={styles.group}>
+                  <div className={styles.actions}>
                     <Button
                       type="button"
                       variant="destructiveOutline"
@@ -241,7 +241,7 @@ export function WorkflowEditModal({ workflow }: WorkflowEditModalProps) {
                     >
                       Delete workflow
                     </Button>
-                    <div className={styles.dialogpanelPrimary}>
+                    <div className={styles.primaryActions}>
                       <Button type="button" variant="outline" size="lg" className={styles.submit} onClick={closeModal}>
                         Cancel
                       </Button>

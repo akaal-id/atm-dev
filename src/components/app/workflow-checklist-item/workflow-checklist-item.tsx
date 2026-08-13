@@ -219,7 +219,7 @@ export function WorkflowChecklistItem({
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className={styles.input}
+              className={cn("input", styles.input)}
               autoFocus
             />
           ) : (

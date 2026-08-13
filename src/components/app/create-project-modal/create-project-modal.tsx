@@ -68,15 +68,15 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
         <ModalPortal>
 
-        <div className={styles.dialogPanel}>
+        <div className={styles.overlay}>
 
-          <div className={styles.modalpanel}>
+          <div className={styles.panel}>
 
-            <div className={styles.dialogpanelDiv}>
+            <div className={styles.header}>
 
               <div>
 
-                <p className={styles.itemDescription}>Project workspace</p>
+                <p className={styles.eyebrow}>Project workspace</p>
 
                 <h2 className={styles.heading}>Create project</h2>
 
@@ -94,7 +94,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
             <form action="/api/resources/Projects" method="post" className={styles.form}>
 
-              <div className={styles.closeCreateProject}>
+              <div className={styles.fieldsGrid}>
 
                 <Field label="Project name">
 
@@ -114,7 +114,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
               <Field label="Description">
 
-                <textarea name="description" required className={styles.input} placeholder="Scope, goals, and deliverables" />
+                <textarea name="description" required className={cn("input", styles.textarea)} placeholder="Scope, goals, and deliverables" />
 
               </Field>
 
@@ -131,12 +131,12 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
                     label: `${template.name}${template.is_default ? " (default)" : ""} · ${template.columns.length} columns`,
                   }))}
                 />
-                <p className={styles.text}>
+                <p className={styles.hint}>
                   Kolom Kanban proyek mengikuti template ini (data tiruan sampai API backend siap).
                 </p>
               </Field>
 
-              <div className={styles.closeCreateProject}>
+              <div className={styles.fieldsGrid}>
 
                 <Field label="Owner">
                   <FormSelect
@@ -156,7 +156,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
 
 
-              <div className={styles.closeCreateProject}>
+              <div className={styles.fieldsGrid}>
 
                 <Field label="Priority">
                   <FormSelect
@@ -180,7 +180,7 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
               <Field label="Members">
 
-                <div className={styles.layout}>
+                <div className={styles.memberGrid}>
 
                   {activeUsers.map((user) => (
 
@@ -190,17 +190,17 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
                       className={cn(
 
-                        styles.label,
+                        styles.member,
 
-                        user.user_id === currentUser.user_id && styles.labelLabel,
+                        user.user_id === currentUser.user_id && styles.memberChecked,
 
                       )}
 
                     >
 
-                      <input name="members" type="checkbox" value={user.user_id} defaultChecked={user.user_id === currentUser.user_id} className={styles.membersinput} />
+                      <input name="members" type="checkbox" value={user.user_id} defaultChecked={user.user_id === currentUser.user_id} className={styles.checkbox} />
 
-                      <span className={styles.caption}>{user.full_name}</span>
+                      <span className={styles.memberName}>{user.full_name}</span>
 
                     </label>
 
@@ -222,13 +222,13 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
               <Field label="Notes">
 
-                <textarea name="notes" className={styles.input} placeholder="Internal notes, risks, or client context" />
+                <textarea name="notes" className={cn("input", styles.textarea)} placeholder="Internal notes, risks, or client context" />
 
               </Field>
 
 
 
-              <div className={styles.group}>
+              <div className={styles.actions}>
 
                 <Button type="button" variant="outline" size="xl" onClick={() => setOpen(false)}>
 

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { AiAssistantWidget } from "@/components/app/ai-assistant/ai-assistant-widget";
+import { AiChatFab } from "@/components/app/ai-assistant/ai-chat-fab";
 import { BottomNav } from "@/components/app/bottom-nav";
 import { DeviceNotifications } from "@/components/app/device-notifications";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -24,7 +24,13 @@ import { listResourceByField } from "@/lib/server/store";
 import { cookieToCompanyId, TENANT_ALL } from "@/lib/tenant-path";
 import styles from "./app-shell.module.css";
 
-export async function AppShell({ children }: { children: React.ReactNode }) {
+export async function AppShell({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal?: React.ReactNode;
+}) {
   const user = await requireUser();
 
   const gate = await assertTenantAccess(user);
@@ -82,7 +88,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <WorkspaceProviders orgId={tenantOrgId} companyId={tenantCompanyId}>
-      <div className={styles.shell}>
+      <div className={styles.shell} data-app-shell>
         <DeviceNotifications />
         <LiveRefresh />
         <div className={styles.layout}>
@@ -98,7 +104,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           </ContentArea>
         </div>
         <BottomNav items={visibleBottom} />
-        <AiAssistantWidget />
+        {modal}
+        <AiChatFab />
       </div>
     </WorkspaceProviders>
   );

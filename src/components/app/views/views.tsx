@@ -905,8 +905,8 @@ export function ProjectsView(data: AppData) {
                       </div>
                     </Field>
                     <Field label="Links"><input name="links" className="input" defaultValue={project.links.join(", ")} /></Field>
-                    <Field label="Description"><textarea name="description" required className={styles.input} defaultValue={project.description} /></Field>
-                    <Field label="Notes"><textarea name="notes" className={styles.input} defaultValue={project.notes} /></Field>
+                    <Field label="Description"><textarea name="description" required className={cn("input", styles.input)} defaultValue={project.description} /></Field>
+                    <Field label="Notes"><textarea name="notes" className={cn("input", styles.input)} defaultValue={project.notes} /></Field>
                     <div className={styles.statuscatalog}>
                       <Button type="submit" variant="default" size="xl">Save project</Button>
                     </div>

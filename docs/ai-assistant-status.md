@@ -13,41 +13,49 @@ Pasangan doc: [ai-assistant-roadmap.md](./ai-assistant-roadmap.md) untuk rencana
 | Data layer | `src/lib/server/supabase-rest.ts` | Helper REST client ke Supabase |
 | API | `src/app/api/ai/conversations/route.ts` | List + create conversation |
 | API | `src/app/api/ai/conversations/[id]/route.ts` | Get + delete satu conversation (+ messages-nya) |
-| API | `src/app/api/ai/chat/route.ts` | Endpoint chat utama: `streamText`, system prompt, tools, penyimpanan memory |
-| UI | `src/components/app/ai-assistant/ai-assistant-widget/` | Widget chat — FAB + drawer/modal, riwayat, composer |
+| API | `src/app/api/ai/chat/route.ts` | HTTP: auth, persist, stream. Prompt/tools dari registry |
+| AI | `src/lib/server/ai/registry.ts` | Gabung modules → system prompt + tools (assert key unik) |
+| AI | `src/lib/server/ai/system-prompt.ts` | Rakit prompt dari base + rules + modul |
+| AI | `src/lib/server/ai/base.ts`, `rules.ts` | Identity + rule akses role + rule lintas-modul |
+| AI | `src/lib/server/ai/modules/task.ts` | `getMyTasks`, `getTask`, `updateTask`, `createTask` (preview → confirm) |
+| AI | `src/lib/server/ai/modules/subtask.ts` | `createChecklist` (preview → confirm) |
+| AI | `src/lib/server/ai/modules/workflow.ts` | `listWorkflows`, `getWorkflow`, `createWorkflow`, `updateWorkflow`, `deleteWorkflow` |
+| AI | `src/lib/server/ai/ticket-id.ts` | Generator ID tiket (`AKL-001`) |
+| AI | `src/lib/ai/mutation.ts` | Kontrak preview/result + pesan `[ATM_CONFIRM]` |
+| AI | `src/lib/server/ai/modules/memory.ts` | `rememberFact` + refresh ringkasan memory |
+| AI | `src/lib/server/ai/parts.ts` | Helper parts: teks, audio stub persist |
+| Routes | `src/app/(workspace)/ai-chat/page.tsx` | Fallback halaman penuh (`variant="page"`) |
+| Routes | `src/app/(workspace)/@modal/(.)ai-chat/page.tsx` | Overlay intercept (`variant="overlay"`) |
+| Routes | `src/app/(workspace)/@modal/default.tsx`, `@modal/ai-chat/page.tsx` | Slot kosong + fallback biar overlay tidak nyangkut |
+| UI | `src/components/app/ai-assistant/ai-chat-view/` | Thread, riwayat, composer, mic, markdown |
+| UI | `src/components/app/ai-assistant/ai-mutation-card/` | Kartu konfirmasi mutasi + daftar workflow |
+| UI | `src/components/app/ai-assistant/ai-task-detail-card/` | Kartu detail satu task di chat |
+| UI | `src/components/app/ai-assistant/ai-chat-fab/` | FAB → `Link` ke `/ai-chat?from=…` |
+
+Widget lama `ai-assistant-widget` sudah dihapus.
 
 ## 2. Cara kerja sekarang
 
-- **Modal/drawer**, dibuka lewat FAB (`MessageCircle`) yang muncul di seluruh halaman app.
-- **Riwayat chat**: sidebar di dalam drawer, load dari `/api/ai/conversations`. Klik item → `loadConversation()` fetch pesan lama, replace state chat.
-- **System prompt**: dirakit inline di `buildSystemPrompt()` ([route.ts](../src/app/api/ai/chat/route.ts)) — identity + role-based access rule (Super Admin / Admin-Leader / Staff) + injeksi memory user (summary + facts) ke dalam satu string besar. Belum dimodulkan.
-- **Tools** yang sudah ada: `getMyTasks` (list task milik user aktif), `rememberFact` (simpan fakta baru ke `ai_user_memory`).
-- **Memory per-user**: tabel `ai_user_memory.facts` (key-value), diisi lewat tool `rememberFact` atau manual. Contoh fact aktif: `task_query_rule_strict` milik user Afif A — soal filter "task saya" vs "semua task" berdasar role.
-  - ⚠️ Diketahui ada 3 fact yang isinya tumpang tindih untuk rule yang sama (`task_query_preference`, `task_query_rule`, `task_query_rule_strict`) — belum dirapikan. Lihat roadmap.
+- **Route `/ai-chat`**, bukan drawer `setOpen`. Klik FAB = client navigation (`next/link`).
+  - Dari halaman workspace → intercepting route merender overlay di atas halaman asal. Close = `router.back()`.
+  - Refresh / buka URL langsung → halaman penuh.
+- **Chat baru tiap buka FAB.** Percakapan di DB baru dibuat saat pesan pertama (teks atau suara). Riwayat di-fetch saat sidebar jam dibuka.
+- **System prompt + tools**: `createAiRegistry()` di `src/lib/server/ai/`. `route.ts` hanya HTTP.
+- **Tools**: `getMyTasks` (default **assigned**), `getTask` (kartu detail di chat), `updateTask`, `createTask` (wajib workflow), `createChecklist`, `listWorkflows`, `getWorkflow`, `createWorkflow`, `updateWorkflow`, `deleteWorkflow`, `rememberFact`.
+- **Mutasi lewat kartu**: create/update/delete task, checklist, dan workflow **tidak nulis** sampai user tap Konfirmasi. Tool pertama mengembalikan `{ kind: "preview" }`. Tombol kirim pesan `[ATM_CONFIRM]` + JSON `confirmed: true`. Model dilarang set `confirmed` sendiri.
+- **Create task tanpa board**: `{ kind: "needsWorkflow" }` + daftar board yang bisa diklik, lalu preview task.
+- **Pesan suara**: mic di composer → Gemini. Byte audio tidak disimpan di DB (hanya penanda “Pesan suara”).
+- **Memory per-user**: `ai_user_memory.facts` tetap dipakai. Preferensi personal mengalahkan asumsi role (contoh: Super Admin + "task saya" = assigned). Jangan hapus fact hanya karena rule sudah ada di kode.
+- **Shell**: kolom konten workspace yang scroll (`overflow-y` di `.content`), bukan scrollbar window. Overlay chat mengunci body.
 
-## 3. Bug yang sudah diperbaiki
+## 3. Bug / UX yang sudah diperbaiki
 
-**Klik riwayat chat → tampilan malah "chat baru" (padahal indikator sidebar sudah benar).**
+**Klik riwayat → tampilan “chat baru”.** `useChat` id-race: `setConversationId` + `setMessages` di cycle yang sama. Fix: `chatSessionId = useId()` konstan, terpisah dari `conversationId`. Sekarang di `ai-chat-view.tsx`.
 
-- **Akar masalah**: [ai-assistant-widget.tsx](../src/components/app/ai-assistant/ai-assistant-widget/ai-assistant-widget.tsx) pakai `useChat({ id: conversationId ?? "ai-pending", ... })`. `useChat` (AI SDK) simpan `messages` di internal store yang di-*key* oleh `id`. Saat `loadConversation()` manggil `setConversationId(newId)` dan `setMessages(...)` di render-cycle yang sama, `setMessages` masih nunjuk ke store-entry `id` **lama** (React belum re-render). Begitu re-render jalan dengan `id` baru, SDK cari entry `id` itu — kosong.
-- **Fix**: `id` internal `useChat` dipisah dari `conversationId` — dibikin konstan pakai `chatSessionId = useId()` (server tidak pernah baca field `id` dari body request, cuma pakai `conversationId` yang dikirim terpisah lewat ref — jadi aman dijadikan konstan).
-- **File yang diubah**: `ai-assistant-widget.tsx` — deklarasi `chatSessionId`, dan `useChat({ id: chatSessionId, transport })`.
+**FAB `<a href>` bikin hard nav** (intercept overlay tidak jalan, header fallback ke “Command center”). Fix: `next/link`.
 
-## 4. Keputusan arsitektur yang sudah disepakati (belum diimplementasi)
+**Bullet markdown tidak kelihatan** (reset `list-style` Tailwind + marker di luar box). Fix: bullet/nomor via `::before` di `.mdList`.
 
-Refactor `route.ts` (monolith) jadi modular per domain:
+## 4. Keputusan arsitektur
 
-```
-src/lib/server/ai/
-├── system-prompt.ts   # Builder utama
-├── registry.ts        # Gabungin rules + tools semua modul
-├── base.ts             # Identity, tone, bahasa
-├── rules.ts             # Rule umum lintas-modul (akses role, larangan ngarang)
-└── modules/
-    ├── task.ts          # Rule + tools task (termasuk rule Afif, setelah dirapikan)
-    ├── subtask.ts
-    ├── workflow.ts
-    └── memory.ts
-```
-
-Prinsip: rule + tools **satu domain digabung** dalam satu file modul (bukan dipisah folder `rules/` vs `tools/`) karena keduanya coupled. `base.ts`/`rules.ts` cuma untuk yang benar-benar lintas-modul. Belum ada 1 baris kode pun dari struktur ini yang ditulis — masih tahap desain. Lihat roadmap untuk detail risiko & urutan kerja.
+`route.ts` monolith sudah dipecah ke `src/lib/server/ai/` (registry + modules). Filter prompt per `pagePath` belum dipasang — semua modul task/subtask/workflow/memory masih ikut tiap request. Write tools memakai preview + konfirmasi kartu, bukan `needsApproval` native AI SDK (belum ada di `ai@7` yang dipakai).

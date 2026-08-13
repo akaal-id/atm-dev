@@ -94,13 +94,13 @@ export function TaskPickerDialog({
                 }}
                 className={styles.control}
               >
-                <span className={styles.caption}>
+                <span className={styles.taskRow}>
                   <span className={styles.captionSpan}>{task.title || task.task_id}</span>
                   <span className={styles.captionPrimary}>
                     {task.status}
                   </span>
                 </span>
-                {task.task_id ? <span className={styles.caption}>{task.task_id}</span> : null}
+                {task.task_id ? <span className={styles.taskId}>{task.task_id}</span> : null}
               </button>
             ))
           )}

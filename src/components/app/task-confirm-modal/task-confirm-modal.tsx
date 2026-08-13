@@ -32,9 +32,9 @@ export function TaskConfirmModal({
 
   return (
     <ModalPortal>
-    <div className={styles.taskconfirm}>
-      <div className={styles.modalpanel}>
-        <div className={styles.dialogPanel}>
+    <div className={styles.overlay}>
+      <div className={styles.panel}>
+        <div className={styles.header}>
           <div>
             <h2 className={styles.heading}>{title}</h2>
           </div>
@@ -46,14 +46,14 @@ export function TaskConfirmModal({
             disabled={confirming}
             aria-label="Close confirmation"
           >
-            <X className={styles.closeConfirmation} />
+            <X className={styles.closeIcon} />
           </Button>
         </div>
 
-        <div className={styles.closeButton}>
+        <div className={styles.body}>
           <p className={styles.itemDescription}>{description}</p>
 
-          <div className={styles.closeConfirmationCloseConfirmation}>
+          <div className={styles.actions}>
             <Button type="button" variant="outline" size="xl" onClick={() => onOpenChange(false)} disabled={confirming}>
               {cancelLabel}
             </Button>

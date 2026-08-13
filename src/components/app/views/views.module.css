@@ -76,10 +76,6 @@
   gap: 0.5rem;
 }
 
-.slotPrimary {
-  display: none;
-}
-
 .button {
   width: 100%;
 }
@@ -701,6 +697,7 @@
 
 .input {
   min-height: 6rem;
+  resize: vertical;
 }
 
 .statuscatalog {

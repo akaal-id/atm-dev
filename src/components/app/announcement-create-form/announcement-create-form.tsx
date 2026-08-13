@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormSelect } from "@/components/ui/form-select";
 import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -77,7 +78,7 @@ export function AnnouncementCreateForm({ createdBy }: { createdBy: string }) {
         />
       </Field>
       <Field label="Body">
-        <textarea name="body" required className={styles.input} />
+        <textarea name="body" required className={cn("input", styles.textarea)} />
       </Field>
       <label className={styles.bodylabel}>
         <input name="is_pinned" type="checkbox" className={styles.bodyinput} /> Pin important announcement
