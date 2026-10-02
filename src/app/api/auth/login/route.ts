@@ -22,7 +22,7 @@ function resolveNext(value: unknown, tenant: { orgId: string; companyId: string 
       return raw;
     }
     // Legacy workspace path → tenant URL
-    if (raw === "/dashboard" || raw.startsWith("/tasks") || raw.startsWith("/employees") || raw.startsWith("/admin") || raw.startsWith("/chat") || raw.startsWith("/projects") || raw.startsWith("/calendar") || raw.startsWith("/attendance") || raw.startsWith("/announcements") || raw.startsWith("/email-blast") || raw.startsWith("/leaderboard") || raw.startsWith("/notifications") || raw.startsWith("/project-files")) {
+    if (raw === "/dashboard" || raw.startsWith("/tasks") || raw.startsWith("/employees") || raw.startsWith("/admin") || raw.startsWith("/chat") || raw.startsWith("/projects") || raw.startsWith("/calendar") || raw.startsWith("/attendance") || raw.startsWith("/announcements") || raw.startsWith("/email-blast") || raw.startsWith("/leaderboard") || raw.startsWith("/notifications") || raw.startsWith("/project-files") || raw.startsWith("/office")) {
       return buildTenantPath({ ...tenant, path: raw });
     }
     return raw;

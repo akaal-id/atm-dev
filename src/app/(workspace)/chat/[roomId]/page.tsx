@@ -5,7 +5,7 @@ import { ChatLayout } from "@/components/app/chat/chat-layout";
 import { ChatWindow } from "@/components/app/chat/chat-window";
 import { hasPermission } from "@/lib/permissions";
 import { requireUser } from "@/lib/server/auth";
-import { getRoom, listDirectory, listMembers, listMessages, listRoomsForUser } from "@/lib/server/chat-actions";
+import { ensureSelfRoom, getRoom, listDirectory, listMembers, listMessages, listRoomsForUser, markRoomRead } from "@/lib/server/chat-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,8 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
   const room = await getRoom(roomId).catch(() => null);
   if (!room) notFound();
 
+  // Opening the room reads it — before the list is built, so its badge doesn't flash.
+  await Promise.all([ensureSelfRoom().catch(() => null), markRoomRead(roomId).catch(() => null)]);
   const [rooms, members, messages, directory] = await Promise.all([
     listRoomsForUser(),
     listMembers(roomId),
@@ -30,7 +32,11 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ roomI
 
   const other = room.type === "private" ? members.find((m) => m.user_id !== me.user_id) : undefined;
   const title =
-    room.type === "private" ? other?.author?.full_name || room.name || "Direct message" : room.name || "Group";
+    room.type === "self"
+      ? "My notes"
+      : room.type === "private"
+        ? other?.author?.full_name || room.name || "Direct message"
+        : room.name || "Group";
 
   return (
     <div className={styles.page}>

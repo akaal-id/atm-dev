@@ -15,14 +15,25 @@ function timeLabel(iso: string) {
   return new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
+/** Up to 8 emoji and nothing else → shown large, without a bubble. */
+const EMOJI_ONLY = /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator}|\u200d|\ufe0f|\s)+$/u;
+function isEmojiOnly(html: string) {
+  const text = stripHtml(html);
+  return Boolean(text) && EMOJI_ONLY.test(text) && [...text.replace(/\s/g, "")].filter((char) => /\p{Extended_Pictographic}/u.test(char)).length <= 8;
+}
+
 export function MessageBubble({
   message,
   isOwn,
   showAuthor,
+  withAvatar = true,
 }: {
   message: ChatMessageView;
   isOwn: boolean;
+  /** First message of a sender's group: show their name / avatar. */
   showAuthor: boolean;
+  /** Group rooms show who's talking; 1:1 rooms don't need it. */
+  withAvatar?: boolean;
 }) {
   if (message.type === "system") {
     return (
@@ -33,20 +44,22 @@ export function MessageBubble({
   }
 
   const authorName = message.author?.full_name ?? "Unknown";
+  const emojiOnly = message.type === "text" && !message.link_preview && isEmojiOnly(message.content);
+  const showIdentity = withAvatar && !isOwn;
 
   return (
     <div className={cn(styles.group, isOwn ? styles.cluster : styles.clusterDiv)}>
-      <div className={styles.panel}>
-        {showAuthor && !isOwn ? <Avatar name={authorName} image={message.author?.profile_photo} size="sm" /> : null}
-      </div>
+      {showIdentity ? (
+        <div className={styles.panel}>{showAuthor ? <Avatar name={authorName} image={message.author?.profile_photo} size="sm" /> : null}</div>
+      ) : null}
 
       <div className={cn(styles.region, isOwn ? styles.itemsend : styles.itemsstart)}>
-        {showAuthor && !isOwn ? <span className={styles.caption}>{authorName}</span> : null}
+        {showAuthor && showIdentity ? <span className={styles.caption}>{authorName}</span> : null}
 
         <div
           className={cn(
             styles.block,
-            isOwn ? styles.surface : styles.surfaceDiv,
+            emojiOnly ? styles.emojiOnly : isOwn ? styles.surface : styles.surfaceDiv,
             message.pending && styles.surfacePrimary,
           )}
         >
@@ -65,7 +78,7 @@ export function MessageBubble({
 
           {message.link_preview ? <LinkCard preview={message.link_preview} isOwn={isOwn} /> : null}
 
-          <div className={cn(styles.surfaceTertiary, isOwn ? styles.surfaceAlt : styles.surfaceAside)}>
+          <div className={cn(styles.surfaceTertiary, isOwn && !emojiOnly ? styles.surfaceAlt : styles.surfaceAside)}>
             <span>{timeLabel(message.created_at)}</span>
             {message.pending ? <span>· sending…</span> : null}
           </div>

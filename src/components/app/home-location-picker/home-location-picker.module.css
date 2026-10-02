@@ -1,0 +1,124 @@
+.panel {
+  max-width: 40rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.searchRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.searchRow input {
+  flex: 1;
+  min-width: 0;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  max-height: 11rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+}
+
+.result {
+  width: 100%;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  padding: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--foreground);
+  text-align: start;
+  cursor: pointer;
+}
+
+.result:hover,
+.result:focus-visible {
+  background: var(--surface-inset);
+}
+
+.mapWrap {
+  position: relative;
+}
+
+.map {
+  height: 18rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  z-index: 0;
+}
+
+.locate {
+  position: absolute;
+  inset-block-end: 0.75rem;
+  inset-inline-end: 0.75rem;
+  z-index: 500;
+  background: var(--card);
+}
+
+/* Leaflet divIcon: a teardrop pin. Leaflet positions the icon with `transform`, so the
+   rotation lives on ::before — rotating the icon itself would rotate its position too. */
+.pin::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--primary);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
+  transform: rotate(-45deg);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.error {
+  font-size: 0.75rem;
+  color: var(--destructive);
+}
+
+.icon,
+.spin {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .map {
+    height: 14rem;
+  }
+}

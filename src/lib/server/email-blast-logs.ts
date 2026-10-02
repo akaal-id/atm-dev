@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import { makeId } from "@/lib/utils";
 import type { BlastRecipientResult } from "@/lib/server/resend";
 
@@ -55,7 +57,7 @@ export async function createEmailLog(input: {
     created_at: new Date().toISOString(),
   };
 
-  const response = await fetch(`${baseUrl}/rest/v1/email_logs`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/email_logs`, {
     method: "POST",
     headers: {
       apikey: key,
@@ -87,7 +89,7 @@ export async function listEmailLogs(userId?: string, limit = 50): Promise<EmailL
   });
   if (userId) params.set("user_id", `eq.${userId}`);
 
-  const response = await fetch(`${baseUrl}/rest/v1/email_logs?${params}`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/email_logs?${params}`, {
     headers: {
       apikey: key,
       Authorization: `Bearer ${key}`,
@@ -104,7 +106,7 @@ export async function getEmailLog(id: string): Promise<EmailLogRecord | null> {
   const key = supabaseKey();
   if (!baseUrl || !key) return null;
 
-  const response = await fetch(`${baseUrl}/rest/v1/email_logs?id=eq.${encodeURIComponent(id)}&select=*&limit=1`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/email_logs?id=eq.${encodeURIComponent(id)}&select=*&limit=1`, {
     headers: {
       apikey: key,
       Authorization: `Bearer ${key}`,

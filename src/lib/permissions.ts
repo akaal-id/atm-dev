@@ -70,3 +70,8 @@ export function canApproveTaskAsLeader(user: { role_id: RoleKey; employment_stat
     user.employment_status === "Manager"
   );
 }
+
+/** Leaders may set a task's effort override, PIC, credit split and quality rating; workers only pick its work type. */
+export function canManageTaskScoring(user: { role_id: RoleKey; employment_status: EmployeeStatus | string }) {
+  return hasPermission(user.role_id, "tasks:manage") || hasPermission(user.role_id, "tasks:team") || canApproveTaskAsLeader(user);
+}

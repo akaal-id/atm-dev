@@ -6,6 +6,7 @@ import { MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { isChatPath } from "@/lib/navigation";
 import { useTenant } from "@/components/app/tenant-provider";
 import { appPathname } from "@/lib/tenant-path";
 
@@ -19,7 +20,8 @@ export function AiChatFab() {
   const { href: tenantHref } = useTenant();
   const appPath = appPathname(pathname);
 
-  if (appPath === "/ai-chat") return null;
+  // Hidden in chat: it would cover the message composer and send button.
+  if (appPath === "/ai-chat" || isChatPath(pathname)) return null;
 
   return (
     <div className={styles.fabWrap}>

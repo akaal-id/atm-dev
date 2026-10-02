@@ -10,11 +10,14 @@ import { FormSelect } from "@/components/ui/form-select";
 import { ModalPortal } from "@/components/ui/modal-portal";
 import { mockWorkflows } from "@/lib/data/workflow-templates-mock";
 import { listLocalWorkflows } from "@/lib/data/workflow-local-store";
+import { canManageTaskScoring } from "@/lib/permissions";
+import { trackLabel } from "@/lib/scoring";
 import { taskNeedsLeaderApproval, visibleTaskLabels } from "@/lib/task-approval";
 import type { CurrentUser, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import styles from "./create-task-modal.module.css";
+import { useWorkTypes } from "./use-work-types";
 
 export interface TaskModalUser {
   user_id: string;
@@ -81,6 +84,12 @@ export function TaskFormModal({
   const formRef = useRef<HTMLFormElement>(null);
   const activeUsers = users.filter((user) => user.is_active);
   const isEdit = mode === "edit" && task;
+  const canScore = canManageTaskScoring(currentUser);
+  const scoring = useWorkTypes(open);
+  const [workTypeId, setWorkTypeId] = useState("");
+  const [picUserId, setPicUserId] = useState("");
+  const [assignees, setAssignees] = useState<string[]>([]);
+  const selectedType = scoring?.workTypes.find((type) => type.id === workTypeId);
 
   const workflows = useMemo(() => {
     const seed =
@@ -125,10 +134,16 @@ export function TaskFormModal({
       setNeedLeaderApproval(taskNeedsLeaderApproval(task));
       setProjectId(task.project_id || "");
       setWorkflowId(task.workflow_id || "");
+      setWorkTypeId(task.work_type_id || "");
+      setPicUserId(task.pic_user_id || "");
+      setAssignees(task.assigned_to);
       return;
     }
 
     setNeedLeaderApproval(false);
+    setWorkTypeId("");
+    setPicUserId("");
+    setAssignees([currentUser.user_id]);
     const seed =
       workflowsProp.length > 0
         ? workflowsProp
@@ -142,7 +157,7 @@ export function TaskFormModal({
     const preset = all.find((workflow) => workflow.id === presetId);
     setWorkflowId(presetId);
     setProjectId(preset?.project_id || "");
-  }, [open, isEdit, task, defaultWorkflowId, workflowsProp]);
+  }, [open, isEdit, task, defaultWorkflowId, workflowsProp, currentUser.user_id]);
 
   if (!open) return null;
 
@@ -257,13 +272,57 @@ export function TaskFormModal({
                 </Field>
               </div>
 
-              <Field label="Priority">
-                <FormSelect
-                  name="priority"
-                  defaultValue={isEdit ? task.priority : "Medium"}
-                  options={["Low", "Medium", "High", "Urgent"].map((priority) => ({ value: priority, label: priority }))}
-                />
-              </Field>
+              <div className={styles.layout}>
+                <Field label="Priority">
+                  <FormSelect
+                    name="priority"
+                    defaultValue={isEdit ? task.priority : "Medium"}
+                    options={["Low", "Medium", "High", "Urgent"].map((priority) => ({ value: priority, label: priority }))}
+                  />
+                </Field>
+                <Field label="Work type">
+                  <FormSelect
+                    name="work_type_id"
+                    value={workTypeId}
+                    onValueChange={setWorkTypeId}
+                    placeholder={scoring ? "Not set" : "Loading…"}
+                    options={[
+                      { value: "", label: "Not set" },
+                      ...(scoring?.workTypes ?? []).map((type) => ({ value: type.id, label: `${trackLabel(type.track)} · ${type.name} (${type.effort} pts)` })),
+                    ]}
+                  />
+                </Field>
+              </div>
+
+              {canScore ? (
+                <div className={styles.layout}>
+                  <Field label="Effort points">
+                    <input
+                      name="effort_points"
+                      type="number"
+                      min={0.5}
+                      max={40}
+                      step={0.5}
+                      className="input"
+                      placeholder={selectedType ? `${selectedType.effort} from work type` : `${scoring?.defaultEffort ?? 2} (default)`}
+                      defaultValue={isEdit && task.effort_points ? String(task.effort_points) : undefined}
+                    />
+                    <p className={styles.hint}>Leave empty to use the work type&apos;s value.</p>
+                  </Field>
+                  <Field label="PIC (gets the larger share)">
+                    <FormSelect
+                      name="pic_user_id"
+                      value={assignees.includes(picUserId) ? picUserId : ""}
+                      onValueChange={setPicUserId}
+                      placeholder={assignees.length > 1 ? "No PIC — split equally" : "Only assignee"}
+                      options={[
+                        { value: "", label: assignees.length > 1 ? "No PIC — split equally" : "Only assignee" },
+                        ...activeUsers.filter((user) => assignees.includes(user.user_id)).map((user) => ({ value: user.user_id, label: user.full_name })),
+                      ]}
+                    />
+                  </Field>
+                </div>
+              ) : null}
 
               <Button
                 type="button"
@@ -322,6 +381,11 @@ export function TaskFormModal({
                           defaultChecked={checked}
                           value={user.user_id}
                           className={styles.checkbox}
+                          onChange={(event) =>
+                            setAssignees((current) =>
+                              event.target.checked ? [...new Set([...current, user.user_id])] : current.filter((id) => id !== user.user_id),
+                            )
+                          }
                         />
                         <span className={styles.assigneeName}>{user.full_name}</span>
                       </label>

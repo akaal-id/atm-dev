@@ -118,6 +118,39 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
               </Field>
 
+              <Field label="Objective">
+                <textarea name="objective" className={cn("input", styles.textarea)} placeholder="What this project must achieve, e.g. grow awareness of the brand among Gen Z in Jakarta" />
+              </Field>
+
+              <div className={styles.fieldsGrid}>
+                <Field label="Project type">
+                  <FormSelect
+                    name="project_type"
+                    defaultValue="general"
+                    options={[
+                      { value: "general", label: "General" },
+                      { value: "social_media", label: "Social media" },
+                    ]}
+                  />
+                </Field>
+                <Field label="Person in charge">
+                  <FormSelect
+                    name="pic_user_id"
+                    defaultValue={currentUser.user_id}
+                    options={activeUsers.map((user) => ({ value: user.user_id, label: user.full_name }))}
+                  />
+                </Field>
+              </div>
+
+              <div className={styles.fieldsGrid}>
+                <Field label="Period start">
+                  <DatePickerField name="period_start" variant="form" />
+                </Field>
+                <Field label="Period end">
+                  <DatePickerField name="period_end" variant="form" />
+                </Field>
+              </div>
+
               <Field label="Workflow template">
                 <FormSelect
                   name="workflow_template_id"

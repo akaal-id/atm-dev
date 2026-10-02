@@ -25,6 +25,8 @@ function isSameOriginNavigation(target: EventTarget | null) {
   }
 }
 
+const SHOW_AFTER_MS = 150;
+
 export function RouteProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -33,6 +35,7 @@ export function RouteProgress() {
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<number | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
   const visibleRef = useRef(visible);
 
   useEffect(() => {
@@ -46,12 +49,14 @@ export function RouteProgress() {
   const clearTimers = useCallback(() => {
     if (timerRef.current) window.clearInterval(timerRef.current);
     if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    if (showTimerRef.current) window.clearTimeout(showTimerRef.current);
     timerRef.current = null;
     hideTimerRef.current = null;
+    showTimerRef.current = null;
   }, []);
 
-  const start = useCallback(() => {
-    clearTimers();
+  const show = useCallback(() => {
+    showTimerRef.current = null;
     visibleRef.current = true;
     setVisible(true);
     setProgress(8);
@@ -63,9 +68,19 @@ export function RouteProgress() {
         return Math.min(92, current + step);
       });
     }, 180);
-  }, [clearTimers]);
+  }, []);
+
+  // Only show the bar when a navigation is actually slow; instant ones show nothing.
+  const start = useCallback(() => {
+    clearTimers();
+    showTimerRef.current = window.setTimeout(show, SHOW_AFTER_MS);
+  }, [clearTimers, show]);
 
   const finish = useCallback(() => {
+    if (showTimerRef.current) {
+      window.clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
     if (!visibleRef.current) return;
     if (timerRef.current) window.clearInterval(timerRef.current);
     timerRef.current = null;
@@ -75,27 +90,6 @@ export function RouteProgress() {
       setVisible(false);
       setProgress(100);
     }, 280);
-  }, []);
-
-  useEffect(() => {
-    const startTimer = window.setTimeout(() => {
-      visibleRef.current = true;
-      setVisible(true);
-      setProgress(12);
-    }, 0);
-
-    const timer = window.setTimeout(() => {
-      setProgress(100);
-      hideTimerRef.current = window.setTimeout(() => {
-        visibleRef.current = false;
-        setVisible(false);
-      }, 280);
-    }, 360);
-
-    return () => {
-      window.clearTimeout(startTimer);
-      window.clearTimeout(timer);
-    };
   }, []);
 
   useEffect(() => {

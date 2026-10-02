@@ -79,7 +79,7 @@ export type AttendanceStatus =
   | "Approved"
   | "Rejected";
 
-export type LeaveRequestType = "Izin" | "Sick" | "Cuti" | "WFH" | "Half Day";
+export type LeaveRequestType = "Izin" | "Sick" | "Cuti" | "WFH" | "Half Day" | "Off-site";
 
 export type Permission =
   | "dashboard:view"
@@ -109,6 +109,15 @@ export interface User {
   profile_photo: string;
   bio: string;
   phone: string;
+  /** Leaderboard track: design / copywriting / video / account / leader / general. */
+  score_track?: string;
+  /** Attendance base locations (WFO / WFH classification). */
+  office_lat?: number | null;
+  office_lng?: number | null;
+  office_label?: string;
+  home_lat?: number | null;
+  home_lng?: number | null;
+  home_label?: string;
   department_id: string;
   position: string;
   employment_status: EmployeeStatus;
@@ -174,6 +183,13 @@ export interface Task {
   // Set when the worker first hands off (status reaches Waiting Approval / Ready). Used to
   // decide overdue fairly: a task handed off on or before its due date never counts as overdue.
   handed_off_at?: string;
+  /** Leaderboard v2 scoring (docs/leaderboard-plan.md). */
+  work_type_id?: string;
+  effort_points?: number | null;
+  pic_user_id?: string;
+  contribution_shares?: Record<string, number>;
+  revision_count?: number;
+  quality_rating?: number | null;
 }
 
 export interface TaskComment {
@@ -211,9 +227,15 @@ export interface ProjectFile {
   file_url: string;
   file_name: string;
   file_mime: string;
+  /** `base` = project base file, `sop` = SOP attachment; empty/`general` for task files. */
+  category?: ProjectFileCategory;
   created_at: string;
   updated_at: string;
 }
+
+export type ProjectFileCategory = "general" | "base" | "sop";
+
+export type ProjectType = "general" | "social_media";
 
 export interface Project {
   project_id: string;
@@ -230,6 +252,14 @@ export interface Project {
   deadline: string;
   notes: string;
   links: string[];
+  /** Project hub header (see docs/project-hub-plan.md). Optional for seed/Sheets data. */
+  project_type?: ProjectType;
+  period_start?: string;
+  period_end?: string;
+  objective?: string;
+  pic_user_id?: string;
+  /** SOP as tiptap HTML. */
+  sop_content?: string;
   created_at: string;
   updated_at: string;
 }

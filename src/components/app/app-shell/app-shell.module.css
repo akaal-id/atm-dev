@@ -42,6 +42,13 @@
   padding-bottom: 0;
 }
 
+/* Chat list on phones/tablets: leave room for the bottom nav. */
+@media (max-width: 1023px) {
+  .contentChatList {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .main {
   display: grid;
   gap: 1.25rem;
@@ -91,6 +98,6 @@
   }
 
   .mainChatRoom {
-    padding: 0 2rem 1.25rem;
+    padding: 1rem 2rem 1.25rem;
   }
 }

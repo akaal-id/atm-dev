@@ -1,0 +1,89 @@
+.title {
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-semibold);
+}
+
+.subtitle,
+.hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.iconSet,
+.iconMissing {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+}
+
+.iconSet {
+  background: var(--primary-subtle);
+  color: var(--foreground);
+}
+
+.iconMissing {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+}
+
+.iconSet svg,
+.iconMissing svg,
+.row button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.place {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--primary);
+}
+
+.place span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+}
+
+.missing {
+  font-size: 0.8125rem;
+  color: var(--destructive);
+}
+

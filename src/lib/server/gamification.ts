@@ -1,33 +1,52 @@
 import "server-only";
 
 import { createResource, listResource } from "@/lib/server/store";
-import { isTaskOverdue } from "@/lib/metrics";
-import type { Attendance, Task } from "@/lib/types";
+import { isSupabaseRestConfigured, supabaseRest } from "@/lib/server/supabase-rest";
 
-const completedTaskStatuses = new Set(["Finished", "Done", "Approved", "Completed"]);
+/*
+ * Points ledger. Since leaderboard v2 (2026-10-02, docs/leaderboard-plan.md) the score is
+ * computed from tasks and attendance directly; the v1 automatic awards (task_done,
+ * task_overdue, punctual_attendance) are frozen as lifetime XP. The ledger still records
+ * manual adjustments and Off-site penalties.
+ */
 
-const fallbackRules = {
-  completeTask: 50,
-  punctualAttendance: 10,
-  overdueTask: -20,
-};
+type AwardKeyRow = { user_id: string; source_type: string; source_id: string };
+const awardKey = (row: AwardKeyRow) => `${row.user_id}:${row.source_type}:${row.source_id}`;
+const PAGE = 1000; // PostgREST returns at most 1000 rows per request
 
-async function gamificationRules() {
-  const settings = await listResource("Settings");
-  const rulesSetting = settings.find((setting) => setting.setting_key === "gamification_rules");
-
-  if (!rulesSetting?.setting_value) return fallbackRules;
-
-  try {
-    const parsed = JSON.parse(rulesSetting.setting_value) as Partial<typeof fallbackRules>;
-    return {
-      completeTask: Number(parsed.completeTask ?? fallbackRules.completeTask),
-      punctualAttendance: Number(parsed.punctualAttendance ?? fallbackRules.punctualAttendance),
-      overdueTask: Number(parsed.overdueTask ?? fallbackRules.overdueTask),
-    };
-  } catch {
-    return fallbackRules;
+/**
+ * Keys of points already awarded for these sources. Reads every matching row
+ * (paged) — a plain list stops at PostgREST's 1000-row cap, which previously made
+ * the app re-award the same points on every leaderboard visit.
+ */
+async function existingAwardKeys(sourceIds: string[]): Promise<Set<string>> {
+  const ids = [...new Set(sourceIds.filter(Boolean))];
+  if (process.env.ATM_DATA_MODE !== "supabase" || !isSupabaseRestConfigured()) {
+    const all = (await listResource("Gamification_Points")) as AwardKeyRow[];
+    return new Set(all.map(awardKey));
   }
+  const keys = new Set<string>();
+  const chunks = Array.from({ length: Math.ceil(ids.length / 40) }, (_, index) => ids.slice(index * 40, index * 40 + 40));
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      const list = encodeURIComponent(chunk.map((id) => `"${id.replace(/"/g, "")}"`).join(","));
+      for (let offset = 0; ; offset += PAGE) {
+        const rows = await supabaseRest<AwardKeyRow[]>(
+          `/gamification_points?select=user_id,source_type,source_id&source_id=in.(${list})&order=point_id.asc&limit=${PAGE}&offset=${offset}`,
+        );
+        rows.forEach((row) => keys.add(awardKey(row)));
+        if (rows.length < PAGE) break;
+      }
+    }),
+  );
+  return keys;
+}
+
+/** A unique-constraint conflict means another request already awarded these points. */
+function ignoreDuplicateAward(error: unknown) {
+  const text = error instanceof Error ? `${error.message} ${(error as { status?: number }).status ?? ""}` : String(error);
+  if (/\b409\b|23505|duplicate key|gamification_points_award_unique/.test(text)) return null;
+  throw error;
 }
 
 export async function awardPointsOnce({
@@ -45,12 +64,8 @@ export async function awardPointsOnce({
 }) {
   if (!userId || !sourceType || !sourceId || points === 0) return null;
 
-  const existing = await listResource("Gamification_Points");
-  const alreadyAwarded = existing.some(
-    (point) => point.user_id === userId && point.source_type === sourceType && point.source_id === sourceId,
-  );
-
-  if (alreadyAwarded) return null;
+  const existing = await existingAwardKeys([sourceId]);
+  if (existing.has(`${userId}:${sourceType}:${sourceId}`)) return null;
 
   return createResource("Gamification_Points", {
     user_id: userId,
@@ -59,103 +74,5 @@ export async function awardPointsOnce({
     points,
     reason,
     created_at: new Date().toISOString(),
-  });
-}
-
-export async function awardTaskDonePoints(task: Pick<Task, "task_id" | "title">, userId: string) {
-  const rules = await gamificationRules();
-
-  return awardPointsOnce({
-    userId,
-    sourceType: "task_done",
-    sourceId: task.task_id,
-    points: rules.completeTask,
-    reason: `Completed task: ${task.title}`,
-  });
-}
-
-export async function awardPunctualAttendancePoints(attendance: Pick<Attendance, "attendance_id" | "status" | "date" | "user_id">) {
-  if (attendance.status !== "Present") return null;
-
-  const rules = await gamificationRules();
-
-  return awardPointsOnce({
-    userId: attendance.user_id,
-    sourceType: "punctual_attendance",
-    sourceId: attendance.attendance_id,
-    points: rules.punctualAttendance,
-    reason: `Punctual attendance on ${attendance.date}`,
-  });
-}
-
-export async function syncLeaderboardPoints() {
-  const [tasks, attendance, existingPoints, rules] = await Promise.all([
-    listResource("Tasks"),
-    listResource("Attendance"),
-    listResource("Gamification_Points"),
-    gamificationRules(),
-  ]);
-  const existingKeys = new Set(existingPoints.map((point) => `${point.user_id}:${point.source_type}:${point.source_id}`));
-  const awards: Array<Promise<unknown>> = [];
-
-  const awardMissing = ({ userId, sourceType, sourceId, points, reason }: { userId: string; sourceType: string; sourceId: string; points: number; reason: string }) => {
-    const key = `${userId}:${sourceType}:${sourceId}`;
-    if (existingKeys.has(key)) return;
-    existingKeys.add(key);
-    awards.push(
-      createResource("Gamification_Points", {
-        user_id: userId,
-        source_type: sourceType,
-        source_id: sourceId,
-        points,
-        reason,
-        created_at: new Date().toISOString(),
-      }),
-    );
-  };
-
-  tasks
-    .filter((task) => completedTaskStatuses.has(task.status))
-    .forEach((task) => {
-      task.assigned_to.forEach((userId) => {
-        awardMissing({
-          userId,
-          sourceType: "task_done",
-          sourceId: task.task_id,
-          points: rules.completeTask,
-          reason: `Completed task: ${task.title}`,
-        });
-      });
-    });
-
-  // Deduct points once per assignee when a task slips past its due date.
-  if (rules.overdueTask !== 0) {
-    tasks
-      .filter((task) => isTaskOverdue(task))
-      .forEach((task) => {
-        task.assigned_to.forEach((userId) => {
-          awardMissing({
-            userId,
-            sourceType: "task_overdue",
-            sourceId: task.task_id,
-            points: rules.overdueTask,
-            reason: `Overdue task: ${task.title}`,
-          });
-        });
-      });
-  }
-
-  attendance
-    .filter((record) => record.status === "Present")
-    .forEach((record) => {
-      awardMissing({
-        userId: record.user_id,
-        sourceType: "punctual_attendance",
-        sourceId: record.attendance_id,
-        points: rules.punctualAttendance,
-        reason: `Punctual attendance on ${record.date}`,
-      });
-    });
-
-  await Promise.all(awards);
+  }).catch(ignoreDuplicateAward);
 }

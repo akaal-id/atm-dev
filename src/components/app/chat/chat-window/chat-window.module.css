@@ -1,3 +1,14 @@
+/* Root: header / scrolling messages / composer, filling the chat pane. */
+.root {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* Migrated from Tailwind utilities: plain CSS only, no @apply */
 
 .chatinput {
@@ -121,11 +132,57 @@
   min-height: 0;
   flex: 1 1 0%;
   overflow-y: auto;
-  padding-inline: 0.75rem;
-  padding-block: 1rem;
+  background: color-mix(in srgb, var(--surface-inset) 55%, var(--card));
+  padding-inline: 0.875rem;
+  padding-block: 0.75rem 1rem;
 }
-.messages > * + * {
-  margin-block-start: 0.25rem;
+
+/* Tight spacing inside a sender's group, more air between groups. */
+.grouped {
+  margin-top: 0.125rem;
+}
+
+.ungrouped {
+  margin-top: 0.75rem;
+}
+
+.dayDivider {
+  display: flex;
+  justify-content: center;
+  margin: 0.75rem 0;
+}
+
+.dayDivider span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+}
+
+.jump {
+  position: absolute;
+  bottom: 5.5rem;
+  left: 50%;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
+  color: #fff;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 18%);
+  cursor: pointer;
+}
+
+.jump svg {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 .itemMeta {
@@ -144,4 +201,84 @@
   border-color: var(--border);
   background-color: var(--card);
   padding-bottom: env(safe-area-inset-bottom,0px);
+}
+
+/* Personal notes room */
+.notesAvatar {
+  display: grid;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background-color: var(--primary-subtle);
+  color: var(--foreground);
+}
+
+.selectToggle {
+  margin-left: auto;
+}
+
+.actionIcon {
+  height: 1rem;
+  width: 1rem;
+}
+
+.selectRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.selectRow:hover {
+  background-color: var(--surface-inset);
+}
+
+.selectRowActive {
+  background-color: var(--primary-subtle);
+}
+
+.selectBox {
+  margin-top: 0.625rem;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.selectBubble {
+  flex: 1;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.selectBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.selectCount {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.selectAll {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8125rem;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.selectActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-left: auto;
 }

@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { canApproveTaskAsLeader } from "@/lib/permissions";
-import { awardTaskDonePoints } from "@/lib/server/gamification";
 import { redirectBack, requireApiPermission, wantsJson } from "@/lib/server/api";
 import { createResource, getResourceById, listResource, updateResource } from "@/lib/server/store";
 import { taskNeedsLeaderApproval } from "@/lib/task-approval";
@@ -53,10 +52,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       progress: progressForWorkflowStatus("Finished"),
       completed_at: now,
     });
-  }
-
-  if (task.status !== "Finished") {
-    await Promise.all(task.assigned_to.map((userId) => awardTaskDonePoints(task, userId)));
   }
 
   await createResource("Activity_Logs", {

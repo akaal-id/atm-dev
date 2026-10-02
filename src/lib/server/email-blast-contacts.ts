@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import { makeId } from "@/lib/utils";
 
 function supabaseUrl() {
@@ -63,7 +65,7 @@ async function lookupUsersByIds(userIds: string[]): Promise<Map<string, string>>
   const key = supabaseKey();
   if (!baseUrl || !key) return map;
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${baseUrl}/rest/v1/users?user_id=in.(${unique.map(encodeURIComponent).join(",")})&select=user_id,full_name`,
     { headers: headers(), cache: "no-store" },
   );
@@ -91,7 +93,7 @@ export async function listContactGroupsWithContacts(companyId: string): Promise<
   const key = supabaseKey();
   if (!baseUrl || !key) return [];
 
-  const groupsRes = await fetch(
+  const groupsRes = await supabaseFetch(
     `${baseUrl}/rest/v1/contact_groups?company_id=eq.${encodeURIComponent(companyId)}&select=*&order=created_at.desc`,
     { headers: headers(), cache: "no-store" },
   );
@@ -100,7 +102,7 @@ export async function listContactGroupsWithContacts(companyId: string): Promise<
   if (groups.length === 0) return [];
 
   const groupIds = groups.map((group) => group.id);
-  const contactsRes = await fetch(
+  const contactsRes = await supabaseFetch(
     `${baseUrl}/rest/v1/contacts?group_id=in.(${groupIds.map(encodeURIComponent).join(",")})&select=*&order=full_name.asc`,
     { headers: headers(), cache: "no-store" },
   );
@@ -130,7 +132,7 @@ export async function createContactGroup(
     created_at: new Date().toISOString(),
   };
 
-  const response = await fetch(`${baseUrl}/rest/v1/contact_groups`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/contact_groups`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify(record),
@@ -147,7 +149,7 @@ export async function deleteContactGroup(companyId: string, groupId: string) {
   const key = supabaseKey();
   if (!baseUrl || !key) throw new Error("Supabase is not configured.");
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${baseUrl}/rest/v1/contact_groups?id=eq.${encodeURIComponent(groupId)}&company_id=eq.${encodeURIComponent(companyId)}`,
     { method: "DELETE", headers: headers() },
   );
@@ -176,7 +178,7 @@ export async function addContactsToGroup(
 
   if (rows.length === 0) return [];
 
-  const response = await fetch(`${baseUrl}/rest/v1/contacts`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/contacts`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify(rows),
@@ -190,7 +192,7 @@ export async function getContactGroupForCompany(companyId: string, groupId: stri
   const key = supabaseKey();
   if (!baseUrl || !key) return null;
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${baseUrl}/rest/v1/contact_groups?id=eq.${encodeURIComponent(groupId)}&company_id=eq.${encodeURIComponent(companyId)}&select=*&limit=1`,
     { headers: headers(), cache: "no-store" },
   );
@@ -210,7 +212,7 @@ export async function getContactGroupWithContacts(
   const key = supabaseKey();
   if (!baseUrl || !key) return { ...group, contacts: [], created_by: { user_id: group.user_id, full_name: group.user_id } };
 
-  const contactsRes = await fetch(
+  const contactsRes = await supabaseFetch(
     `${baseUrl}/rest/v1/contacts?group_id=eq.${encodeURIComponent(groupId)}&select=*&order=full_name.asc`,
     { headers: headers(), cache: "no-store" },
   );
@@ -228,7 +230,7 @@ export async function deleteContact(companyId: string, contactId: string) {
   const key = supabaseKey();
   if (!baseUrl || !key) throw new Error("Supabase is not configured.");
 
-  const contactRes = await fetch(
+  const contactRes = await supabaseFetch(
     `${baseUrl}/rest/v1/contacts?id=eq.${encodeURIComponent(contactId)}&select=id,group_id&limit=1`,
     { headers: headers(), cache: "no-store" },
   );
@@ -240,7 +242,7 @@ export async function deleteContact(companyId: string, contactId: string) {
   const group = await getContactGroupForCompany(companyId, contact.group_id);
   if (!group) throw new Error("Forbidden");
 
-  const response = await fetch(`${baseUrl}/rest/v1/contacts?id=eq.${encodeURIComponent(contactId)}`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/contacts?id=eq.${encodeURIComponent(contactId)}`, {
     method: "DELETE",
     headers: headers(),
   });
@@ -258,7 +260,7 @@ export async function updateContactVerification(
   const key = supabaseKey();
   if (!baseUrl || !key) throw new Error("Supabase is not configured.");
 
-  const response = await fetch(`${baseUrl}/rest/v1/contacts?id=eq.${encodeURIComponent(contactId)}`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/contacts?id=eq.${encodeURIComponent(contactId)}`, {
     method: "PATCH",
     headers: headers(),
     body: JSON.stringify({
@@ -278,7 +280,7 @@ export async function listContactsByIdsForCompany(companyId: string, contactIds:
   const key = supabaseKey();
   if (!baseUrl || !key) return [];
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${baseUrl}/rest/v1/contacts?id=in.(${contactIds.map(encodeURIComponent).join(",")})&select=*`,
     { headers: headers(), cache: "no-store" },
   );

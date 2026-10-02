@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import type { BlastRecipientResult } from "@/lib/server/resend";
 import { getResendEmail } from "@/lib/server/resend";
 import { makeId } from "@/lib/utils";
@@ -74,7 +76,7 @@ async function lookupUsersByIds(userIds: string[]): Promise<Map<string, string>>
   const key = supabaseKey();
   if (!baseUrl || !key) return map;
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${baseUrl}/rest/v1/users?user_id=in.(${unique.map(encodeURIComponent).join(",")})&select=user_id,full_name`,
     { headers: headers(), cache: "no-store" },
   );
@@ -147,7 +149,7 @@ export async function createEmailBlastWithRecipients(input: {
     created_at: new Date().toISOString(),
   };
 
-  const blastRes = await fetch(`${baseUrl}/rest/v1/email_blasts`, {
+  const blastRes = await supabaseFetch(`${baseUrl}/rest/v1/email_blasts`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify(blast),
@@ -166,7 +168,7 @@ export async function createEmailBlastWithRecipients(input: {
   }));
 
   if (recipients.length > 0) {
-    const recipientsRes = await fetch(`${baseUrl}/rest/v1/blast_recipients`, {
+    const recipientsRes = await supabaseFetch(`${baseUrl}/rest/v1/blast_recipients`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify(recipients),
@@ -184,7 +186,7 @@ export async function listEmailBlasts(companyId: string, limit = 50): Promise<Em
   const key = supabaseKey();
   if (!baseUrl || !key) return [];
 
-  const blastsRes = await fetch(
+  const blastsRes = await supabaseFetch(
     `${baseUrl}/rest/v1/email_blasts?company_id=eq.${encodeURIComponent(companyId)}&select=*&order=created_at.desc&limit=${limit}`,
     { headers: headers(), cache: "no-store" },
   );
@@ -193,7 +195,7 @@ export async function listEmailBlasts(companyId: string, limit = 50): Promise<Em
   if (blasts.length === 0) return [];
 
   const ids = blasts.map((blast) => blast.id);
-  const recipientsRes = await fetch(
+  const recipientsRes = await supabaseFetch(
     `${baseUrl}/rest/v1/blast_recipients?blast_id=in.(${ids.map(encodeURIComponent).join(",")})&select=*`,
     { headers: headers(), cache: "no-store" },
   );
@@ -216,7 +218,7 @@ export async function getEmailBlast(id: string, companyId: string): Promise<Emai
   const key = supabaseKey();
   if (!baseUrl || !key) return null;
 
-  const blastRes = await fetch(
+  const blastRes = await supabaseFetch(
     `${baseUrl}/rest/v1/email_blasts?id=eq.${encodeURIComponent(id)}&company_id=eq.${encodeURIComponent(companyId)}&select=*&limit=1`,
     {
       headers: headers(),
@@ -228,7 +230,7 @@ export async function getEmailBlast(id: string, companyId: string): Promise<Emai
   const blast = blasts[0];
   if (!blast) return null;
 
-  const recipientsRes = await fetch(
+  const recipientsRes = await supabaseFetch(
     `${baseUrl}/rest/v1/blast_recipients?blast_id=eq.${encodeURIComponent(blast.id)}&select=*`,
     { headers: headers(), cache: "no-store" },
   );
@@ -243,7 +245,7 @@ async function patchRecipientStatus(recipientId: string, status: string) {
   const key = supabaseKey();
   if (!baseUrl || !key) return;
 
-  await fetch(`${baseUrl}/rest/v1/blast_recipients?id=eq.${encodeURIComponent(recipientId)}`, {
+  await supabaseFetch(`${baseUrl}/rest/v1/blast_recipients?id=eq.${encodeURIComponent(recipientId)}`, {
     method: "PATCH",
     headers: headers("return=minimal"),
     body: JSON.stringify({ status }),
@@ -255,7 +257,7 @@ async function patchBlastStatus(blastId: string, status: string) {
   const key = supabaseKey();
   if (!baseUrl || !key) return;
 
-  await fetch(`${baseUrl}/rest/v1/email_blasts?id=eq.${encodeURIComponent(blastId)}`, {
+  await supabaseFetch(`${baseUrl}/rest/v1/email_blasts?id=eq.${encodeURIComponent(blastId)}`, {
     method: "PATCH",
     headers: headers("return=minimal"),
     body: JSON.stringify({ status }),

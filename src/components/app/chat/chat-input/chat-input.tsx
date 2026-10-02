@@ -9,6 +9,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { ListTodo, Loader2, Paperclip, SendHorizontal, X } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { EmojiPicker } from "@/components/app/chat/emoji-picker";
 import { TaskPickerDialog } from "@/components/app/chat/task-picker-dialog";
 import { useDriveUpload } from "@/hooks/useDriveUpload";
 import type { ChatTaskCard, SendMessageInput } from "@/lib/types/chat";
@@ -25,13 +26,13 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
     extensions: [
       StarterKit.configure({ heading: false }),
       Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" } }),
-      Placeholder.configure({ placeholder: "Write a message…  (type /task to attach a task)" }),
+      Placeholder.configure({ placeholder: "Type a message…" }),
     ],
     editorProps: {
       attributes: {
         class: styles.field,
       },
-      handleKeyDown: (_view: any, event: any) => {
+      handleKeyDown: (_view: unknown, event: KeyboardEvent) => {
         // Enter sends, Shift+Enter inserts a newline.
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
@@ -41,7 +42,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
         return false;
       },
     },
-    onUpdate: ({ editor }: { editor: any }) => {
+    onUpdate: ({ editor }) => {
       // Slash command: typing "/task" opens the picker and clears the input.
       if (editor.getText().trim() === "/task") {
         editor.commands.clearContent();
@@ -57,6 +58,10 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
     onSend({ type: "text", content: html });
     editor.commands.clearContent();
     editor.commands.focus();
+  }
+
+  function insertEmoji(emoji: string) {
+    editor?.chain().focus().insertContent(emoji).run();
   }
 
   function attachTask(task: ChatTaskCard) {
@@ -98,6 +103,7 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
             onClick={() => setTaskPickerOpen(true)}
             className={styles.buttonAlt}
             aria-label="Attach task"
+            title="Attach a task (or type /task)"
           >
             <ListTodo className={styles.attachButton} />
           </button>
@@ -105,6 +111,8 @@ export function ChatInput({ onSend }: { onSend: (payload: OutgoingMessage) => vo
           <div className={styles.content}>
             <EditorContent editor={editor} />
           </div>
+
+          <EmojiPicker onPick={insertEmoji} className={styles.emoji} />
 
           <button
             type="button"

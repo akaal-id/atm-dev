@@ -147,6 +147,7 @@ async function supabaseOptionsForScopedRead(
     limit: options.limit,
     orderBy: options.orderBy ?? "created_at",
     ascending: options.ascending ?? false,
+    idColumn: idFields[resource],
   };
 
   if (!companyScopedResources.has(resource)) return read;

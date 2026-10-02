@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DRIVE_FOLDER_MIME, useDriveUpload } from "@/hooks/useDriveUpload";
+import type { ProjectFileCategory } from "@/lib/types";
 
 // folderName derives the top-level folder from a directory pick's relative paths.
 function folderNameFromFiles(files: File[]) {
@@ -19,7 +20,12 @@ function folderNameFromFiles(files: File[]) {
   return "Uploaded folder";
 }
 
-export function ProjectFileForm({ taskId }: { taskId: string }) {
+type ProjectFileFormProps =
+  | { taskId: string; projectId?: undefined; category?: undefined }
+  | { taskId?: undefined; projectId: string; category: ProjectFileCategory };
+
+/** Upload to Drive and record a project file — for a task, or directly on a project (base file / SOP). */
+export function ProjectFileForm({ taskId, projectId, category }: ProjectFileFormProps) {
   const router = useRouter();
   const { upload, uploadFolder, cancel, progress, status, error, isUploading, reset } = useDriveUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,7 +39,7 @@ export function ProjectFileForm({ taskId }: { taskId: string }) {
     const response = await fetch("/api/resources/Project_Files", {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ task_id: taskId, title: title.trim(), ...payload }),
+      body: JSON.stringify({ task_id: taskId ?? "", project_id: projectId, category, title: title.trim(), ...payload }),
     }).catch(() => null);
 
     if (!response?.ok) {

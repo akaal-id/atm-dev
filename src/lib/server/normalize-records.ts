@@ -39,6 +39,24 @@ function ensureNumber(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+/** `{ userId: share }` from jsonb or a JSON string; non-numeric entries are dropped. */
+function ensureShares(value: unknown): Record<string, number> {
+  let parsed = value;
+  if (typeof value === "string") {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  return Object.fromEntries(
+    Object.entries(parsed as Record<string, unknown>)
+      .map(([key, share]) => [key, Number(share)] as const)
+      .filter(([, share]) => Number.isFinite(share) && share > 0),
+  );
+}
+
 export function normalizeSupabaseRecord(resource: ResourceName, row: Record<string, unknown>) {
   const normalized: Record<string, unknown> = { ...row };
 
@@ -63,6 +81,12 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
     normalized.progress = ensureNumber(row.progress);
     normalized.company_id = String(row.company_id ?? "");
     normalized.workflow_id = String(row.workflow_id ?? "");
+    normalized.work_type_id = String(row.work_type_id ?? "");
+    normalized.effort_points = row.effort_points === null || row.effort_points === undefined || row.effort_points === "" ? null : ensureNumber(row.effort_points);
+    normalized.pic_user_id = String(row.pic_user_id ?? "");
+    normalized.contribution_shares = ensureShares(row.contribution_shares);
+    normalized.revision_count = ensureNumber(row.revision_count);
+    normalized.quality_rating = row.quality_rating === null || row.quality_rating === undefined || row.quality_rating === "" ? null : ensureNumber(row.quality_rating);
   }
 
   if (resource === "Projects") {
@@ -70,6 +94,12 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
     normalized.links = ensureStringArray(row.links);
     normalized.progress = ensureNumber(row.progress);
     normalized.company_id = String(row.company_id ?? "");
+    normalized.project_type = row.project_type === "social_media" ? "social_media" : "general";
+    normalized.period_start = normalizeDateField(row.period_start);
+    normalized.period_end = normalizeDateField(row.period_end);
+    normalized.objective = String(row.objective ?? "");
+    normalized.pic_user_id = String(row.pic_user_id ?? "");
+    normalized.sop_content = String(row.sop_content ?? "");
   }
 
   if (resource === "Workflows") {

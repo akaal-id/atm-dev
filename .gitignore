@@ -42,3 +42,16 @@ next-env.d.ts
 
 # local SQL migrations (run manually in Supabase)
 src/sql/*.sql
+
+# graphify (generated code graph)
+/graphify-out/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# perf benchmark results (scripts/perf-bench.mjs)
+/perf-*.json
+/.perf/

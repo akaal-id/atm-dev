@@ -14,9 +14,10 @@
   padding: 1.125rem 1.25rem;
 }
 
+/* Wraps the actions below the copy when there's no room beside it (phones). */
 .copy {
   min-width: 0;
-  flex: 1;
+  flex: 1 1 18rem;
 }
 
 .eyebrow {

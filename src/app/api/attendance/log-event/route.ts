@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
 
     const data = await logAttendanceEvent({
       eodSummary,
+      eodTaskIds: Array.isArray(payload.eod_task_ids) ? payload.eod_task_ids.map(String) : undefined,
       eventType,
       lat,
       lng,

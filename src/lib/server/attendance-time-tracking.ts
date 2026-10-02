@@ -1,8 +1,11 @@
 import "server-only";
 
-import { awardPunctualAttendancePoints } from "@/lib/server/gamification";
-import { createResource, listResourceByField, updateResource } from "@/lib/server/store";
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
+import { createResource, listResource, listResourceByField, updateResource } from "@/lib/server/store";
 import type { Attendance, AttendanceStatus } from "@/lib/types";
+import type { WorkMode } from "@/lib/attendance-location";
+import { classifyWorkMode, penalizeOffsiteWithoutPermit } from "@/lib/server/attendance-location";
 
 export const attendanceEventTypes = ["clock_in", "transit_pause", "resume", "clock_out"] as const;
 
@@ -16,6 +19,9 @@ export interface AttendanceSessionRecord {
   status: "On Time" | "Late" | "Present" | "Leave" | "System Auto-Closed";
   total_active_minutes: number;
   eod_summary: string | null;
+  work_mode?: WorkMode | null;
+  base_distance_m?: number | null;
+  eod_task_ids?: string[];
   created_at: string;
 }
 
@@ -39,6 +45,8 @@ export interface AttendanceTerminalState {
 interface LogAttendanceEventInput {
   eventType: AttendanceEventType;
   eodSummary?: string;
+  /** Tasks the user marks as worked on in the EOD summary (clock-out only). */
+  eodTaskIds?: string[];
   lat: number;
   lng: number;
   userId: string;
@@ -46,6 +54,14 @@ interface LogAttendanceEventInput {
 
 interface SupabaseInsertOptions {
   prefer?: string;
+}
+
+/** Keep only ids of tasks assigned to this user (EOD links are a record, not a status change). */
+async function ownTaskIds(userId: string, taskIds: string[]) {
+  const wanted = [...new Set(taskIds.map(String).filter(Boolean))].slice(0, 50);
+  if (!wanted.length) return [];
+  const tasks = await listResource("Tasks");
+  return wanted.filter((id) => tasks.some((task) => task.task_id === id && task.assigned_to.includes(userId)));
 }
 
 export class AttendanceTimeTrackingError extends Error {
@@ -88,7 +104,7 @@ async function requestSupabase<T>(path: string, init: RequestInit = {}) {
   headers.set("Authorization", `Bearer ${key}`);
   headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${url}${path}`, {
+  const response = await supabaseFetch(`${url}${path}`, {
     ...init,
     cache: "no-store",
     headers,
@@ -308,7 +324,7 @@ async function syncLegacyAttendance({
   if (!legacyRecord) {
     const clockInEvent = sessionEvents.find((item) => item.event_type === "clock_in");
 
-    const created = await createResource("Attendance", {
+    await createResource("Attendance", {
       approval_status: approvalStatusForLegacyStatus(legacyStatus),
       approved_by: "",
       active_minutes: activeMinutes,
@@ -321,11 +337,10 @@ async function syncLegacyAttendance({
       user_id: session.user_id,
     });
 
-    await awardPunctualAttendancePoints(created);
     return;
   }
 
-  const updated = await updateResource("Attendance", legacyRecord.attendance_id, {
+  await updateResource("Attendance", legacyRecord.attendance_id, {
     active_minutes: activeMinutes,
     approval_status: approvalStatusForLegacyStatus(legacyStatus),
     clock_in: event.event_type === "clock_in" ? legacyRecord.clock_in || eventTime : legacyRecord.clock_in,
@@ -335,7 +350,6 @@ async function syncLegacyAttendance({
     status: legacyStatus,
   });
 
-  if (updated) await awardPunctualAttendancePoints(updated);
 }
 
 function stateFor(session: AttendanceSessionRecord | null, events: AttendanceEventRecord[]): AttendanceTerminalState {
@@ -397,11 +411,17 @@ export async function logAttendanceEvent(input: LogAttendanceEventInput): Promis
   let session = state.session;
 
   if (!session) {
+    const placement = await classifyWorkMode(input.userId, lat, lng);
+    if (!placement) {
+      throw new AttendanceTimeTrackingError("Set your home location before clocking in.", 409);
+    }
     session = await insertRow<AttendanceSessionRecord>("attendance_sessions", {
       date: todayDate(),
       status: firstClockInStatus(),
       total_active_minutes: 0,
       user_id: input.userId,
+      work_mode: placement.mode,
+      base_distance_m: placement.distance,
     });
   }
 
@@ -417,12 +437,18 @@ export async function logAttendanceEvent(input: LogAttendanceEventInput): Promis
   if (eventType === "clock_out") {
     const totalActiveMinutes = calculateActiveMinutes(events);
     const status = session.status === "Late" && totalActiveMinutes >= 540 ? "Present" : session.status;
+    const eodTaskIds = await ownTaskIds(input.userId, input.eodTaskIds ?? []);
     session = await updateSession(session.id, {
       eod_summary: eodSummary,
       status,
       total_active_minutes: totalActiveMinutes,
+      eod_task_ids: eodTaskIds,
     });
     events = await readSessionEvents(session.id);
+    const clockIn = events.find((event) => event.event_type === "clock_in");
+    if (session.work_mode === "Off-site" && clockIn) {
+      await penalizeOffsiteWithoutPermit({ userId: input.userId, sessionId: session.id, date: session.date, clockInAt: clockIn.timestamp });
+    }
   }
 
   await syncLegacyAttendance({ event: savedEvent, session });

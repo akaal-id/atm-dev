@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 export function getSupabaseUrl() {
   const explicitUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (explicitUrl) return explicitUrl.replace(/\/$/, "");
@@ -47,4 +49,28 @@ export function applySupabaseAuthHeaders(headers: Headers, key = getSupabaseSecr
 
 export function isJwtIssuedAtFutureError(status: number, preview: string) {
   return status === 401 && preview.includes("PGRST303");
+}
+
+/** JSON request against Supabase PostgREST (`/rest/v1{path}`) with the server secret key. */
+export async function supabaseRest<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const url = getSupabaseUrl();
+  if (!url || !getSupabaseSecretKey()) {
+    throw new Error("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY.");
+  }
+
+  const headers = new Headers(init.headers);
+  applySupabaseAuthHeaders(headers);
+  headers.set("Content-Type", "application/json");
+  if (!headers.has("Prefer") && (init.method === "POST" || init.method === "PATCH")) {
+    headers.set("Prefer", "return=representation");
+  }
+
+  const response = await supabaseFetch(`${url}/rest/v1${path}`, { ...init, cache: "no-store", headers });
+  if (!response.ok) {
+    const preview = (await response.text()).slice(0, 500);
+    throw new Error(`Supabase request failed (${response.status}) for ${path}: ${preview}`);
+  }
+  if (response.status === 204) return undefined as T;
+  const text = await response.text();
+  return text ? (JSON.parse(text) as T) : (undefined as T);
 }

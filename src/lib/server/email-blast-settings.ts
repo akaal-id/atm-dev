@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 function supabaseUrl() {
   const projectId = process.env.SUPABASE_PROJECT_ID;
   const explicitUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,7 +34,7 @@ export async function getSenderProfile(userId: string): Promise<SenderProfile | 
   const key = supabaseKey();
   if (!baseUrl || !key) return null;
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${baseUrl}/rest/v1/email_blast_sender_profiles?user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`,
     { headers: headers(), cache: "no-store" },
   );
@@ -53,7 +55,7 @@ export async function upsertSenderProfile(userId: string, senderName: string): P
     created_at: new Date().toISOString(),
   };
 
-  const response = await fetch(`${baseUrl}/rest/v1/email_blast_sender_profiles`, {
+  const response = await supabaseFetch(`${baseUrl}/rest/v1/email_blast_sender_profiles`, {
     method: "POST",
     headers: {
       ...headers(),

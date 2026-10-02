@@ -1,0 +1,16 @@
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+.empty {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}

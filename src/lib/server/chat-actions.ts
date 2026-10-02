@@ -2,6 +2,8 @@
 
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUser } from "@/lib/server/auth";
@@ -49,7 +51,7 @@ async function rest<T>(path: string, init: RequestInit = {}): Promise<T> {
   headers.set("Authorization", `Bearer ${key}`);
   headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${url}/rest/v1${path}`, { ...init, cache: "no-store", headers });
+  const response = await supabaseFetch(`${url}/rest/v1${path}`, { ...init, cache: "no-store", headers });
 
   if (!response.ok) {
     const preview = (await response.text()).slice(0, 500);
@@ -69,7 +71,11 @@ function isChatAdmin(roleId: string) {
 }
 
 async function requireMembership(roomId: string, userId: string, roleId: string) {
-  if (isChatAdmin(roleId)) return;
+  if (isChatAdmin(roleId)) {
+    // Admins may moderate shared rooms, but a personal notes room stays private to its owner.
+    const rooms = await rest<Pick<ChatRoom, "type">[]>(`/chat_rooms?select=type&room_id=eq.${encodeURIComponent(roomId)}&limit=1`);
+    if (rooms?.[0]?.type !== "self") return;
+  }
   const rows = await rest<RoomMember[]>(
     `/room_members?select=member_id&room_id=eq.${encodeURIComponent(roomId)}&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
   );
@@ -90,14 +96,46 @@ async function authorsByIds(ids: string[]): Promise<Map<string, ChatAuthor>> {
   return new Map(rows.map((row) => [row.user_id, row]));
 }
 
+const SELF_ROOM_NAME = "My notes";
+
+/** The user's personal notes room, created on first use (one per user, enforced by a unique index). */
+export async function ensureSelfRoom(): Promise<ChatRoom | null> {
+  const me = await getCurrentUser();
+  if (!me) return null;
+  const find = () =>
+    rest<ChatRoom[]>(`/chat_rooms?select=*&type=eq.self&created_by=eq.${encodeURIComponent(me.user_id)}&limit=1`).then((rows) => rows?.[0] ?? null);
+
+  const existing = await find();
+  if (existing) return existing;
+
+  const roomId = makeId("room");
+  try {
+    await rest("/chat_rooms", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ room_id: roomId, name: SELF_ROOM_NAME, type: "self", created_by: me.user_id }),
+    });
+  } catch {
+    // Lost a race with another tab: the unique index kept the first room.
+    return find();
+  }
+  await rest("/room_members", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ member_id: makeId("mbr"), room_id: roomId, user_id: me.user_id, role: "admin" }),
+  });
+  return find();
+}
+
 /** Rooms the user belongs to, shaped for the sidebar. */
 export async function listRoomsForUser(): Promise<ChatRoomSummary[]> {
   const me = await getCurrentUser();
   if (!me) return [];
 
-  const memberships = await rest<RoomMember[]>(
-    `/room_members?select=room_id&user_id=eq.${encodeURIComponent(me.user_id)}`,
+  const memberships = await rest<Array<Pick<RoomMember, "room_id"> & { last_read_at: string | null }>>(
+    `/room_members?select=room_id,last_read_at&user_id=eq.${encodeURIComponent(me.user_id)}`,
   );
+  const lastRead = new Map(memberships.map((m) => [m.room_id, m.last_read_at]));
   const roomIds = [...new Set(memberships.map((m) => m.room_id))];
   if (roomIds.length === 0) return [];
 
@@ -109,7 +147,19 @@ export async function listRoomsForUser(): Promise<ChatRoomSummary[]> {
     rest<RoomMember[]>(`/room_members?select=*&room_id=in.(${encodeURIComponent(idList)})`),
   ]);
 
-  const authors = await authorsByIds(allMembers.map((m) => m.user_id));
+  type RecentRow = Pick<ChatMessage, "sender_id" | "type" | "content" | "file_name" | "created_at">;
+  const [authors, recentByRoom] = await Promise.all([
+    authorsByIds(allMembers.map((m) => m.user_id)),
+    // Latest messages per room: the first is the preview, the rest count towards unread.
+    Promise.all(
+      roomIds.map(async (id) => {
+        const rows = await rest<RecentRow[]>(
+          `/messages?select=sender_id,type,content,file_name,created_at&room_id=eq.${encodeURIComponent(id)}&order=created_at.desc&limit=21`,
+        ).catch(() => [] as RecentRow[]);
+        return [id, rows] as const;
+      }),
+    ).then((entries) => new Map(entries)),
+  ]);
 
   return rooms.map((room) => {
     const members = allMembers
@@ -124,10 +174,49 @@ export async function listRoomsForUser(): Promise<ChatRoomSummary[]> {
       members,
       memberCount: members.length,
       displayName:
-        room.type === "private" ? other?.full_name || room.name || "Direct message" : room.name || "Group",
+        room.type === "self"
+          ? SELF_ROOM_NAME
+          : room.type === "private"
+            ? other?.full_name || room.name || "Direct message"
+            : room.name || "Group",
       displayAvatar: room.type === "private" ? other?.profile_photo ?? "" : room.avatar_url,
-      lastMessagePreview: "",
+      lastMessagePreview: previewOf(recentByRoom.get(room.room_id)?.[0], me.user_id, authors),
+      unreadCount: (() => {
+        const since = lastRead.get(room.room_id);
+        // Never opened since unread tracking started: treat as read rather than flag history.
+        if (!since) return 0;
+        return (recentByRoom.get(room.room_id) ?? []).filter((m) => m.sender_id !== me.user_id && m.created_at > since).length;
+      })(),
     };
+  });
+}
+
+/** One-line summary of a message for the room list ("You: …", "📎 file", "📋 Task"). */
+function previewOf(
+  message: Pick<ChatMessage, "sender_id" | "type" | "content" | "file_name"> | undefined,
+  myId: string,
+  authors: Map<string, ChatAuthor>,
+) {
+  if (!message) return "";
+  const body =
+    message.type === "file"
+      ? `📎 ${message.file_name || "File"}`
+      : message.type === "task"
+        ? "📋 Task"
+        : message.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  if (message.type === "system") return body;
+  const who = message.sender_id === myId ? "You" : authors.get(message.sender_id)?.full_name.split(" ")[0];
+  return who ? `${who}: ${body}` : body;
+}
+
+/** Mark the room as read for the current user (drives the unread badge). */
+export async function markRoomRead(roomId: string): Promise<void> {
+  const me = await getCurrentUser();
+  if (!me) return;
+  await rest(`/room_members?room_id=eq.${encodeURIComponent(roomId)}&user_id=eq.${encodeURIComponent(me.user_id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ last_read_at: new Date().toISOString() }),
   });
 }
 
@@ -194,9 +283,12 @@ async function tasksByIds(ids: string[]): Promise<Map<string, ChatTaskCard>> {
 
 /** Hydrate a single message (used when a realtime payload arrives). */
 export async function hydrateMessage(messageId: string): Promise<ChatMessageView | null> {
+  const me = await getCurrentUser();
+  if (!me) return null;
   const rows = await rest<ChatMessage[]>(`/messages?select=*&message_id=eq.${encodeURIComponent(messageId)}&limit=1`);
   const message = rows?.[0];
   if (!message) return null;
+  await requireMembership(message.room_id, me.user_id, me.role_id);
   const [authors, tasks] = await Promise.all([
     authorsByIds([message.sender_id]),
     message.task_id ? tasksByIds([message.task_id]) : Promise.resolve(new Map<string, ChatTaskCard>()),
@@ -341,6 +433,7 @@ export async function createRoom(input: CreateRoomInput): Promise<ChatRoom> {
   const me = await getCurrentUser();
   if (!me) throw new Error("Unauthorized");
 
+  if (input.type !== "private" && input.type !== "group") throw new Error("Invalid room type.");
   const memberIds = [...new Set([me.user_id, ...input.member_ids])];
 
   // Reuse an existing private room between exactly these two users.
@@ -404,6 +497,9 @@ export async function addMember(roomId: string, userId: string): Promise<void> {
   const room = await rest<ChatRoom[]>(`/chat_rooms?select=type&room_id=eq.${encodeURIComponent(roomId)}&limit=1`);
   if (room?.[0]?.type === "private") {
     throw new Error("Cannot add members to a direct message. Start a group chat instead.");
+  }
+  if (room?.[0]?.type === "self") {
+    throw new Error("Personal notes cannot be shared.");
   }
 
   const existing = await rest<RoomMember[]>(

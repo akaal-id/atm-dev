@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { awardPunctualAttendancePoints } from "@/lib/server/gamification";
 import { readPayload, redirectBack, requireApiPermission, wantsJson } from "@/lib/server/api";
 import { createResource, listResource, updateResource } from "@/lib/server/store";
 
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
 
   if (existing) {
     const record = await updateResource("Attendance", existing.attendance_id, { clock_in: existing.clock_in || time, updated_at: new Date().toISOString() });
-    if (record) await awardPunctualAttendancePoints(record);
     return wantsJson(request) ? NextResponse.json({ data: record }) : redirectBack(request, "/attendance");
   }
 
@@ -55,7 +53,5 @@ export async function POST(request: NextRequest) {
     approval_status: status === "Late" ? "Pending Approval" : "Not Required",
     approved_by: "",
   });
-  await awardPunctualAttendancePoints(record);
-
   return wantsJson(request) ? NextResponse.json({ data: record }, { status: 201 }) : redirectBack(request, "/attendance");
 }

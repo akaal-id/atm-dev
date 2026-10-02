@@ -4,7 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { demoPassword } from "@/lib/data/seed";
 import { cleanEmptyStrings, getRecordId, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
 import { notifyApproversAboutLeaveRequest } from "@/lib/server/leave-requests";
-import { createResource, listResource } from "@/lib/server/store";
+import { getScoringConfig } from "@/lib/server/scoring";
+import { canManageTaskScoring, sanitizeTaskScoring } from "@/lib/server/task-scoring";
+import { createResource, getResourceById, listResource } from "@/lib/server/store";
 import { logTaskChecklistActivity, logTaskCommentActivity } from "@/lib/server/task-activity";
 import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
 import { setLeaderApprovalRequirement } from "@/lib/task-approval";
@@ -191,6 +193,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     const workflowId = String(payload.workflow_id ?? "").trim();
     if (workflowId) payload.workflow_id = workflowId;
     else delete payload.workflow_id;
+    sanitizeTaskScoring(payload, {
+      config: await getScoringConfig(),
+      assignees: (payload.assigned_to as unknown[]).map(String),
+      canManage: canManageTaskScoring(access.user),
+    });
+    payload.revision_count = 0;
   }
 
   if (resource === "Projects") {
@@ -232,6 +240,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     const tasks = await listResource("Tasks");
     const linkedTask = tasks.find((candidate) => candidate.task_id === taskId);
     payload.project_id = linkedTask?.project_id ?? String(payload.project_id ?? "");
+    if (!linkedTask && !(payload.project_id && (await getResourceById("Projects", String(payload.project_id))))) {
+      return NextResponse.json({ error: "A valid task or project is required." }, { status: 400 });
+    }
+    if (!["general", "base", "sop"].includes(String(payload.category ?? "general"))) {
+      return NextResponse.json({ error: "Invalid file category." }, { status: 400 });
+    }
     payload.owner_user_id = access.user.user_id;
     payload.title = String(payload.title ?? "").trim() || linkedTask?.title || payload.file_name || "Project file";
     payload.file_name ??= "";
@@ -244,9 +258,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   }
 
   if (resource === "Leave_Requests") {
-    payload.status ??= "Pending Approval";
-    payload.approved_by ??= "";
-    payload.approval_note ??= "";
+    // Requests are always filed for yourself and start pending; approval goes through the approval flow.
+    payload.user_id = access.user.user_id;
+    payload.status = "Pending Approval";
+    payload.approved_by = "";
+    payload.approval_note = "";
   }
 
   if (resource === "Announcements") {

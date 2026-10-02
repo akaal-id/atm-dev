@@ -2,6 +2,7 @@ import "server-only";
 
 import { deriveWorkflowStatus, progressForWorkflowStatus } from "@/lib/workflow";
 import { getResourceById, listResource, updateResource } from "@/lib/server/store";
+import { nextRevisionCount } from "@/lib/server/task-scoring";
 import type { Task } from "@/lib/types";
 
 export async function syncTaskWorkflowStatus(taskId: string) {
@@ -27,6 +28,7 @@ export async function syncTaskWorkflowStatus(taskId: string) {
 
   return updateResource("Tasks", taskId, {
     status: nextStatus,
+    revision_count: nextRevisionCount(task.status, nextStatus, task.revision_count),
     progress: nextProgress,
     completed_at: nextCompletedAt,
     handed_off_at: nextHandedOffAt,

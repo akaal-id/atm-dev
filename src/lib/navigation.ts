@@ -18,7 +18,8 @@ export type IconName =
   | "UserPlus"
   | "MessageCircle"
   | "Mail"
-  | "GitBranch";
+  | "GitBranch"
+  | "FileSpreadsheet";
 
 export interface NavigationItem {
   label: string;
@@ -52,6 +53,7 @@ export const primaryNavigation: NavigationItem[] = [
     children: taskNavigation,
   },
   { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "dashboard:view" },
+  { label: "Office", href: "/office", icon: "FileSpreadsheet", permission: "dashboard:view" },
   { label: "Calendar", href: "/calendar", icon: "CalendarDays", permission: "dashboard:view" },
   { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
   { label: "Announcements", href: "/announcements", icon: "Megaphone", permission: "announcements:view" },
@@ -83,6 +85,11 @@ export const adminNavigation: NavigationItem[] = [
   { label: "Roles", href: "/admin/roles", icon: "KeyRound", permission: "roles:manage" },
   { label: "Invite User", href: "/invite", icon: "UserPlus", permission: "employees:manage" },
 ];
+
+/** The chat list or a chat room — full-height, no page header. */
+export function isChatPath(pathname: string) {
+  return /^\/chat(\/[^/]+)?$/.test(appPathname(pathname));
+}
 
 export function isChatRoomPath(pathname: string) {
   return /^\/chat\/[^/]+$/.test(appPathname(pathname));
@@ -131,6 +138,11 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     title: "Projects",
     eyebrow: "Progress tracking",
     description: "Owners, timelines, milestones, notes, and delivery health.",
+  },
+  "/office": {
+    title: "Office",
+    eyebrow: "Documents",
+    description: "Spreadsheets and documents filed under their project, plus your personal notes.",
   },
   "/workflows": {
     title: "Workflows",
@@ -199,8 +211,8 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
   },
   "/leaderboard": {
     title: "Leaderboard",
-    eyebrow: "Performance gamification",
-    description: "Weekly, monthly, department, and all-time scoreboards.",
+    eyebrow: "Performance",
+    description: "Monthly scores weighted by work type and compared against each track's target, so every role competes fairly.",
   },
   "/notifications": {
     title: "Notifications",
@@ -239,8 +251,8 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
   },
   "/admin/gamification-settings": {
     title: "Gamification settings",
-    eyebrow: "Point engine",
-    description: "Manage score rules, badges, deductions, and leaderboard logic.",
+    eyebrow: "Leaderboard",
+    description: "Tracks, targets, score weights, work types, and manual adjustments for the leaderboard.",
   },
   "/invite": {
     title: "Invite user",

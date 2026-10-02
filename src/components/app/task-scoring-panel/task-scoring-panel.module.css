@@ -1,0 +1,150 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.muted {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.icon,
+.spin {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.people {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-top: 1px solid var(--border);
+  padding-block: 0.5rem;
+}
+
+.personText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.8125rem;
+}
+
+.share {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-inset);
+  padding: 0.75rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.shares {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.shareInput {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 400;
+}
+
+.shareInput span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stars {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.star {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  padding: 0.125rem;
+  color: var(--border);
+  cursor: pointer;
+}
+
+.star svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.starOn {
+  color: #f59e0b;
+}
+
+.starOn svg {
+  fill: currentColor;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

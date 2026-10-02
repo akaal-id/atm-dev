@@ -1,0 +1,15 @@
+/* Route section styles — plain CSS, no @apply */
+.page {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.notice {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-inset);
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}

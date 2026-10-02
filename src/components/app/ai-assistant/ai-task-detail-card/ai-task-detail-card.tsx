@@ -124,7 +124,7 @@ export function AiTaskDetailCard({ state, output, hrefFor, onNavigate, onSendPro
   if (!output.ok) {
     return (
       <div className={styles.card}>
-        <p className={styles.error}>{output.error}</p>
+        <p className={styles.error}>{"error" in output ? output.error : "Gagal memuat detail task."}</p>
       </div>
     );
   }

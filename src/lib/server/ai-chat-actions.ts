@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import type {
   AiConversation,
   AiConversationSummary,
@@ -38,7 +40,7 @@ async function rest<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set("Prefer", "return=representation");
   }
 
-  const response = await fetch(`${url}/rest/v1${path}`, { ...init, cache: "no-store", headers });
+  const response = await supabaseFetch(`${url}/rest/v1${path}`, { ...init, cache: "no-store", headers });
 
   if (!response.ok) {
     const preview = (await response.text()).slice(0, 500);
@@ -137,7 +139,7 @@ export async function countUserMessages(conversationId: string): Promise<number>
   const key = supabaseKey();
   if (!url || !key) return 0;
 
-  const response = await fetch(
+  const response = await supabaseFetch(
     `${url}/rest/v1/ai_messages?conversation_id=eq.${encodeURIComponent(conversationId)}&role=eq.user&select=message_id`,
     {
       cache: "no-store",

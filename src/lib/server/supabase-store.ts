@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import { appDatabaseSchema } from "@/lib/data/schema";
 import {
   applySupabaseAuthHeaders,
@@ -42,13 +44,15 @@ export interface SupabaseReadOptions {
   /** Raw PostgREST `or=(...)` body, without the outer `or=` key. */
   or?: string;
   limit?: number;
+  /** Unique column used as a sort tiebreaker so paged reads are stable. */
+  idColumn?: string;
   orderBy?: string;
   ascending?: boolean;
 }
 
 const optionalSupabaseFields: Partial<Record<SupabaseResourceName, string[]>> = {
   Attendance: ["active_minutes", "location_count"],
-  Tasks: ["need_leader_approval", "handed_off_at", "report"],
+  Tasks: ["need_leader_approval", "handed_off_at", "report", "work_type_id", "effort_points", "pic_user_id", "contribution_shares", "revision_count", "quality_rating"],
 };
 
 // Resources whose Supabase table may not exist yet (newly introduced). A missing
@@ -113,7 +117,7 @@ async function requestSupabaseOnce<T>(url: string, key: string, path: string, in
   applySupabaseAuthHeaders(headers, key);
   headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${url}${path}`, {
+  const response = await supabaseFetch(`${url}${path}`, {
     ...init,
     cache: "no-store",
     headers,
@@ -178,6 +182,9 @@ export async function testSupabaseConnection() {
   };
 }
 
+/** PostgREST's default max rows per request. */
+const SUPABASE_PAGE_SIZE = 1000;
+
 export async function readSupabaseResource(resource: SupabaseResourceName, options: SupabaseReadOptions = {}) {
   return readSupabaseResourceWhere(resource, {
     orderBy: options.orderBy ?? "created_at",
@@ -207,16 +214,27 @@ export async function readSupabaseResourceWhere(resource: SupabaseResourceName, 
     params.set("or", `(${options.or.trim().replace(/^\(/, "").replace(/\)$/, "")})`);
   }
 
-  if (options.orderBy) {
-    params.set("order", `${options.orderBy}.${options.ascending ? "asc" : "desc"}.nullslast`);
-  }
-
-  if (typeof options.limit === "number") {
-    params.set("limit", String(options.limit));
-  }
+  const order = [
+    options.orderBy ? `${options.orderBy}.${options.ascending ? "asc" : "desc"}.nullslast` : "",
+    // A unique tiebreaker keeps pages stable when the sort column has ties.
+    options.idColumn && options.idColumn !== options.orderBy ? `${options.idColumn}.asc` : "",
+  ].filter(Boolean);
+  if (order.length) params.set("order", order.join(","));
 
   try {
-    return await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${params.toString()}`);
+    if (typeof options.limit === "number") {
+      params.set("limit", String(options.limit));
+      return await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${params.toString()}`);
+    }
+    // No limit means "all rows": page past PostgREST's 1000-row cap instead of silently truncating.
+    const rows: Record<string, unknown>[] = [];
+    for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
+      params.set("limit", String(SUPABASE_PAGE_SIZE));
+      params.set("offset", String(offset));
+      const page = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${params.toString()}`);
+      rows.push(...page);
+      if (page.length < SUPABASE_PAGE_SIZE) return rows;
+    }
   } catch (error) {
     if (optionalSupabaseResources.has(resource) && isMissingTableError(error)) return [];
     throw error;

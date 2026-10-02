@@ -10,7 +10,7 @@ import { isChatRoomPath } from "@/lib/navigation";
 import { getPageCopy } from "@/lib/page-meta";
 import { appPathname } from "@/lib/tenant-path";
 import { cn } from "@/lib/utils";
-import styles from "./page-header.module.css";
+import { PageHero } from "./page-hero";
 
 export function PageHeader({ meta }: { meta?: React.ReactNode }) {
   const pathname = usePathname();
@@ -29,14 +29,5 @@ export function PageHeader({ meta }: { meta?: React.ReactNode }) {
       </Link>
     ) : null);
 
-  return (
-    <header className={styles.header}>
-      <div className={styles.copy}>
-        <p className={styles.eyebrow}>{copy.eyebrow}</p>
-        <h1 className={styles.title}>{copy.title}</h1>
-        <p className={styles.description}>{copy.description}</p>
-      </div>
-      {headerMeta ? <div className={styles.caption}>{headerMeta}</div> : null}
-    </header>
-  );
+  return <PageHero eyebrow={copy.eyebrow} title={copy.title} description={copy.description} actions={headerMeta} />;
 }

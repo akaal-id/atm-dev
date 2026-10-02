@@ -1,7 +1,8 @@
 // Live Chat domain types.
 // Note: primary/foreign keys are TEXT to match users.user_id and tasks.task_id.
 
-export type RoomType = "private" | "group";
+/** `self` = the user's private notes room (one per user, never shared). */
+export type RoomType = "private" | "group" | "self";
 export type MemberRole = "admin" | "member";
 export type MessageType = "text" | "file" | "task" | "system";
 
@@ -81,6 +82,8 @@ export interface ChatRoomSummary extends ChatRoom {
   displayAvatar: string;
   lastMessagePreview: string;
   memberCount: number;
+  /** Messages from others since the user last opened the room (capped at 21 → shown as "20+"). */
+  unreadCount: number;
 }
 
 // ---- Server action payloads -------------------------------------------------

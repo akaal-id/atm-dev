@@ -1,0 +1,223 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search {
+  position: relative;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.search input {
+  width: 100%;
+  padding-inline-start: 2rem;
+}
+
+.searchIcon {
+  position: absolute;
+  inset-inline-start: 0.625rem;
+  top: 50%;
+  width: 0.875rem;
+  height: 0.875rem;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.toolbarActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-inline-start: auto;
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+.spinnerSm {
+  width: 0.75rem;
+  height: 0.75rem;
+  animation: spin 1s linear infinite;
+}
+
+.summary {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  min-width: 82rem;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-inset);
+  border-bottom: 1px solid var(--border);
+  padding: 0.625rem 0.75rem;
+  text-align: start;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover td {
+  background: color-mix(in srgb, var(--surface-inset) 60%, transparent);
+}
+
+.num {
+  width: 3rem;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+
+.titleCol {
+  min-width: 16rem;
+}
+
+.actionsCol {
+  position: sticky;
+  inset-inline-end: 0;
+  width: 5.5rem;
+  background: var(--card);
+}
+
+.table th.actionsCol {
+  background: var(--surface-inset);
+}
+
+.titleButton {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  text-align: start;
+  cursor: pointer;
+}
+
+.titleButton:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.ticket {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.createTask {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.createTask:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--foreground);
+}
+
+.tag {
+  display: inline-block;
+  border-radius: 999px;
+  background: var(--muted);
+  padding: 0.0625rem 0.5rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.linkCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.linkIcon {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.rowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.125rem;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--muted-foreground);
+}
+
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

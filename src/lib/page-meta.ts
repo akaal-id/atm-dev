@@ -25,6 +25,18 @@ export function getPageCopy(pathname: string): PageCopy {
       }
     );
   }
+  if (path === "/attendance/approvals") {
+    return { title: "Attendance approvals", eyebrow: "Attendance", description: "Leave, sick, WFH, and Off-site requests to review." };
+  }
+  if (path === "/attendance/history") {
+    return { title: "Attendance history", eyebrow: "Attendance", description: "Team attendance by day, week, or month, with PDF reports." };
+  }
+  if (path.startsWith("/office/")) {
+    return { title: "Office file", eyebrow: "Office", description: "Edits save automatically." };
+  }
+  if (path.startsWith("/projects/")) {
+    return { title: "Project dashboard", eyebrow: "Projects", description: "Period, objective, team, KPIs, strategy, base files, and SOP for this project." };
+  }
   if (path.startsWith("/chat")) return pageCopy["/chat"];
   if (path.startsWith("/workflows/") && path !== "/workflows/new") {
     return {

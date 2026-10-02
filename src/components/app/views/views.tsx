@@ -1,4 +1,15 @@
 import Link from "next/link";
+
+import { BaseLocationCard } from "@/components/app/base-location-card";
+import { LeaveRequestButton } from "@/components/app/leave-request-modal";
+import { PageHero } from "@/components/app/page-header";
+import type { MonthScore } from "@/lib/server/scoring";
+import { TaskScoringPanel } from "@/components/app/task-scoring-panel";
+import { AttendancePager, AttendancePeriodNav, pageSlice } from "@/components/app/attendance-period-nav";
+import type { AttendanceHistoryRow, HistoryView } from "@/lib/attendance-history";
+
+/** Company office as shown in the work-locations card. */
+export type OfficePlace = { lat: number; lng: number; label: string; radius: number };
 import {
   Activity,
   AlarmClock,
@@ -9,19 +20,17 @@ import {
   CheckCircle2,
   CheckSquare,
   Clock3,
-  Crown,
-  Download,
   ExternalLink,
   Filter,
   FolderOpen,
   Gauge,
   GitBranch,
+  LayoutDashboard,
   MessageCircle,
   Paperclip,
   Plus,
   Save,
   ShieldCheck,
-  Sparkles,
   Trash2,
   Trophy,
   Users,
@@ -53,9 +62,7 @@ import { LinkifiedText } from "@/components/ui/linkified-text";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Progress } from "@/components/ui/progress";
 import { StatusPill, TaskStatusPill, statusTone } from "@/components/ui/status-pill";
-import dashStyles from "./dashboard.module.css";
 import {
-  activeTasks,
   activeUsers,
   announcementsForUser,
   attendanceLateCount,
@@ -68,14 +75,12 @@ import {
   latestAnnouncementLabel,
   pendingLeaveRequests,
   taskCompletionRate,
-  tasksDueOnDate,
-  teamAttendanceRateThisWeek,
   upcomingBirthdays,
   userAttendanceRateThisWeek,
   visibleTasksForUser,
   clampProgress,
 } from "@/lib/metrics";
-import { attendanceStatuses, canApproveTaskAsLeader, employeeStatusOptions, hasPermission, projectStatuses, taskStatuses } from "@/lib/permissions";
+import { attendanceStatuses, canApproveTaskAsLeader, canManageTaskScoring, employeeStatusOptions, hasPermission, projectStatuses, taskStatuses } from "@/lib/permissions";
 import { visibleTaskLabels } from "@/lib/task-approval";
 import type {
   ActivityLog,
@@ -152,32 +157,6 @@ function supabaseConfigLabel() {
 
 function supabaseSecretLabel() {
   return process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY ? "Configured" : "Not configured";
-}
-
-function scoreForUser(points: GamificationPoint[], userId: string) {
-  return points.filter((point) => point.user_id === userId).reduce((total, point) => total + point.points, 0);
-}
-
-function leaderboardRows(data: Pick<AppData, "users" | "points" | "badges" | "userBadges">) {
-  return data.users
-    .filter((user) => user.is_active)
-    .map((user) => {
-      const earnedBadges = data.userBadges
-        .filter((userBadge) => userBadge.user_id === user.user_id)
-        .map((userBadge) => data.badges.find((badge) => badge.badge_id === userBadge.badge_id))
-        .filter(Boolean) as BadgeType[];
-
-      return {
-        user,
-        points: scoreForUser(data.points, user.user_id),
-        badges: earnedBadges,
-      };
-    })
-    .sort((a, b) => b.points - a.points);
-}
-
-function canManageLeaderboardScore(user: CurrentUser) {
-  return user.role_id === "super_admin" || user.role_id === "admin" || user.employment_status === "Manager";
 }
 
 function SectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
@@ -283,228 +262,6 @@ function DataToolbar({ tabs, action }: { tabs: string[]; action?: React.ReactNod
           Filter
         </Button>
         {action}
-      </div>
-    </div>
-  );
-}
-
-function DashboardPinnedUpdates({ data }: { data: AppData }) {
-  const pinnedAnnouncements = announcementsForUser(data.announcements, data.currentUser)
-    .filter((announcement) => announcement.is_pinned)
-    .sort((left, right) => right.scheduled_at.localeCompare(left.scheduled_at))
-    .slice(0, 2);
-
-  if (pinnedAnnouncements.length === 0) return null;
-
-  return (
-    <div className={dashStyles.pinned}>
-      {pinnedAnnouncements.map((announcement) => (
-        <Link key={announcement.announcement_id} href="/announcements" className={dashStyles.pinnedItem}>
-          <Badge tone={announcement.category === "Important" ? "yellow" : "blue"}>{announcement.category}</Badge>
-          <div className={styles.card}>
-            <p className={dashStyles.pinnedTitle}>{announcement.title}</p>
-            <p className={dashStyles.pinnedMeta}>{formatDate(announcement.scheduled_at)}</p>
-          </div>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function DashboardSectionTitle({ title, action }: { title: string; action?: React.ReactNode }) {
-  return (
-    <div className={dashStyles.sectionTitle}>
-      <h2 className={dashStyles.sectionTitleText}>{title}</h2>
-      {action ? <div className={styles.emptystate}>{action}</div> : null}
-    </div>
-  );
-}
-
-function attendanceClockTone(value: string): "green" | "yellow" | "neutral" {
-  if (value === "Active") return "green";
-  if (value === "Complete") return "yellow";
-  return "neutral";
-}
-
-export function DashboardView(data: AppData) {
-  const myTasks = visibleTasksForUser(data.tasks, data.currentUser.user_id);
-  const myActiveTasks = activeTasks(myTasks);
-  const myCompletedTasks = completedTasks(myTasks);
-  const dueToday = tasksDueOnDate(myActiveTasks, jakartaToday());
-  const todayTaskList = dueToday.length > 0 ? dueToday : myActiveTasks.slice(0, 5);
-  const canApproveLeave = hasPermission(data.currentUser.role_id, "attendance:approve");
-  const pendingApprovals = pendingLeaveRequests(data.leaveRequests, canApproveLeave ? { approverView: true } : { userId: data.currentUser.user_id });
-  const attendanceRate = teamAttendanceRateThisWeek(data.attendance, data.users);
-  const weekRange = currentWeekRange();
-  const unread = data.notifications.filter((notification) => notification.user_id === data.currentUser.user_id && !notification.is_read);
-  const teamAttendance = activeUsers(data.users)
-    .map((user) => {
-      const record = getTodayAttendance(data.attendance, user.user_id);
-      const clock = getClockStatus(record);
-      return { user, record, clock };
-    })
-    .slice(0, 8);
-  const latestAnnouncements = announcementsForUser(data.announcements, data.currentUser)
-    .sort((left, right) => {
-      if (left.is_pinned !== right.is_pinned) return left.is_pinned ? -1 : 1;
-      return right.scheduled_at.localeCompare(left.scheduled_at);
-    })
-    .slice(0, 3);
-  const recentActivity = [...data.activityLogs].sort((left, right) => right.created_at.localeCompare(left.created_at)).slice(0, 8);
-  const firstName = data.currentUser.full_name.split(" ")[0] || data.currentUser.full_name;
-
-  return (
-    <div className={dashStyles.page}>
-      <section className={dashStyles.hero}>
-        <div>
-          <p className={dashStyles.heroEyebrow}>Today at Akaal</p>
-          <h1 className={dashStyles.heroTitle}>Welcome back, {firstName}</h1>
-          <p className={dashStyles.heroText}>
-            {dueToday.length} due today Â· {pendingApprovals.length} approvals Â· {unread.length} unread
-          </p>
-        </div>
-        <div className={dashStyles.heroMeta}>
-          <Link href="/tasks/my" className={dashStyles.heroChip}>
-            My tasks
-          </Link>
-          <Link href="/attendance" className={dashStyles.heroChip}>
-            Attendance
-          </Link>
-          <Link href="/announcements" className={dashStyles.heroChip}>
-            Announcements
-          </Link>
-        </div>
-      </section>
-
-      <DashboardPinnedUpdates data={data} />
-
-      <div className={dashStyles.metrics}>
-        <MetricCard
-          label="Active tasks"
-          value={String(myActiveTasks.length)}
-          detail={`${dueToday.length} due today Â· ${myCompletedTasks.length} completed`}
-          icon={CheckSquare}
-          tone="dark"
-        />
-        <MetricCard label="Attendance" value={`${attendanceRate}%`} detail={`Team checked-in this week (${weekRange.start} to ${weekRange.end})`} icon={CalendarCheck} tone="green" />
-        <MetricCard
-          label="Approvals"
-          value={String(pendingApprovals.length)}
-          detail={canApproveLeave ? "Leave requests awaiting approval" : "Your leave requests pending"}
-          icon={ShieldCheck}
-          tone="yellow"
-        />
-        <MetricCard label="Unread" value={String(unread.length)} detail="Mentions and reminders" icon={Bell} tone="blue" />
-      </div>
-
-      <div className={dashStyles.mainGrid}>
-        <Card>
-          <CardHeader>
-            <DashboardSectionTitle
-              title="Today's tasks"
-              action={
-                <Link href="/tasks/my" className={dashStyles.sectionLink}>
-                  Open tasks
-                </Link>
-              }
-            />
-          </CardHeader>
-          <CardBody flush>
-            {todayTaskList.length === 0 ? (
-              <p className={dashStyles.empty}>No tasks due today.</p>
-            ) : (
-              todayTaskList.slice(0, 5).map((task) => (
-                <article key={task.task_id} className={dashStyles.taskRow}>
-                  <div className={dashStyles.taskTop}>
-                    <div className={dashStyles.taskMeta}>
-                      <span className={dashStyles.taskId}>#{task.task_id}</span>
-                      <div>
-                        <Link href={`/tasks/${task.task_id}`} className={dashStyles.taskTitle}>
-                          {task.title}
-                        </Link>
-                        <LinkifiedText text={task.description} className={dashStyles.taskDesc} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className={dashStyles.stageBar}>
-                    <span className={dashStyles.stageLabel}>Status</span>
-                    <div className={styles.body}>
-                      {task.due_date ? <span className={styles.header}>Due {formatShortDate(task.due_date)}</span> : null}
-                      <TaskStatusPill status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />
-                    </div>
-                  </div>
-                </article>
-              ))
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <DashboardSectionTitle
-              title="Team attendance"
-              action={
-                <Link href="/attendance" className={dashStyles.sectionLink}>
-                  View all
-                </Link>
-              }
-            />
-          </CardHeader>
-          <CardBody flush>
-            {teamAttendance.length === 0 ? (
-              <p className={dashStyles.empty}>No team members to show.</p>
-            ) : (
-              teamAttendance.map(({ user, record, clock }) => (
-                <div key={user.user_id} className={dashStyles.attendRow}>
-                  <Avatar name={user.full_name} image={user.profile_photo} size="sm" />
-                  <div className={styles.content}>
-                    <p className={dashStyles.attendName}>{user.full_name}</p>
-                    <p className={dashStyles.attendDetail}>{clock.detail}</p>
-                  </div>
-                  <Badge tone={attendanceClockTone(clock.value)}>{record?.status ?? clock.value}</Badge>
-                </div>
-              ))
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
-      <div className={dashStyles.bottomGrid}>
-        <Card>
-          <CardHeader>
-            <DashboardSectionTitle
-              title="Latest announcements"
-              action={
-                <Link href="/announcements" className={dashStyles.sectionLink}>
-                  View all
-                </Link>
-              }
-            />
-          </CardHeader>
-          <CardBody flush>
-            {latestAnnouncements.length === 0 ? (
-              <p className={dashStyles.empty}>No announcements yet.</p>
-            ) : (
-              latestAnnouncements.map((announcement) => (
-                <Link key={announcement.announcement_id} href="/announcements" className={dashStyles.announceRow}>
-                  <Badge tone={announcement.is_pinned ? "yellow" : "blue"}>{announcement.category}</Badge>
-                  <p className={dashStyles.announceTitle}>{announcement.title}</p>
-                  <p className={dashStyles.announceBody}>{announcement.body}</p>
-                </Link>
-              ))
-            )}
-          </CardBody>
-        </Card>
-
-        <div className={dashStyles.bottomWide}>
-          <ActivityFeed
-            logs={recentActivity}
-            users={data.users}
-            title="Recent activity"
-            emptyLabel="No recent activity yet."
-            initialLimit={5}
-          />
-        </div>
       </div>
     </div>
   );
@@ -739,18 +496,17 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
         </Card>
         <Card>
           <CardHeader>
-            <SectionTitle title="Assignees" />
+            <SectionTitle title="Assignees & scoring" />
           </CardHeader>
-          <CardBody className={styles.bodyCardbody}>
-            {task.assigned_to.map((id) => (
-              <div key={id} className={styles.itemDiv}>
-                <Avatar name={userName(data.users, id)} size="sm" />
-                <div>
-                  <p className={styles.textPrimary}>{userName(data.users, id)}</p>
-                  <p className={styles.textSecondary}>Assigned by {userName(data.users, task.assigned_by)}</p>
-                </div>
-              </div>
-            ))}
+          <CardBody>
+            <TaskScoringPanel
+              task={task}
+              assignedByName={userName(data.users, task.assigned_by)}
+              canEdit={canManageTaskScoring(data.currentUser) || task.assigned_by === data.currentUser.user_id}
+              people={data.users
+                .filter((user) => task.assigned_to.includes(user.user_id))
+                .map((user) => ({ user_id: user.user_id, full_name: user.full_name, photo: user.profile_photo || "" }))}
+            />
           </CardBody>
         </Card>
         <ActivityFeed logs={taskLogs} users={data.users} title="Task activity" emptyLabel="No activity yet." initialLimit={5} />
@@ -839,7 +595,7 @@ export function ProjectsView(data: AppData) {
               <div className={styles.projectCardHeader}>
                 <div className={styles.projectCardTitle}>
                   <TicketId id={project.ticket_id_prefix || project.project_id} />
-                  <p className={styles.itemMeta}>{project.project_name}</p>
+                  <Link href={`/projects/${project.project_id}`} className={styles.itemMeta}>{project.project_name}</Link>
                   <p className={styles.text}>Owner: {userName(data.users, project.owner_user_id)}</p>
                 </div>
                 <StatusPill status={project.status} />
@@ -856,6 +612,13 @@ export function ProjectsView(data: AppData) {
                 </div>
                 <Badge tone={project.priority === "Urgent" ? "red" : project.priority === "High" ? "yellow" : "neutral"}>{project.priority}</Badge>
               </div>
+              <Link
+                href={`/projects/${project.project_id}`}
+                className={cn(buttonVariants({ variant: "default", size: "lg" }), styles.projectFilesLink)}
+              >
+                <LayoutDashboard className={styles.icon} />
+                Project Dashboard
+              </Link>
               <Link
                 href={`/project-files?project=${project.project_id}`}
                 className={cn(buttonVariants({ variant: "outline", size: "lg" }), styles.projectFilesLink)}
@@ -990,7 +753,7 @@ function buildCalendarActivities(data: AppData, monthKey: string): CalendarActiv
     activities.push({
       id: `task-${task.task_id}`,
       title: task.title,
-      description: `${task.status} Â· ${task.priority}`,
+      description: `${task.status} · ${task.priority}`,
       type: "Deadline",
       date: task.due_date,
       href: `/tasks/${task.task_id}`,
@@ -1001,7 +764,7 @@ function buildCalendarActivities(data: AppData, monthKey: string): CalendarActiv
     activities.push({
       id: `project-${project.project_id}`,
       title: project.project_name,
-      description: `${project.status} Â· ${project.priority}`,
+      description: `${project.status} · ${project.priority}`,
       type: "Project Milestone",
       date: project.deadline,
       href: "/projects",
@@ -1023,7 +786,7 @@ function buildCalendarActivities(data: AppData, monthKey: string): CalendarActiv
     activities.push({
       id: `leave-${request.request_id}`,
       title: `${userName(data.users, request.user_id)} ${request.request_type}`,
-      description: `${request.status} Â· ${formatShortDate(request.start_date)} to ${formatShortDate(request.end_date)}`,
+      description: `${request.status} · ${formatShortDate(request.start_date)} to ${formatShortDate(request.end_date)}`,
       type: request.request_type,
       date: request.start_date,
       href: "/attendance/request",
@@ -1130,14 +893,58 @@ export function CalendarView(data: AppData) {
   );
 }
 
-export function AttendanceView(data: AppData & { canApproveLeave: boolean }) {
-  const todayRecord = getTodayAttendance(data.attendance, data.currentUser.user_id);
+const leaveStatusTone = (status: string) => (status === "Approved" ? "green" : status === "Rejected" ? "red" : "yellow");
+
+const MY_ATTENDANCE_PAGE_SIZE = 10;
+
+export function AttendanceView(
+  data: AppData & {
+    canApproveLeave: boolean;
+    canViewTeam: boolean;
+    office: OfficePlace;
+    /** The signed-in user's attendance for the selected period. */
+    myAttendance: { rows: AttendanceHistoryRow[]; view: HistoryView; anchor: string; page: number };
+  },
+) {
+  const me = data.currentUser;
+  const todayRecord = getTodayAttendance(data.attendance, me.user_id);
   const clockStatus = getClockStatus(todayRecord);
   const weekRange = currentWeekRange();
-  const pendingRequests = pendingLeaveRequests(data.leaveRequests, data.canApproveLeave ? { approverView: true } : { userId: data.currentUser.user_id });
+  const pendingRequests = pendingLeaveRequests(data.leaveRequests, data.canApproveLeave ? { approverView: true } : { userId: me.user_id });
+  const periodState = { basePath: "/attendance", view: data.myAttendance.view, anchor: data.myAttendance.anchor };
+  const myPage = pageSlice(data.myAttendance.rows, data.myAttendance.page, MY_ATTENDANCE_PAGE_SIZE);
+  const today = jakartaToday();
+  const myRequests = data.leaveRequests
+    .filter((request) => request.user_id === me.user_id)
+    .sort((left, right) => right.created_at.localeCompare(left.created_at))
+    .slice(0, 5);
 
   return (
     <Page>
+      <PageHero
+        eyebrow="Workday status"
+        title="Attendance"
+        description="Clock in, track active time, and request leave."
+        actions={
+          <>
+            {data.canApproveLeave ? (
+              <Link href="/attendance/approvals" className={cn(buttonVariants({ variant: "outline" }))}>
+                <CalendarCheck className={styles.icon} />
+                Approvals
+                {pendingRequests.length ? <span className={styles.approvalCount}>{pendingRequests.length}</span> : null}
+              </Link>
+            ) : null}
+            {data.canViewTeam ? (
+              <Link href="/attendance/history" className={cn(buttonVariants({ variant: "outline" }))}>
+                <Clock3 className={styles.icon} />
+                History
+              </Link>
+            ) : null}
+            <LeaveRequestButton />
+          </>
+        }
+      />
+
       <div className={styles.attendance}>
         <MetricCard label="Clock status" value={clockStatus.value} detail={clockStatus.detail} icon={Clock3} />
         <MetricCard
@@ -1156,125 +963,119 @@ export function AttendanceView(data: AppData & { canApproveLeave: boolean }) {
         />
       </div>
 
-      {data.canApproveLeave && pendingRequests.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <SectionTitle
-              title="Leave requests to review"
-              action={
-                <Link href="/attendance/request" className={styles.linkTertiary}>
-                  Open queue
-                </Link>
-              }
-            />
+      <div className={styles.attendanceGrid}>
+        <AttendanceTerminal className={styles.attendanceTerminal} />
+
+        <Card className={styles.attendanceHistory}>
+          <CardHeader className={styles.recentHeader}>
+            <SectionTitle title="My attendance" action={<span className={styles.recentCount}>{data.myAttendance.rows.length} days</span>} />
+            <AttendancePeriodNav state={periodState} />
           </CardHeader>
-          <CardBody className={styles.bodyCardbody}>
-            {pendingRequests.map((request) => (
-              <LeaveRequestCard key={request.request_id} request={request} users={data.users} canApprove={data.canApproveLeave} />
+          <CardBody className={styles.recentList}>
+            {myPage.rows.length === 0 ? <p className={styles.recentEmpty}>No attendance in this period.</p> : null}
+            {myPage.rows.map((item) => (
+              <div key={item.date} className={styles.recentRow}>
+                <div className={styles.recentGrid}>
+                  <span className={styles.recentDate}>{formatDate(item.date)}</span>
+                  <span className={styles.recentTimes}>
+                    {item.clock_in || "-"}
+                    {item.clock_out ? ` → ${item.clock_out}` : ""}
+                    {item.active_minutes ? <span className={styles.recentActive}> · {formatActiveMinutes(item.active_minutes)}</span> : null}
+                    {!item.clock_out && item.date !== today ? <span className={styles.recentActive}> · no clock-out</span> : null}
+                  </span>
+                  <span className={styles.recentBadges}>
+                    {item.work_mode ? <Badge tone={item.work_mode === "WFO" ? "green" : item.work_mode === "WFH" ? "blue" : "red"}>{item.work_mode}</Badge> : null}
+                    {item.status ? <StatusPill status={item.status} /> : null}
+                  </span>
+                </div>
+                {item.eod ? <p className={styles.recentNote}>{item.eod}</p> : null}
+              </div>
             ))}
-          </CardBody>
-        </Card>
-      ) : null}
-
-      <div className={styles.bodyTertiary}>
-        <AttendanceTerminal />
-
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Leave request" />
-          </CardHeader>
-          <CardBody>
-            <Link href="/attendance/request" className={styles.surfaceSecondary}>
-              <Plus className={styles.icon} />
-              Request leave
-            </Link>
+            <div className={styles.recentPager}>
+              <AttendancePager state={periodState} current={myPage.current} pages={myPage.pages} />
+            </div>
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Attendance history" action={<Button type="button" variant="link" size="sm"><Download className={styles.icon} /> Export</Button>} />
-          </CardHeader>
-          <CardBody className={styles.roles}>
-            <DataTable
-              headers={["Employee", "Date", "Clock in", "Clock out", "Active time", "Locations", "Status", "Approval", "EOD summary"]}
-              rows={data.attendance.map((item) => [
-                userName(data.users, item.user_id),
-                formatDate(item.date),
-                item.clock_in || "-",
-                item.clock_out || "-",
-                formatActiveMinutes(item.active_minutes),
-                item.location_count || "-",
-                <StatusPill key="status" status={item.status} />,
-                item.approval_status,
-                item.note || "-",
-              ])}
-            />
-          </CardBody>
-        </Card>
+        <aside className={styles.attendanceSide}>
+          <BaseLocationCard
+            editable
+            office={data.office}
+            officeRadius={data.office.radius}
+            home={{ lat: me.home_lat ?? null, lng: me.home_lng ?? null, label: me.home_label ?? "" }}
+          />
+
+          <Card>
+            <CardHeader>
+              <SectionTitle title="My requests" />
+            </CardHeader>
+            <CardBody className={styles.recentList}>
+              {myRequests.length === 0 ? <p className={styles.recentNote}>No leave requests yet.</p> : null}
+              {myRequests.map((request) => (
+                <div key={request.request_id} className={styles.recentRow}>
+                  <div className={styles.recentLine}>
+                    <span className={styles.recentDate}>{request.request_type}</span>
+                    <Badge tone={leaveStatusTone(request.status)}>{request.status === "Pending Approval" ? "Pending" : request.status}</Badge>
+                  </div>
+                  <p className={styles.recentNote}>
+                    {request.start_date === request.end_date ? formatDate(request.start_date) : `${formatDate(request.start_date)} – ${formatDate(request.end_date)}`}
+                    {request.approval_note ? ` · ${request.approval_note}` : ""}
+                  </p>
+                </div>
+              ))}
+            </CardBody>
+          </Card>
+        </aside>
       </div>
     </Page>
   );
 }
 
-export function LeaveRequestView(data: AppData & { canApproveLeave: boolean }) {
-  const pendingRequests = data.leaveRequests.filter((request) => request.status === "Pending Approval");
-  const myRequests = data.leaveRequests.filter((request) => request.user_id === data.currentUser.user_id);
-  const queueTitle = data.canApproveLeave ? "Approval queue" : "My requests";
-  const queueItems = data.canApproveLeave ? data.leaveRequests : myRequests;
+const leaveTypeTabs = ["All", "Izin", "Sick", "Cuti", "WFH", "Half Day", "Off-site"] as const;
+const leaveStatusTabs = ["Pending Approval", "Approved", "Rejected", "All"] as const;
+
+/** All leave / permit approvals in one place, filtered by type and status via the URL. */
+export function LeaveApprovalsView({ data, type, status }: { data: AppData; type: string; status: string }) {
+  const activeType = (leaveTypeTabs as readonly string[]).includes(type) ? type : "All";
+  const activeStatus = (leaveStatusTabs as readonly string[]).includes(status) ? status : "Pending Approval";
+  const href = (next: { type?: string; status?: string }) => {
+    const params = new URLSearchParams({ type: next.type ?? activeType, status: next.status ?? activeStatus });
+    return `/attendance/approvals?${params.toString()}`;
+  };
+  const pendingByType = (value: string) =>
+    data.leaveRequests.filter((request) => request.status === "Pending Approval" && (value === "All" || request.request_type === value)).length;
+  const visible = data.leaveRequests
+    .filter((request) => (activeType === "All" || request.request_type === activeType) && (activeStatus === "All" || request.status === activeStatus))
+    .sort((left, right) => right.created_at.localeCompare(left.created_at));
 
   return (
-    <div className={styles.gamificationsettings}>
+    <Page>
+      <PageHero eyebrow="Attendance" title="Attendance approvals" description="Leave, sick, WFH, and Off-site requests from your team." />
+      <div className={styles.approvalTabs} role="tablist" aria-label="Request type">
+        {leaveTypeTabs.map((value) => (
+          <Link key={value} href={href({ type: value })} role="tab" aria-selected={value === activeType} className={cn(styles.approvalTab, value === activeType && styles.approvalTabActive)}>
+            {value}
+            {pendingByType(value) ? <span className={styles.approvalCount}>{pendingByType(value)}</span> : null}
+          </Link>
+        ))}
+      </div>
+      <div className={styles.approvalTabs} role="tablist" aria-label="Status">
+        {leaveStatusTabs.map((value) => (
+          <Link key={value} href={href({ status: value })} role="tab" aria-selected={value === activeStatus} className={cn(styles.approvalChip, value === activeStatus && styles.approvalTabActive)}>
+            {value === "Pending Approval" ? "Pending" : value}
+          </Link>
+        ))}
+      </div>
       <Card>
-        <CardHeader>
-          <SectionTitle title="Submit request" />
-        </CardHeader>
-        <CardBody>
-          <form action="/api/resources/Leave_Requests" method="post" encType="multipart/form-data" className={styles.bodyPrimary}>
-            <input type="hidden" name="user_id" value={data.currentUser.user_id} />
-            <Field label="Type">
-              <FormSelect
-                name="request_type"
-                defaultValue="Izin"
-                options={["Izin", "Sick", "Cuti", "WFH", "Half Day"].map((type) => ({ value: type, label: type }))}
-              />
-            </Field>
-            <div className={styles.region}>
-              <Field label="Start"><DatePickerField name="start_date" required variant="form" /></Field>
-              <Field label="End"><DatePickerField name="end_date" required variant="form" /></Field>
-            </div>
-            <Field label="Reason"><textarea name="reason" required className={styles.startDateinput} /></Field>
-            <Field label="Attachment">
-              <input name="attachment_url" type="url" className="input" placeholder="https://" />
-              <input name="attachment_file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="input" />
-            </Field>
-            <Button type="submit" variant="default" size="xl" className={styles.button}>Submit request</Button>
-          </form>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <SectionTitle
-            title={queueTitle}
-            action={
-              data.canApproveLeave ? (
-                <Badge tone={pendingRequests.length > 0 ? "yellow" : "green"}>{pendingRequests.length} pending</Badge>
-              ) : null
-            }
-          />
-        </CardHeader>
         <CardBody className={styles.bodyCardbody}>
-          {queueItems.length === 0 ? (
-            <EmptyState label={data.canApproveLeave ? "No leave requests yet." : "You have not submitted any leave requests."} />
+          {visible.length === 0 ? (
+            <EmptyState label="No requests here." />
           ) : (
-            queueItems.map((request) => (
-              <LeaveRequestCard key={request.request_id} request={request} users={data.users} canApprove={data.canApproveLeave} />
-            ))
+            visible.map((request) => <LeaveRequestCard key={request.request_id} request={request} users={data.users} canApprove />)
           )}
         </CardBody>
       </Card>
-    </div>
+    </Page>
   );
 }
 
@@ -1324,7 +1125,7 @@ export function AnnouncementsView(data: AppData & { canManage: boolean }) {
   );
 }
 
-export function EmployeesView(data: AppData) {
+export function EmployeesView(data: AppData & { scores: Record<string, MonthScore> }) {
   const employees = directoryUsers(data.users);
   const activeEmployeeCount = activeUsers(data.users).length;
   const birthdayCount = upcomingBirthdays(data.users, 30).length;
@@ -1342,14 +1143,14 @@ export function EmployeesView(data: AppData) {
         </CardHeader>
         <CardBody className={styles.roles}>
           <DataTable
-            headers={["Name", "Department", "Position", "Status", "Role", "Performance"]}
+            headers={["Name", "Department", "Position", "Status", "Role", "Score (this month)"]}
             rows={employees.map((user) => [
               <Link key="name" href={`/employees/${user.user_id}`} className={styles.linkAlt}><Avatar name={user.full_name} size="sm" /> {user.full_name}</Link>,
               departmentName(data.departments, user.department_id),
               user.position,
               <StatusPill key="status" status={user.employment_status} />,
               data.roles.find((role) => role.role_id === user.role_id)?.role_name ?? user.role_id,
-              String(scoreForUser(data.points, user.user_id)),
+              data.scores[user.user_id] ? `${data.scores[user.user_id].score} · #${data.scores[user.user_id].rank}` : "—",
             ])}
           />
         </CardBody>
@@ -1358,12 +1159,12 @@ export function EmployeesView(data: AppData) {
   );
 }
 
-export function EmployeeProfileView({ data, employee }: { data: AppData; employee: User }) {
+export function EmployeeProfileView({ data, employee, office, monthScore }: { data: AppData; employee: User; office?: OfficePlace; monthScore?: MonthScore }) {
   const employeeTasks = visibleTasksForUser(data.tasks, employee.user_id);
   const employeeAttendance = data.attendance.filter((item) => item.user_id === employee.user_id);
   const employeeDoneTasks = completedTasks(employeeTasks);
   const weekAttendanceRate = userAttendanceRateThisWeek(data.attendance, employee.user_id);
-  const score = scoreForUser(data.points, employee.user_id);
+  const score = monthScore;
   const canManageEmployees = data.currentUser.role.permissions_json.includes("employees:manage");
 
   return (
@@ -1387,10 +1188,24 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
 
       <div className={styles.listBody}>
         <div className={styles.bodyEmployeesview}>
-          <MetricCard label="Performance score" value={String(score)} detail="All-time points" icon={Trophy} tone="yellow" />
+          <MetricCard
+            label="Performance score"
+            value={score ? `${score.score}/100` : "—"}
+            detail={score ? `Rank #${score.rank} of ${score.of} this month · ${score.xp.toLocaleString("en-US")} XP lifetime` : "Not on the leaderboard"}
+            icon={Trophy}
+            tone="yellow"
+          />
           <MetricCard label="Assigned tasks" value={String(employeeTasks.length)} detail={`${employeeDoneTasks.length} completed`} icon={CheckSquare} />
           <MetricCard label="Attendance this week" value={`${weekAttendanceRate}%`} detail={`${employeeAttendance.length} records on file`} icon={CalendarCheck} tone="green" />
         </div>
+        {office ? (
+          <BaseLocationCard
+            editable={employee.user_id === data.currentUser.user_id}
+            office={office}
+            officeRadius={office.radius}
+            home={{ lat: employee.home_lat ?? null, lng: employee.home_lng ?? null, label: employee.home_label ?? "" }}
+          />
+        ) : null}
         <Card>
           <CardHeader>
             <SectionTitle title="Task history" />
@@ -1435,138 +1250,6 @@ export function EmployeeProfileView({ data, employee }: { data: AppData; employe
         ) : null}
       </div>
     </div>
-  );
-}
-
-export function LeaderboardView(data: AppData) {
-  const rows = leaderboardRows(data);
-  const podium = [rows[1], rows[0], rows[2]].filter(Boolean);
-  const recentPoints = [...data.points].sort((left, right) => right.created_at.localeCompare(left.created_at)).slice(0, 8);
-  const taskDonePointCount = data.points.filter((point) => point.source_type === "task_done").length;
-  const punctualPointCount = data.points.filter((point) => point.source_type === "punctual_attendance").length;
-  const canManageScores = canManageLeaderboardScore(data.currentUser);
-  const editableUsers = data.users.filter((user) => user.is_active);
-
-  return (
-    <Page>
-      <DataToolbar tabs={["Weekly", "Monthly", "All-time", "Department"]} />
-      <div className={styles.attendance}>
-        <MetricCard label="Point events" value={String(data.points.length)} detail="All recorded scoring actions" icon={Sparkles} tone="blue" />
-        <MetricCard label="Task done" value={String(taskDonePointCount)} detail="Completion awards issued" icon={CheckCircle2} tone="green" />
-        <MetricCard label="Punctual" value={String(punctualPointCount)} detail="On-time attendance awards" icon={Clock3} tone="yellow" />
-      </div>
-
-      <Card>
-        <CardBody>
-          <div className={styles.bodyAside}>
-            {podium.map((row) => {
-              const rank = row === rows[0] ? 1 : row === rows[1] ? 2 : 3;
-              return (
-                <div key={row.user.user_id} className={cn(styles.bodyInner, rank === 1 && "md:order-2", rank === 2 && "md:order-1", rank === 3 && "md:order-3")}>
-                  <div className={styles.glyph}>
-                    <div className={cn(styles.iconDiv, rank === 1 ? styles.iconPrimary : styles.iconSecondary)}>
-                      <Crown className={styles.icon} />
-                      Rank {rank}
-                    </div>
-                    <Avatar name={row.user.full_name} size="lg" />
-                    <p className={styles.textLead}>{row.user.full_name}</p>
-                    <p className={styles.emptyText}>{row.badges[0]?.badge_name ?? "Team Player"}</p>
-                    <p className={styles.emptytextP}>{row.points}</p>
-                  </div>
-                  <div className={cn(styles.emptystateOuter, rank === 1 ? styles.iconDiv : rank === 2 ? styles.iconPrimary : styles.iconSecondary)} />
-                </div>
-              );
-            })}
-          </div>
-        </CardBody>
-      </Card>
-
-      {canManageScores ? (
-        <Card>
-          <CardHeader>
-            <SectionTitle title="Manage scores" action={<Badge tone="yellow">Admin</Badge>} />
-          </CardHeader>
-          <CardBody className={styles.dialogPanel}>
-            <form action="/api/leaderboard/score" method="post" className={styles.formSecondary}>
-              <input type="hidden" name="mode" value="adjust" />
-              <Field label="User">
-                <FormSelect
-                  name="user_id"
-                  required
-                  defaultValue={editableUsers[0]?.user_id ?? ""}
-                  options={editableUsers.map((user) => ({ value: user.user_id, label: user.full_name }))}
-                />
-              </Field>
-              <Field label="Adjust points">
-                <input name="points" required type="number" className="input" placeholder="25 or -10" />
-              </Field>
-              <Field label="Reason">
-                <input name="reason" required className="input" placeholder="Manual correction or bonus" />
-              </Field>
-              <Button type="submit" variant="default" size="xl">Apply adjustment</Button>
-            </form>
-
-            <form action="/api/leaderboard/score" method="post" className={styles.formSecondary}>
-              <input type="hidden" name="mode" value="set_total" />
-              <Field label="User">
-                <FormSelect
-                  name="user_id"
-                  required
-                  defaultValue={editableUsers[0]?.user_id ?? ""}
-                  options={editableUsers.map((user) => ({
-                    value: user.user_id,
-                    label: `${user.full_name} - current ${scoreForUser(data.points, user.user_id)}`,
-                  }))}
-                />
-              </Field>
-              <Field label="Set total score">
-                <input name="target_score" required type="number" min="0" className="input" placeholder="100" />
-              </Field>
-              <Field label="Reason">
-                <input name="reason" required className="input" placeholder="Score correction" />
-              </Field>
-              <Button type="submit" variant="default" size="xl">Set score</Button>
-            </form>
-          </CardBody>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardHeader>
-          <SectionTitle title="Full ranking" />
-        </CardHeader>
-        <CardBody className={styles.roles}>
-          <DataTable
-            headers={["Rank", "Name", "Department", "Points", "Badge"]}
-            rows={rows.map((row, index) => [
-              index + 1,
-              <span key="name" className={styles.linkAlt}><Avatar name={row.user.full_name} size="sm" /> {row.user.full_name}</span>,
-              departmentName(data.departments, row.user.department_id),
-              row.points,
-              row.badges[0]?.badge_name ?? "Team Player",
-            ])}
-          />
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <SectionTitle title="Recent point activity" />
-        </CardHeader>
-        <CardBody className={styles.roles}>
-          <DataTable
-            headers={["User", "Source", "Points", "Reason", "Date"]}
-            rows={recentPoints.map((point) => [
-              userName(data.users, point.user_id),
-              point.source_type.replaceAll("_", " "),
-              point.points,
-              point.reason,
-              formatDate(point.created_at, { hour: "2-digit", minute: "2-digit" }),
-            ])}
-          />
-        </CardBody>
-      </Card>
-    </Page>
   );
 }
 
@@ -1815,7 +1498,7 @@ export function DepartmentsManagerView(data: AppData) {
                       <div className={styles.card}>
                         <p className={styles.ellipsis}>{department.department_name}</p>
                         <p className={styles.header}>
-                          {memberCount} member{memberCount === 1 ? "" : "s"} Â· ID <code className={styles.breakall}>{department.department_id}</code>
+                          {memberCount} member{memberCount === 1 ? "" : "s"} · ID <code className={styles.breakall}>{department.department_id}</code>
                         </p>
                       </div>
                     </div>
@@ -1915,38 +1598,6 @@ export function AttendanceSettingsView(data: AppData) {
         <CardHeader><SectionTitle title="Approval statuses" /></CardHeader>
         <CardBody className={styles.bodyOuter}>
           {attendanceStatuses.map((status) => <StatusPill key={status} status={status} />)}
-        </CardBody>
-      </Card>
-    </div>
-  );
-}
-
-export function GamificationSettingsView(data: AppData) {
-  return (
-    <div className={styles.gamificationsettings}>
-      <Card>
-        <CardHeader><SectionTitle title="Point rules" /></CardHeader>
-        <CardBody className={styles.bodyCardbody}>
-          {["Completing tasks", "Before deadline", "Helpful comments", "Good attendance", "Late task deduction", "Rejected task deduction", "Overdue task deduction"].map((rule, index) => (
-            <div key={rule} className={styles.surfacePaperclip}>
-              <span className={styles.textPrimary}>{rule}</span>
-              <Badge tone={index > 3 ? "red" : "green"}>{index > 3 ? "-" : "+"}{[50, 25, 10, 15, 20, 30, 20][index]}</Badge>
-            </div>
-          ))}
-        </CardBody>
-      </Card>
-      <Card>
-        <CardHeader><SectionTitle title="Badges" /></CardHeader>
-        <CardBody className={styles.layout}>
-          {data.badges.map((badge) => (
-            <div key={badge.badge_id} className={styles.infotile}>
-              <div className={styles.bodyLead}>
-                <Sparkles className={styles.iconSecondary} />
-                <p className={styles.itemMeta}>{badge.badge_name}</p>
-              </div>
-              <p className={styles.textFoot}>{badge.description}</p>
-            </div>
-          ))}
         </CardBody>
       </Card>
     </div>

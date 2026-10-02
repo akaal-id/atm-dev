@@ -32,6 +32,7 @@ export function BottomNav({ items }: { items: NavigationItem[] }) {
             <Link
               key={item.href}
               href={tenantHref(item.href)}
+              prefetch
               className={cn(styles.item, active && styles.active)}
             >
               <AppIcon name={item.icon} className={styles.icon} />

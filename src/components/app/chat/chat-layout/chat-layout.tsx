@@ -2,7 +2,7 @@
 
 import styles from "./chat-layout.module.css";
 
-import { MessageSquarePlus, Search, Users, X } from "lucide-react";
+import { MessageSquarePlus, NotebookPen, Search, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -13,6 +13,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { createRoom } from "@/lib/server/chat-actions";
 import type { ChatRoomSummary } from "@/lib/types/chat";
 import { cn } from "@/lib/utils";
+
+/** The room you're looking at is never "unread". */
+const unreadIn = (activeRoomId?: string) => (room: ChatRoomSummary) => room.room_id !== activeRoomId && room.unreadCount > 0;
 
 function timeAgo(iso: string | null) {
   if (!iso) return "";
@@ -41,27 +44,23 @@ export function ChatLayout({
   const [query, setQuery] = useState("");
   const [newChatOpen, setNewChatOpen] = useState(false);
   const { href: tenantHref } = useTenant();
+  const unread = unreadIn(activeRoomId);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rooms;
-    return rooms.filter((r) => r.displayName.toLowerCase().includes(q));
+    // Personal notes stay pinned at the top.
+    const ordered = [...rooms.filter((r) => r.type === "self"), ...rooms.filter((r) => r.type !== "self")];
+    if (!q) return ordered;
+    return ordered.filter((r) => r.displayName.toLowerCase().includes(q));
   }, [rooms, query]);
 
   return (
-    <div
-      className={cn(
-        styles.shell,
-        activeRoomId
-          ? styles.shellRoomOpen
-          : styles.shellListOnly,
-      )}
-    >
+    <div className={styles.shell}>
       {/* Sidebar */}
       <aside
         className={cn(
           styles.sidebar,
-          activeRoomId ? "hidden md:flex" : styles.sidebarExpanded,
+          activeRoomId ? styles.sidebarDesktopOnly : styles.sidebarExpanded,
         )}
       >
         <div className={styles.sectionHeader}>
@@ -101,7 +100,11 @@ export function ChatLayout({
                   activeRoomId === room.room_id && styles.selected,
                 )}
               >
-                {room.type === "group" && !room.displayAvatar ? (
+                {room.type === "self" ? (
+                  <span className={styles.groupAvatar}>
+                    <NotebookPen className={styles.iconSm} />
+                  </span>
+                ) : room.type === "group" && !room.displayAvatar ? (
                   <span className={styles.groupAvatar}>
                     <Users className={styles.iconSm} />
                   </span>
@@ -110,12 +113,16 @@ export function ChatLayout({
                 )}
                 <div className={styles.roomInfo}>
                   <div className={styles.roomInfoTop}>
-                    <p className={styles.roomName}>{room.displayName}</p>
-                    <span className={styles.roomTime}>{timeAgo(room.last_message_at)}</span>
+                    <p className={cn(styles.roomName, unread(room) && styles.roomNameUnread)}>{room.displayName}</p>
+                    <span className={cn(styles.roomTime, unread(room) && styles.roomTimeUnread)}>{timeAgo(room.last_message_at)}</span>
                   </div>
-                  <p className={styles.roomSubtitle}>
-                    {room.type === "group" ? `${room.memberCount} members` : "Direct message"}
-                  </p>
+                  <div className={styles.roomInfoBottom}>
+                    <p className={cn(styles.roomSubtitle, unread(room) && styles.roomSubtitleUnread)}>
+                      {room.lastMessagePreview ||
+                        (room.type === "self" ? "Personal notes · only you" : room.type === "group" ? `${room.memberCount} members` : "No messages yet")}
+                    </p>
+                    {unread(room) ? <span className={styles.unreadBadge}>{room.unreadCount > 20 ? "20+" : room.unreadCount}</span> : null}
+                  </div>
                 </div>
               </Link>
             ))
@@ -124,7 +131,7 @@ export function ChatLayout({
       </aside>
 
       {/* Main window */}
-      <main className={cn(styles.mainPane, activeRoomId ? styles.mainPaneVisible : "hidden md:flex")}>
+      <main className={cn(styles.mainPane, activeRoomId ? styles.mainPaneVisible : styles.mainPaneDesktopOnly)}>
         <div className={styles.mainPaneInner}>{children}</div>
       </main>
 

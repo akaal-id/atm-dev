@@ -1,0 +1,260 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.muted {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.warn {
+  color: #b45309;
+}
+
+.icon,
+.spin {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Sticky save bar for the rules (tracks and adjustments save on their own). */
+.saveBar {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 0.625rem 1rem;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 5%);
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.headRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Tracks */
+.people {
+  display: grid;
+  gap: 0.25rem 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .people {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.personRow {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+  border-bottom: 1px solid var(--border);
+  padding-block: 0.5rem;
+}
+
+.personText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.8125rem;
+}
+
+.personText > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackSelect {
+  width: 11rem;
+  flex-shrink: 0;
+}
+
+/* Number fields */
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.span2 {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+}
+
+.numberField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+}
+
+.numberInput {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.numberInput input {
+  min-width: 0;
+  flex: 1;
+}
+
+.numberInput em {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+/* Work types */
+.types {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.typeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 11rem 6rem 4.5rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.typeHead {
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.inactive {
+  opacity: 0.55;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.advanced > summary {
+  padding: 1rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.advanced > .fields {
+  border-top: 1px solid var(--border);
+  padding: 1rem;
+}
+
+@media (min-width: 900px) {
+  .advanced > .fields {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Manual adjustments */
+.adjust {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.adjustForm {
+  display: grid;
+  grid-template-columns: 14rem 6rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.adjustList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+
+.adjustList li {
+  display: grid;
+  grid-template-columns: 3rem 12rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+  padding-block: 0.5rem;
+}
+
+.plus {
+  color: #047857;
+}
+
+.minus {
+  color: #be123c;
+}
+
+@media (max-width: 767px) {
+  .typeRow {
+    grid-template-columns: minmax(0, 1fr) 5rem;
+  }
+
+  .typeRow > :nth-child(2) {
+    grid-column: 1;
+  }
+
+  .typeHead {
+    display: none;
+  }
+
+  .typeRow {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  .adjustForm,
+  .adjustList li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trackSelect {
+    width: 9rem;
+  }
+}

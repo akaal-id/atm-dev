@@ -1,0 +1,104 @@
+.panel {
+  max-width: 40rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+.brands {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin: 0;
+  padding: 0.75rem;
+  min-width: 0;
+}
+
+.brands legend {
+  padding: 0 0.25rem;
+}
+
+.empty {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.brandList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.brand,
+.subBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.subBrand {
+  padding-inline-start: 1.5rem;
+  color: var(--muted-foreground);
+}
+
+.addBrand {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .addBrand {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+  }
+}

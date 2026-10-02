@@ -1,8 +1,9 @@
 /* Migrated from Tailwind utilities: plain CSS only, no @apply */
 
+/* Grows with the text up to ~6 lines, then scrolls. */
 .field {
   min-height: 40px;
-  max-height: 10rem;
+  max-height: 8.5rem;
   overflow-y: auto;
   padding-inline: 0.75rem;
   padding-block: 0.5rem;
@@ -12,19 +13,30 @@
 }
 
 .panel {
+  border-top: 1px solid var(--border);
   background-color: var(--card);
-  padding: 0.75rem;
+  padding: 0.625rem 0.75rem;
 }
 
 .group {
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
-  border-radius: 2px;
+  border-radius: var(--radius);
   border-width: 1px;
   border-style: solid;
   border-color: var(--border);
   background-color: var(--card);
+  padding-inline-start: 0.25rem;
+}
+
+.group:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+
+.emoji {
+  align-self: flex-end;
+  margin-bottom: 0.125rem;
 }
 
 .button {

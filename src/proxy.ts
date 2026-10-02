@@ -94,6 +94,7 @@ export const config = {
     "/projects/:path*",
     "/workflows/:path*",
     "/project-files/:path*",
+    "/office/:path*",
     "/calendar/:path*",
     "/attendance/:path*",
     "/announcements/:path*",

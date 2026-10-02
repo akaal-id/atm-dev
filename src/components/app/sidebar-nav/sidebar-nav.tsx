@@ -145,6 +145,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
                           <Link
                             key={child.href}
                             href={child.linkHref}
+                            prefetch
                             title={child.label}
                             className={cn(styles.subLink, childActive && styles.activePrimary)}
                           >
@@ -162,6 +163,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
               <Link
                 key={item.href}
                 href={item.linkHref}
+                prefetch
                 title={item.label}
                 className={cn(styles.link, active && styles.activePrimary)}
               >
@@ -182,6 +184,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
                   <Link
                     key={item.href}
                     href={item.linkHref}
+                    prefetch
                     title={item.label}
                     className={cn(styles.link, active && styles.activeAdmin)}
                   >

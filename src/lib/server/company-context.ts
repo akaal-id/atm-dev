@@ -1,5 +1,7 @@
 import "server-only";
 
+import { supabaseFetch } from "@/lib/server/supabase-fetch";
+
 import { cookies } from "next/headers";
 
 import { isSupabaseConfigured } from "@/lib/server/supabase-store";
@@ -96,7 +98,7 @@ async function requestSupabase<T>(path: string, init: RequestInit = {}) {
   headers.set("Authorization", `Bearer ${key}`);
   headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${url}${path}`, {
+  const response = await supabaseFetch(`${url}${path}`, {
     ...init,
     cache: "no-store",
     headers,

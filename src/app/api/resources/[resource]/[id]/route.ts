@@ -2,9 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { canApproveTaskAsLeader, hasPermission } from "@/lib/permissions";
 import { cleanEmptyStrings, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
-import { awardTaskDonePoints } from "@/lib/server/gamification";
 import { createResource, deleteResource, getResourceById, updateResource } from "@/lib/server/store";
+import { getScoringConfig } from "@/lib/server/scoring";
 import { cascadeDeleteTaskDependents } from "@/lib/server/task-delete";
+import { canManageTaskScoring, nextRevisionCount, sanitizeTaskScoring } from "@/lib/server/task-scoring";
 import { logTaskChecklistActivity, logTaskChecklistToggleActivity } from "@/lib/server/task-activity";
 import { syncTaskWorkflowStatus } from "@/lib/server/task-workflow";
 import { UploadError } from "@/lib/server/uploads";
@@ -65,7 +66,10 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
     (patch.assigned_to !== undefined ||
       patch.status !== undefined ||
       patch.need_leader_approval !== undefined ||
-      patch.labels !== undefined)
+      patch.labels !== undefined ||
+      patch.work_type_id !== undefined ||
+      patch.effort_points !== undefined ||
+      patch.pic_user_id !== undefined)
   ) {
     existingTask = (await getResourceById("Tasks", id)) as Task | undefined;
     previousAssignedTo = Array.isArray(existingTask?.assigned_to) ? existingTask.assigned_to : [];
@@ -74,6 +78,13 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
   if (resource === "Tasks") {
     delete patch.task_id;
     delete patch.project_id;
+    // Revision rounds are counted by the server, never set by a client.
+    delete patch.revision_count;
+    if (existingTask || ["work_type_id", "effort_points", "pic_user_id", "contribution_shares", "quality_rating"].some((key) => key in patch)) {
+      existingTask ??= (await getResourceById("Tasks", id)) as Task | undefined;
+      const assignees = Array.isArray(patch.assigned_to) ? patch.assigned_to.map(String) : (existingTask?.assigned_to ?? []);
+      sanitizeTaskScoring(patch, { config: await getScoringConfig(), assignees, canManage: canManageTaskScoring(access.user) });
+    }
 
     if (patch.workflow_id !== undefined) {
       const workflowId = String(patch.workflow_id ?? "").trim();
@@ -114,6 +125,7 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
     }
 
     patch.status = nextStatus;
+    patch.revision_count = nextRevisionCount(existingTask?.status, nextStatus, existingTask?.revision_count);
     patch.progress = progressForWorkflowStatus(nextStatus);
     patch.completed_at = nextStatus === "Finished" ? new Date().toISOString() : "";
     // Stamp the first hand-off (Waiting Approval / Ready) and keep it sticky afterwards.
@@ -176,7 +188,6 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
     }
   }
 
-  const shouldAwardFinishedTask = resource === "Tasks" && patch.status === "Finished" && existingTask?.status !== "Finished";
   const record = await updateResource(resource, id, patch as never);
   if (!record) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -207,10 +218,6 @@ async function patchResource(request: NextRequest, context: { params: Promise<{ 
           }),
         ),
       );
-    }
-
-    if (shouldAwardFinishedTask) {
-      await Promise.all((record as Task).assigned_to.map((userId) => awardTaskDonePoints(record as Task, userId)));
     }
   }
 

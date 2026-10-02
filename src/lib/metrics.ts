@@ -171,7 +171,7 @@ function birthdayMonthDay(birthday: string) {
   return normalized.slice(5, 10);
 }
 
-function daysUntilBirthday(birthday: string, reference = new Date()) {
+export function daysUntilBirthday(birthday: string, reference = new Date()) {
   const monthDay = birthdayMonthDay(birthday);
   if (!monthDay) return Number.POSITIVE_INFINITY;
 

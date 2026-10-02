@@ -25,6 +25,7 @@ export const protectedRoutePrefixes = [
   "/admin",
   "/invite",
   "/project-files",
+  "/office",
   "/org",
   "/tenant-access-denied",
 ] as const;
