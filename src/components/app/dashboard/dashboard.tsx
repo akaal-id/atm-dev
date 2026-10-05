@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { LeaveRequestButton } from "@/components/app/leave-request-modal";
 import { PageHero } from "@/components/app/page-header";
+import { PushToggle } from "@/components/app/push-toggle";
 import type { AppData } from "@/components/app/views";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -119,6 +120,8 @@ export function DashboardView({ data, monthScore, sessions }: { data: AppData } 
           </>
         }
       />
+
+      <PushToggle mode="banner" />
 
       <div className={styles.stats}>
         <Link href="/tasks/my" className={styles.stat}>

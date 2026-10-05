@@ -67,3 +67,61 @@ export async function disablePush(): Promise<PushState> {
   }
   return pushState();
 }
+
+export type PushEnv = {
+  os: "macos" | "windows" | "android" | "ios" | "linux" | "other";
+  browser: "chrome" | "edge" | "firefox" | "safari" | "samsung" | "other";
+  /** Inside the Tauri desktop app (system webview: no Web Push). */
+  desktopApp: boolean;
+  /** Installed PWA / home-screen / Dock app window. */
+  standalone: boolean;
+  mobile: boolean;
+};
+
+/** Where ATM is running, so the push prompt can give exact, device-specific steps. */
+export function pushEnv(): PushEnv {
+  const ua = navigator.userAgent;
+  const os: PushEnv["os"] = isIos() ? "ios" : /Android/.test(ua) ? "android" : /Mac OS X/.test(ua) ? "macos" : /Windows/.test(ua) ? "windows" : /Linux/.test(ua) ? "linux" : "other";
+  const browser: PushEnv["browser"] = /SamsungBrowser/.test(ua)
+    ? "samsung"
+    : /Edg\//.test(ua)
+      ? "edge"
+      : /Firefox\//.test(ua)
+        ? "firefox"
+        : /Chrome\//.test(ua) || /CriOS\//.test(ua)
+          ? "chrome"
+          : /Safari\//.test(ua)
+            ? "safari"
+            : "other";
+  const tauri = typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
+  // Desktop system webviews (WKWebView / WebView2 shells) lack the Push API and the usual browser tokens.
+  const embeddedWebview = (os === "macos" || os === "windows") && !("PushManager" in window) && !/(Safari|Firefox)\//.test(ua);
+  return { os, browser, desktopApp: tauri || embeddedWebview, standalone: isStandalone(), mobile: os === "android" || os === "ios" };
+}
+
+/** Sends a test notification to this device only. */
+export async function sendTestPush() {
+  const reg = await registration();
+  const subscription = await reg?.pushManager.getSubscription();
+  if (!subscription) throw new Error("Turn notifications on first.");
+  const send = () =>
+    fetch("/api/push/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    });
+  let response = await send();
+  if (response.status === 404) {
+    // The browser is subscribed but the server dropped the row (e.g. after a push-service error): re-register once.
+    const saved = await fetch("/api/push/subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription.toJSON()),
+    });
+    if (saved.ok) response = await send();
+  }
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error || "Couldn't send a test notification.");
+  }
+}

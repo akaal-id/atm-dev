@@ -32,6 +32,8 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - Every `Notifications` row and every chat message pushes to the user's subscribed devices (table `push_subscriptions`).
   - The VAPID keys are in `.env.local`, with a backup at `~/.config/atm/vapid.json`, and still need to be set on Vercel.
   - Android and iOS get push through the PWA install. The Tauri APK can't.
+  - 2026-10-05: **Desktop push needs a real browser.** The Tauri `.dmg`/`.exe` webview has no Push API. Chrome/Edge deliver while the browser process runs (on Mac, not after ⌘Q). Safari "Add to Dock" delivers even when fully closed.
+  - `PushToggle mode="banner"` on the Dashboard prompts every device that isn't receiving push, with steps for its OS and browser, and hides for 7 days on "Not now". The Notifications page card has "Send test notification" (`POST /api/push/test`, this device only). On a 404 it re-registers the device and retries once.
 - 2026-10-05:
   - **Leaderboard tracks** were set from task data: leaders are Azzam, Asad, Afif A, and Faisal; Ridho is video; Nabil is general; everyone else is design. **Copywriters can't be told apart from designers in the task data**, so the admin must correct them in Settings → Gamification.
   - **Messages badge:** `ChatUnreadProvider` (in WorkspaceProviders) takes its count from `/api/chat/unread` and bumps it live from realtime `messages` INSERTs in the user's rooms.
@@ -72,7 +74,9 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - The `atm-dev` folder is now set to **Keep Downloaded**.
   - Check with `find . -flags -dataless`. The `-` matters, because the flags are `compressed,dataless`.
   - Restore with `npm ci`, or by reading the files.
+  - A single evicted file can still break `next build`. Tailwind 4 scans every non-ignored file (including `docs/*.sql`), the read blocks, and Turbopack panics with "timeout while receiving message from process" on `globals.css`. To restore an unchanged tracked file without reading it, `git show HEAD:<path> > tmp`, then `mv` the copy over it.
 - **Testing server modules with tsx:** `server-only` isn't installed, so use `.perf/tsconfig.test.json`, which maps it to a stub. Name scripts `.mts` so top-level await works.
+- **Headless Chromium always reports `Notification.permission === "denied"`**, even after `grantPermissions` (`navigator.permissions.query` says "granted"). To test push UI states, override `Notification.permission` with `addInitScript`.
 - **Playwright `page.route` can't mock app API calls while the PWA service worker is active**, because the service worker answers first. Create the context with `serviceWorkers: "block"`.
 - **Chat realtime needs the token set before subscribing.**
   - With `@supabase/ssr`'s `createBrowserClient`, a channel created right away joined *without* an access token. Supabase accepted the join ("ok") but never delivered `postgres_changes`, so messages only appeared after a refresh.

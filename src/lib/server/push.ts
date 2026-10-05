@@ -63,10 +63,13 @@ export async function deletePushSubscription(endpoint: string, userId?: string) 
   });
 }
 
+export type PushResult = { sent: number; removed: number; failed: number };
+
 /** Send to every device of these users. Never throws: push is best-effort next to the in-app list and email. */
-export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
+export async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<PushResult> {
+  const result: PushResult = { sent: 0, removed: 0, failed: 0 };
   const ids = [...new Set(userIds.filter(Boolean))];
-  if (!ids.length || !ready()) return;
+  if (!ids.length || !ready()) return result;
   try {
     const list = ids.map((id) => `"${id.replace(/"/g, "")}"`).join(",");
     const rows = await supabaseRest<SubscriptionRow[]>(`/push_subscriptions?select=endpoint,user_id,p256dh,auth&user_id=in.(${encodeURIComponent(list)})`);
@@ -75,17 +78,36 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
       rows.map(async (row) => {
         try {
           await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, body, { TTL: 60 * 60 * 24, urgency: "high" });
+          result.sent += 1;
         } catch (error) {
           const status = (error as { statusCode?: number }).statusCode;
           // The browser unsubscribed or the subscription expired: forget it.
-          if (status === 404 || status === 410) await deletePushSubscription(row.endpoint).catch(() => null);
-          else console.error("Web push failed", status, (error as Error).message);
+          if (status === 404 || status === 410) {
+            result.removed += 1;
+            await deletePushSubscription(row.endpoint).catch(() => null);
+          } else {
+            result.failed += 1;
+            console.error("Web push failed", status, (error as Error).message);
+          }
         }
       }),
     );
   } catch (error) {
     console.error("Web push lookup failed", error);
   }
+  return result;
+}
+
+/** Push to exactly one subscription (the device asking for a test). */
+export async function sendPushToEndpoint(userId: string, endpoint: string, payload: PushPayload) {
+  if (!ready()) return false;
+  const rows = await supabaseRest<SubscriptionRow[]>(
+    `/push_subscriptions?select=endpoint,user_id,p256dh,auth&endpoint=eq.${encodeURIComponent(endpoint)}&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+  );
+  const row = rows[0];
+  if (!row) return false;
+  await webpush.sendNotification({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, JSON.stringify(payload), { TTL: 300, urgency: "high" });
+  return true;
 }
 
 /** Send after the response is flushed when inside a request; otherwise right away. */
