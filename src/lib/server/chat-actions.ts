@@ -4,6 +4,8 @@ import "server-only";
 
 import { supabaseFetch } from "@/lib/server/supabase-fetch";
 
+import { sendPushToUsers } from "@/lib/server/push";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUser } from "@/lib/server/auth";
@@ -207,6 +209,28 @@ function previewOf(
   if (message.type === "system") return body;
   const who = message.sender_id === myId ? "You" : authors.get(message.sender_id)?.full_name.split(" ")[0];
   return who ? `${who}: ${body}` : body;
+}
+
+/** Push a new chat message to the room's other members (one notification per room, replaced as messages arrive). */
+async function notifyRoomMembers(roomId: string, sender: { user_id: string; full_name: string }, message: ChatMessage) {
+  try {
+    const [room, members] = await Promise.all([
+      rest<ChatRoom[]>(`/chat_rooms?select=room_id,name,type&room_id=eq.${encodeURIComponent(roomId)}`).then((rows) => rows[0]),
+      rest<RoomMember[]>(`/room_members?select=user_id&room_id=eq.${encodeURIComponent(roomId)}`),
+    ]);
+    const recipients = members.map((member) => member.user_id).filter((id) => id !== sender.user_id);
+    if (!room || room.type === "self" || !recipients.length) return;
+    const body = previewOf(message, "", new Map([[sender.user_id, { user_id: sender.user_id, full_name: sender.full_name, profile_photo: "" }]]));
+    await sendPushToUsers(recipients, {
+      title: room.type === "group" ? room.name || "Group chat" : sender.full_name,
+      // Group pushes keep the "Name: …" prefix; direct messages show just the text.
+      body: room.type === "group" ? body : body.replace(/^[^:]+:\s/, ""),
+      url: `/chat/${roomId}`,
+      tag: `chat-${roomId}`,
+    });
+  } catch (error) {
+    console.error("Chat push failed", error);
+  }
 }
 
 /** Mark the room as read for the current user (drives the unread badge). */
@@ -422,6 +446,8 @@ export async function sendMessage(input: SendMessageInput): Promise<ChatMessageV
   ]);
 
   revalidatePath(`/chat/${input.room_id}`);
+  // After the response: the sender never waits on push delivery.
+  after(() => notifyRoomMembers(input.room_id, me, message));
   return {
     ...message,
     author: authors.get(message.sender_id) ?? null,

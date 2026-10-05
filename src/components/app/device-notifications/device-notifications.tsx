@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { enablePush, pushState, pushSupported } from "@/lib/push-client";
 import type { AppNotification } from "@/lib/types";
 
 const STORAGE_KEY = "atm_device_notified_ids";
@@ -15,7 +16,11 @@ function readShownIds() {
 }
 
 function saveShownIds(ids: Set<string>) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids).slice(-100)));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(ids).slice(-100)));
+  } catch {
+    // Storage blocked: worst case a notification is shown twice.
+  }
 }
 
 async function showDeviceNotification(notification: AppNotification) {
@@ -23,8 +28,8 @@ async function showDeviceNotification(notification: AppNotification) {
 
   const options: NotificationOptions = {
     body: notification.description,
-    icon: "/icon.svg",
-    badge: "/icon.svg",
+    icon: "/icon/atm-icon-192.png",
+    badge: "/icon/atm-icon-192.png",
     tag: notification.notification_id,
     data: { url: notification.related_link || "/notifications" },
   };
@@ -44,20 +49,32 @@ async function showDeviceNotification(notification: AppNotification) {
   };
 }
 
+/**
+ * Device notifications.
+ * - Web Push (preferred): this device subscribes once; the server pushes even when ATM is closed.
+ * - Fallback (no Push API, e.g. the Tauri desktop shell or an iPhone browser tab): poll every
+ *   30 s while ATM is open and show new notifications locally.
+ */
 export function DeviceNotifications() {
   const requestedRef = useRef(false);
 
+  // First tap anywhere asks for permission (browsers require a user gesture), then subscribes.
   useEffect(() => {
     if (!("Notification" in window)) return;
 
-    const requestOnGesture = () => {
-      if (requestedRef.current || Notification.permission !== "default") return;
+    const onGesture = () => {
+      if (requestedRef.current) return;
       requestedRef.current = true;
-      void Notification.requestPermission();
+      if (Notification.permission === "denied") return;
+      if (pushSupported()) void enablePush().catch(() => null);
+      else if (Notification.permission === "default") void Notification.requestPermission();
     };
 
-    window.addEventListener("click", requestOnGesture, { once: true });
-    return () => window.removeEventListener("click", requestOnGesture);
+    // Already allowed earlier: make sure this device's subscription is registered (no prompt).
+    if (Notification.permission === "granted" && pushSupported()) void enablePush().catch(() => null);
+
+    window.addEventListener("click", onGesture, { once: true });
+    return () => window.removeEventListener("click", onGesture);
   }, []);
 
   useEffect(() => {
@@ -65,6 +82,8 @@ export function DeviceNotifications() {
 
     const poll = async () => {
       if (!("Notification" in window) || Notification.permission !== "granted") return;
+      // With an active push subscription the server delivers; polling would show duplicates.
+      if ((await pushState()) === "on") return;
 
       const response = await fetch("/api/notifications/unread", { cache: "no-store" }).catch(() => null);
       if (!response?.ok || cancelled) return;

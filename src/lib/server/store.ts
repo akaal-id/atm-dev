@@ -6,6 +6,7 @@ import { seedResources } from "@/lib/data/seed";
 import { googleSheetsDatabaseSchema, type SheetName } from "@/lib/data/schema";
 import { appendAppsScriptRow, deleteAppsScriptRow, isAppsScriptConfigured, readAppsScriptSheet, updateAppsScriptRow } from "@/lib/server/apps-script";
 import { appendSheetRow, isGoogleSheetsConfigured, readSheet, updateSheetRow } from "@/lib/server/google-sheets";
+import { pushForNotification } from "@/lib/server/push";
 import { sendNotificationEmail } from "@/lib/server/resend";
 import { normalizeSupabaseRecords } from "@/lib/server/normalize-records";
 import {
@@ -348,6 +349,7 @@ export async function createResource<R extends ResourceName>(resource: R, payloa
   if (shouldUseSupabase()) {
     const created = (await insertSupabaseResource(resource, record as unknown as Record<string, unknown>)) as unknown as ResourceItem<R>;
     if (resource === "Notifications") {
+      pushForNotification(created as unknown as AppNotification);
       await sendEmailForNotification(created as unknown as AppNotification);
     }
     return created;
@@ -364,6 +366,7 @@ export async function createResource<R extends ResourceName>(resource: R, payloa
   }
 
   if (resource === "Notifications") {
+    pushForNotification(record as unknown as AppNotification);
     await sendEmailForNotification(record as unknown as AppNotification);
   }
 

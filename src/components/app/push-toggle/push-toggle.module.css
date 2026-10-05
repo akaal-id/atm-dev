@@ -1,0 +1,57 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  border-radius: var(--radius);
+  background: var(--primary-subtle);
+  padding: 0.875rem 1rem;
+}
+
+.on {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--primary);
+}
+
+.on .icon {
+  color: #047857;
+}
+
+.icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.text {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.body {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.spin {
+  width: 0.875rem;
+  height: 0.875rem;
+  animation: spin 1s linear infinite;
+}

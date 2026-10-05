@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Attendance clock-in reads the device location (WKWebView needs this key to ask). -->
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>ATM uses your location to record where you clock in and out for attendance.</string>
+</dict>
+</plist>

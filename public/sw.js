@@ -1,5 +1,5 @@
-const APP_VERSION = "V2.1";
-const CACHE_NAME = "atm-pwa-v2-1";
+const APP_VERSION = "V2.2";
+const CACHE_NAME = "atm-pwa-v2-2";
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -83,6 +83,53 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+// Web Push from the server (works while ATM is closed). Payload: { title, body, url, tag }.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "" };
+  }
+  const title = payload.title || "ATM";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body || "",
+      icon: "/icon/atm-icon-192.png",
+      badge: "/icon/atm-icon-192.png",
+      tag: payload.tag || undefined,
+      renotify: Boolean(payload.tag),
+      data: { url: payload.url || "/notifications" },
+    }),
+  );
+});
+
+// The browser rotated the subscription: re-register it with the server.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    fetch("/api/push/key")
+      .then((response) => response.json())
+      .then(({ data }) =>
+        self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(data.key) }),
+      )
+      .then((subscription) =>
+        fetch("/api/push/subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(subscription.toJSON()),
+        }),
+      )
+      .catch(() => undefined),
+  );
+});
+
+function urlBase64ToUint8Array(base64) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (char) => char.charCodeAt(0));
+}
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || "/notifications";
@@ -92,8 +139,8 @@ self.addEventListener("notificationclick", (event) => {
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clients) => {
-        const existing = clients.find((client) => client.url === url);
-        if (existing) return existing.focus();
+        const existing = clients.find((client) => client.url === url) || clients.find((client) => new URL(client.url).origin === self.location.origin);
+        if (existing) return existing.focus().then((client) => (client.url === url ? client : client.navigate(url)));
         return self.clients.openWindow(url);
       }),
   );

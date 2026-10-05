@@ -1,5 +1,8 @@
 /* Route section styles — plain CSS, no @apply */
 .page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   min-width: 0;
   width: 100%;
   max-width: 100%;

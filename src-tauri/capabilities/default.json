@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core window permissions only. The app loads https://team.akaal.id, which is NOT granted any Tauri IPC (no remote capability), so the website can't call native APIs.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

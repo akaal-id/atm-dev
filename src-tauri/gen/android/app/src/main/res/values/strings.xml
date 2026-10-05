@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">"ATM"</string>
+    <string name="main_activity_title">"ATM"</string>
+</resources>

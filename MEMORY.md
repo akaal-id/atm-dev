@@ -23,6 +23,11 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - "Needs attention" (leave approvals and task reviews for leaders; own requests for others)
   - a "Team today" summary, announcements, and "Coming up" (calendar + birthdays, 7 days)
   - Recent activity and the duplicate announcement banners were removed.
+- 2026-10-05: Desktop and Android apps (Tauri v2) are a shell that loads https://team.akaal.id. There is no static export, since the app needs its API routes, server actions, and cookies. iOS is postponed. Build, install, and distribution steps are in `docs/desktop-android-apps.md`. Windows `.exe` builds come from the GitHub Actions workflow "Desktop build".
+- 2026-10-05: Real Web Push (VAPID) is live in code; see `docs/push-notifications.md`.
+  - Every `Notifications` row and every chat message pushes to the user's subscribed devices (table `push_subscriptions`).
+  - The VAPID keys are in `.env.local`, with a backup at `~/.config/atm/vapid.json`, and still need to be set on Vercel.
+  - Android and iOS get push through the PWA install. The Tauri APK can't.
 
 ## Gotchas
 
@@ -41,6 +46,17 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
 - **`updateResource` always stamps `updated_at = now`.** Scoring falls back to `updated_at` when `completed_at` is empty, so the scoring API pins `completed_at` before editing a finished task.
 - **A Leader with no briefed work scores 0% team output, not "no data"**, otherwise idle leaders top the board on attendance alone.
 - **iCloud duplicates in `.next/types` can be `* 2.ts` or `* 3.ts`.** Clean them with `find .next -name "* [0-9].*" -delete`.
+- **Tauri build output must stay outside iCloud.** The repo is in iCloud Drive, and a single build reached 945 MB.
+  - Rust: `CARGO_TARGET_DIR=~/.cache/atm-tauri-target`, set in `~/.zshrc`.
+  - Gradle: `src-tauri/gen/android/{build,app/build,.gradle}` are symlinks to `~/.cache/atm-android`.
+  - Gradle's Rust step runs `npm run tauri`, so `package.json` needs the `"tauri": "tauri"` script.
+- **The Android release key is at `~/.android-keys/` and must be backed up.** If it's lost, updates can't be installed over existing apps.
+- **iCloud can evict project files when the disk is low.** With "Optimize Mac Storage", files become `dataless`, and tsc/next then stall for minutes on 0% CPU.
+  - On 2026-10-05, 22k `node_modules` files and 217 source files were evicted when free disk fell to 3.8 GB.
+  - The `atm-dev` folder is now set to **Keep Downloaded**.
+  - Check with `find . -flags -dataless`. The `-` matters, because the flags are `compressed,dataless`.
+  - Restore with `npm ci`, or by reading the files.
+- **Testing server modules with tsx:** `server-only` isn't installed, so use `.perf/tsconfig.test.json`, which maps it to a stub. Name scripts `.mts` so top-level await works.
 - **No Tailwind utility classes** in migrated components. Use the co-located `*.module.css`.
 
 ## Tooling
