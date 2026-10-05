@@ -260,3 +260,8 @@
   font-weight: 400;
   color: var(--foreground);
 }
+
+/* Trigger text; hidden on phones by the topbar (icon-only). */
+.triggerLabel {
+  white-space: nowrap;
+}

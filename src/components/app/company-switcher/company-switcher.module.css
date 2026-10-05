@@ -359,3 +359,16 @@
     border-radius: var(--radius);
   }
 }
+
+/* Phones: icon-only square trigger (name shows in the dropdown). */
+@media (max-width: 639px) {
+  .trigger {
+    width: 2.5rem;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .chevron {
+    display: none;
+  }
+}

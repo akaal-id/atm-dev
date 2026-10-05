@@ -87,7 +87,7 @@ export async function AppShell({
     hasPermission(user.role_id, "tasks:manage");
 
   return (
-    <WorkspaceProviders orgId={tenantOrgId} companyId={tenantCompanyId}>
+    <WorkspaceProviders orgId={tenantOrgId} companyId={tenantCompanyId} userId={user.user_id}>
       <div className={styles.shell} data-app-shell>
         <DeviceNotifications />
         <LiveRefresh />

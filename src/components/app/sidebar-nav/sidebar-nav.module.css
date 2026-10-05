@@ -368,3 +368,19 @@
     display: flex;
   }
 }
+
+/* Unread chat bubble on the Messages item. */
+.link {
+  position: relative;
+}
+
+.navBadge {
+  margin-left: auto;
+}
+
+.collapsed .navBadge {
+  position: absolute;
+  top: 0.125rem;
+  left: calc(50% + 0.25rem);
+  margin: 0;
+}

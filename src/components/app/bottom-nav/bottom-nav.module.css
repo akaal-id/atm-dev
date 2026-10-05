@@ -53,3 +53,15 @@
     display: none;
   }
 }
+
+/* Icon + unread chat bubble pinned to its top-right corner. */
+.iconWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge {
+  position: absolute;
+  top: -0.5rem;
+  left: 0.625rem;
+}

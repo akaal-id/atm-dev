@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ChatUnreadBadge } from "@/components/app/chat-unread";
 import { AppIcon } from "@/components/app/icons";
 import { useTenant } from "@/components/app/tenant-provider";
 import { isChatRoomPath, type NavigationItem } from "@/lib/navigation";
@@ -35,7 +36,10 @@ export function BottomNav({ items }: { items: NavigationItem[] }) {
               prefetch
               className={cn(styles.item, active && styles.active)}
             >
-              <AppIcon name={item.icon} className={styles.icon} />
+              <span className={styles.iconWrap}>
+                <AppIcon name={item.icon} className={styles.icon} />
+                {isMessagesNav ? <ChatUnreadBadge className={styles.badge} /> : null}
+              </span>
               <span className={styles.label}>{item.label}</span>
             </Link>
           );

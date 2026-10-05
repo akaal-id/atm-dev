@@ -524,7 +524,7 @@ export function CreateTaskModal({
         disabled={optionsLoading && open}
       >
         <Plus className={styles.icon} />
-        {title}
+        <span className={styles.triggerLabel}>{title}</span>
       </Button>
 
       <TaskFormModal

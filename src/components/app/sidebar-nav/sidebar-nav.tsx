@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { ChatUnreadBadge } from "@/components/app/chat-unread";
 import { AppIcon } from "@/components/app/icons";
 import { useTenant } from "@/components/app/tenant-provider";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
               >
                 <AppIcon name={item.icon} className={styles.icon} />
                 <span className={styles.linkLabel}>{item.label}</span>
+                {item.href === "/chat" ? <ChatUnreadBadge className={styles.navBadge} /> : null}
               </Link>
             );
           })}

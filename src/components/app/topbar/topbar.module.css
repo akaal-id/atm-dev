@@ -301,3 +301,59 @@
     padding-left: 2rem;
   }
 }
+
+/* Brand mark: only on phones/tablets, where the sidebar (and its logo) is hidden. */
+.mobileBrand {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+}
+
+.mobileBrand img {
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .mobileBrand {
+    display: none;
+  }
+}
+
+/* Phones: show only the current page title, icon-only actions. */
+@media (max-width: 639px) {
+  .inner {
+    gap: 0.625rem;
+  }
+
+  .breadcrumbParent {
+    display: none;
+  }
+
+  .breadcrumbCurrent {
+    overflow: hidden;
+    font-size: 0.9375rem;
+    font-weight: var(--font-weight-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .actions {
+    gap: 0.375rem;
+  }
+
+  .createTask {
+    width: 2.5rem;
+    padding: 0;
+  }
+
+  .createTask span {
+    display: none;
+  }
+}
+
+/* Very narrow phones: the logo + bottom-nav highlight say where you are; skip the clipped title. */
+@media (max-width: 380px) {
+  .breadcrumbs {
+    display: none;
+  }
+}

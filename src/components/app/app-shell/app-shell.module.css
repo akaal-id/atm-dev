@@ -13,6 +13,12 @@
   color: var(--shell-fg);
 }
 
+@media (max-width: 1023px) {
+  .shell {
+    --shell-header-block-size: 3.5rem;
+  }
+}
+
 .layout {
   position: relative;
   z-index: 1;

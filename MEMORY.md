@@ -4,7 +4,11 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
 
 ## Current state (2026-10-01)
 
-- Branch `development` is the working branch; `main` is the PR target.
+- **Repos and deploy (verified 2026-10-05):**
+  - Work happens in `akaal-creative/atm-dev` (this checkout's `origin`), on branch `development`.
+  - Changes ship through a PR **into `akaal-id/atm-dev`, base `development`**.
+  - Vercel project `atm-dev` (team "Akaal's projects", account `akaal-id`) is linked to `akaal-id/atm-dev`, with **production branch = `development`**. Merging there deploys team.akaal.id.
+  - The `main` branches are not used for deploys.
 - Recent work: CSS-module migration (Tailwind utilities → plain CSS modules), folderized components, AI chat as a full-page route plus intercepted overlay, context panel switcher.
 - Production database: Supabase project `aqahlffbhbyblqesgpjv`, `ATM_DATA_MODE=supabase`.
 - 2026-10-01: Project Hub rework started — plan and decisions in `docs/project-hub-plan.md`. All 5 phases built 2026-10-02 (dashboard, content matrix, social dashboard, Office, personal notes); user will review in the browser and send revisions.
@@ -28,6 +32,10 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - Every `Notifications` row and every chat message pushes to the user's subscribed devices (table `push_subscriptions`).
   - The VAPID keys are in `.env.local`, with a backup at `~/.config/atm/vapid.json`, and still need to be set on Vercel.
   - Android and iOS get push through the PWA install. The Tauri APK can't.
+- 2026-10-05:
+  - **Leaderboard tracks** were set from task data: leaders are Azzam, Asad, Afif A, and Faisal; Ridho is video; Nabil is general; everyone else is design. **Copywriters can't be told apart from designers in the task data**, so the admin must correct them in Settings → Gamification.
+  - **Messages badge:** `ChatUnreadProvider` (in WorkspaceProviders) takes its count from `/api/chat/unread` and bumps it live from realtime `messages` INSERTs in the user's rooms.
+  - **Mobile top bar:** 56 px tall, logo, current-page title, icon-only actions.
 
 ## Gotchas
 
@@ -57,6 +65,7 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - Check with `find . -flags -dataless`. The `-` matters, because the flags are `compressed,dataless`.
   - Restore with `npm ci`, or by reading the files.
 - **Testing server modules with tsx:** `server-only` isn't installed, so use `.perf/tsconfig.test.json`, which maps it to a stub. Name scripts `.mts` so top-level await works.
+- **Playwright `page.route` can't mock app API calls while the PWA service worker is active**, because the service worker answers first. Create the context with `serviceWorkers: "block"`.
 - **No Tailwind utility classes** in migrated components. Use the co-located `*.module.css`.
 
 ## Tooling

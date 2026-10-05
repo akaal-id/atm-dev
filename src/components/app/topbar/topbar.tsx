@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { isChatRoomPath } from "@/lib/navigation";
 import { getBreadcrumbs } from "@/lib/page-meta";
 import type { AppNotification, CurrentUser } from "@/lib/types";
 import { useTenant } from "@/components/app/tenant-provider";
+import { cn } from "@/lib/utils";
 import styles from "./topbar.module.css";
 
 interface TopbarProps {
@@ -71,12 +73,15 @@ export function Topbar({
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
+        <Link href={tenantHref("/dashboard")} className={styles.mobileBrand} aria-label="ATM home">
+          <Image src="/icon/atm-icon-192.png" alt="" width={30} height={30} priority />
+        </Link>
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
           <ol className={styles.breadcrumbList}>
             {breadcrumbs.map((crumb, index) => {
               const isLast = index === breadcrumbs.length - 1;
               return (
-                <li key={`${crumb.label}-${index}`} className={styles.breadcrumbItem}>
+                <li key={`${crumb.label}-${index}`} className={cn(styles.breadcrumbItem, !isLast && styles.breadcrumbParent)}>
                   {index > 0 ? <span className={styles.breadcrumbSep} aria-hidden="true">/</span> : null}
                   {crumb.href && !isLast ? (
                     <Link href={crumb.href} className={styles.breadcrumbLink}>
