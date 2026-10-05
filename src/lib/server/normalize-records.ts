@@ -64,6 +64,7 @@ export function normalizeSupabaseRecord(resource: ResourceName, row: Record<stri
     normalized.birthday = normalizeDateField(row.birthday);
     normalized.join_date = normalizeDateField(row.join_date);
     normalized.is_active = ensureBoolean(row.is_active);
+    normalized.must_change_password = row.must_change_password === undefined ? false : ensureBoolean(row.must_change_password);
     normalized.signup_status = String(row.signup_status ?? "");
   }
 

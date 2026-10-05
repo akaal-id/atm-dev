@@ -1,1 +1,1 @@
-export { ChatUnreadBadge, ChatUnreadProvider, useChatUnread } from "./chat-unread";
+export { ChatUnreadBadge, ChatUnreadProvider, useChatUnread, type LiveMessage } from "./chat-unread";

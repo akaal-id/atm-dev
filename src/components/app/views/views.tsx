@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BaseLocationCard } from "@/components/app/base-location-card";
 import { LeaveRequestButton } from "@/components/app/leave-request-modal";
 import { PageHero } from "@/components/app/page-header";
+import { PasswordResetButton } from "@/components/app/password-reset-button";
 import type { MonthScore } from "@/lib/server/scoring";
 import { TaskScoringPanel } from "@/components/app/task-scoring-panel";
 import { AttendancePager, AttendancePeriodNav, pageSlice } from "@/components/app/attendance-period-nav";
@@ -1245,6 +1246,19 @@ export function EmployeeProfileView({ data, employee, office, monthScore }: { da
                 statuses={employeeStatusOptions}
                 canRemove={employee.user_id !== data.currentUser.user_id}
               />
+              {employee.user_id === data.currentUser.user_id ? null : (
+                <PasswordResetButton
+                  userId={employee.user_id}
+                  name={employee.full_name}
+                  blockedReason={
+                    employee.signup_provider === "google" || employee.signup_provider === "apple"
+                      ? "Signs in with Google/Apple — there's no ATM password to reset."
+                      : ["super_admin", "org_owner"].includes(employee.role_id) && !["super_admin", "org_owner"].includes(data.currentUser.role_id)
+                        ? "Only an owner or super admin can reset this account's password."
+                        : undefined
+                  }
+                />
+              )}
             </CardBody>
           </Card>
         ) : null}

@@ -146,6 +146,12 @@ export function Topbar({
               <Link href={tenantHref("/notifications")} className={styles.notificationFooter}>
                 View all notifications
               </Link>
+              {user.signup_provider === "google" || user.signup_provider === "apple" ? null : (
+                <Link href="/account/password" className={cn(styles.notificationFooter, styles.menuLink)}>
+                  <AppIcon name="KeyRound" className={styles.icon} />
+                  Change password
+                </Link>
+              )}
               <form action="/api/auth/logout" method="post" className={styles.logoutForm}>
                 <Button type="submit" variant="ghost" size="xl" className={styles.logoutButton}>
                   <AppIcon name="LogOut" className={styles.icon} />

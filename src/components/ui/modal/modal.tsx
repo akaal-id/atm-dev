@@ -24,7 +24,7 @@ export function Modal({ open, onClose, title, eyebrow, className, children }: Mo
   return (
     <ModalPortal>
       <div className={styles.overlay}>
-        <div className={cn(styles.panel, className)}>
+        <div className={cn(styles.panel, className)} role="dialog" aria-modal="true" aria-label={title}>
           <div className={styles.header}>
             <div className={styles.content}>
               {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}

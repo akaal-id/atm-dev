@@ -28,6 +28,7 @@ export const protectedRoutePrefixes = [
   "/office",
   "/org",
   "/tenant-access-denied",
+  "/account",
 ] as const;
 
 export function isProtectedPath(pathname: string) {
@@ -40,6 +41,8 @@ export function isLegacyWorkspacePath(pathname: string) {
   if (isTenantPath(pathname)) return false;
   if (pathname === "/invite") return false;
   if (pathname === "/tenant-access-denied") return false;
+  // Account pages live outside the tenant workspace.
+  if (pathname === "/account" || pathname.startsWith("/account/")) return false;
   return protectedRoutePrefixes.some(
     (prefix) =>
       prefix !== "/org" &&

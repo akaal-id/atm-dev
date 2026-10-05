@@ -36,6 +36,11 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - **Leaderboard tracks** were set from task data: leaders are Azzam, Asad, Afif A, and Faisal; Ridho is video; Nabil is general; everyone else is design. **Copywriters can't be told apart from designers in the task data**, so the admin must correct them in Settings → Gamification.
   - **Messages badge:** `ChatUnreadProvider` (in WorkspaceProviders) takes its count from `/api/chat/unread` and bumps it live from realtime `messages` INSERTs in the user's rooms.
   - **Mobile top bar:** 56 px tall, logo, current-page title, icon-only actions.
+- 2026-10-05: Password management.
+  - **Admin reset:** Employee profile → Reset password calls `POST /api/users/[id]/reset-password`. It returns a one-time temporary password and sets `must_change_password`. AppShell then redirects the user to `/account/password` until they change it.
+  - **Self change:** avatar menu → Change password calls `POST /api/auth/password`.
+  - **Sessions:** both bump `password_changed_at`. Session JWTs with an earlier `iat` are rejected in `getCurrentUser`, so everyone else is logged out.
+  - **Not built yet:** "forgot password" by email.
 
 ## Gotchas
 
@@ -66,6 +71,15 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - Restore with `npm ci`, or by reading the files.
 - **Testing server modules with tsx:** `server-only` isn't installed, so use `.perf/tsconfig.test.json`, which maps it to a stub. Name scripts `.mts` so top-level await works.
 - **Playwright `page.route` can't mock app API calls while the PWA service worker is active**, because the service worker answers first. Create the context with `serviceWorkers: "block"`.
+- **Chat realtime needs the token set before subscribing.**
+  - With `@supabase/ssr`'s `createBrowserClient`, a channel created right away joined *without* an access token. Supabase accepted the join ("ok") but never delivered `postgres_changes`, so messages only appeared after a refresh.
+  - `src/lib/supabase/client.ts` is now a shared supabase-js client that calls `realtime.setAuth(publishableKey)` synchronously.
+  - For debugging, look at the `phx_join` payload's `access_token`.
+- **Chat sends must stay light.**
+  - `sendMessage` inserts first. The link preview and push run in `after()`, and the preview arrives as a realtime UPDATE.
+  - No `revalidatePath` on send: re-rendering the room page in the action response was the lag.
+- **Test inserts into `messages` need a real `sender_id`** (it's a foreign key to users). Always check the insert response.
+- **Rows inserted straight into the DB stay invisible to the app for up to 5 min.** `supabaseFetch` caches table reads under tag `sb:<table>`, and only writes through the app invalidate the tag. In tests, make one app write to that table after a direct insert.
 - **No Tailwind utility classes** in migrated components. Use the co-located `*.module.css`.
 
 ## Tooling

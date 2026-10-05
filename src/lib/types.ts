@@ -109,6 +109,10 @@ export interface User {
   profile_photo: string;
   bio: string;
   phone: string;
+  /** Set by an admin password reset: the user must choose a new password before using ATM. */
+  must_change_password?: boolean;
+  /** Sessions issued before this are rejected. */
+  password_changed_at?: string | null;
   /** Leaderboard track: design / copywriting / video / account / leader / general. */
   score_track?: string;
   /** Attendance base locations (WFO / WFH classification). */

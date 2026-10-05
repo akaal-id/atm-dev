@@ -10,7 +10,7 @@ export async function GET() {
   const rooms = await listRoomsForUser().catch(() => []);
   const total = rooms.reduce((sum, room) => sum + room.unreadCount, 0);
   return NextResponse.json(
-    { data: { total, roomIds: rooms.map((room) => room.room_id) } },
+    { data: { total, roomIds: rooms.map((room) => room.room_id), unread: Object.fromEntries(rooms.map((room) => [room.room_id, room.unreadCount])) } },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

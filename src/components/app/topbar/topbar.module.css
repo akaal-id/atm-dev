@@ -357,3 +357,11 @@
     display: none;
   }
 }
+
+/* Avatar-menu link with an icon (e.g. Change password). */
+.menuLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+}

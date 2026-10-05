@@ -113,6 +113,11 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
   const authorMap = useRef(
     new Map(roomMembers.map((m) => [m.user_id, m.author]).filter(([, a]) => a) as [string, ChatAuthor][]),
   );
+  // Read inside realtime callbacks; kept in a ref so new server props don't resubscribe the channel.
+  const directoryRef = useRef(directory);
+  useEffect(() => {
+    directoryRef.current = directory;
+  }, [directory]);
 
   // Realtime: stream new messages + member changes from other clients.
   useEffect(() => {
@@ -144,11 +149,20 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
       )
       .on(
         "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `room_id=eq.${room.room_id}` },
+        (payload) => {
+          // e.g. the link preview, fetched after the message was saved.
+          const row = payload.new as ChatMessage;
+          setMessages((prev) => prev.map((m) => (m.message_id === row.message_id ? { ...m, ...row, author: m.author, task: m.task } : m)));
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${room.room_id}` },
         (payload) => {
           if (payload.eventType === "INSERT") {
             const row = payload.new as RoomMember;
-            const author = directory.find((u) => u.user_id === row.user_id);
+            const author = directoryRef.current.find((u) => u.user_id === row.user_id);
             setRoomMembers((prev) =>
               prev.some((m) => m.user_id === row.user_id)
                 ? prev
@@ -165,7 +179,7 @@ export function ChatWindow({ currentUser, room, title, members, initialMessages,
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [room.room_id, currentUser.user_id, directory]);
+  }, [room.room_id, currentUser.user_id]);
 
   // Follow new messages only when already at the bottom (or it's your own send);
   // otherwise offer a "new messages" jump button instead of yanking the scroll.

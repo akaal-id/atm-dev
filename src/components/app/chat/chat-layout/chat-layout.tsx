@@ -7,12 +7,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { type LiveMessage, useChatUnread } from "@/components/app/chat-unread";
 import { useTenant } from "@/components/app/tenant-provider";
 import type { DirectoryUser } from "@/components/app/chat/members-dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { createRoom } from "@/lib/server/chat-actions";
 import type { ChatRoomSummary } from "@/lib/types/chat";
 import { cn } from "@/lib/utils";
+
+/** One-line preview of a live message, matching the server's format. Unknown senders are you (the directory excludes you). */
+function livePreview(message: LiveMessage, directory: DirectoryUser[]) {
+  const body =
+    message.type === "file"
+      ? `📎 ${message.file_name || "File"}`
+      : message.type === "task"
+        ? "📋 Task"
+        : message.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  if (message.type === "system") return body;
+  const sender = directory.find((user) => user.user_id === message.sender_id);
+  return `${sender ? sender.full_name.split(" ")[0] : "You"}: ${body}`;
+}
 
 /** The room you're looking at is never "unread". */
 const unreadIn = (activeRoomId?: string) => (room: ChatRoomSummary) => room.room_id !== activeRoomId && room.unreadCount > 0;
@@ -45,14 +59,33 @@ export function ChatLayout({
   const [newChatOpen, setNewChatOpen] = useState(false);
   const { href: tenantHref } = useTenant();
   const unread = unreadIn(activeRoomId);
+  const { unreadByRoom, latestByRoom } = useChatUnread();
+
+  // Server list + whatever arrived live since it was rendered (preview, time, unread, order).
+  const liveRooms = useMemo(
+    () =>
+      rooms
+        .map((room) => {
+          const live = latestByRoom[room.room_id];
+          const newer = live && (!room.last_message_at || live.created_at > room.last_message_at);
+          return {
+            ...room,
+            unreadCount: unreadByRoom[room.room_id] ?? room.unreadCount,
+            last_message_at: newer ? live.created_at : room.last_message_at,
+            lastMessagePreview: newer ? livePreview(live, directory) : room.lastMessagePreview,
+          };
+        })
+        .sort((a, b) => (b.last_message_at ?? "").localeCompare(a.last_message_at ?? "")),
+    [rooms, latestByRoom, unreadByRoom, directory],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     // Personal notes stay pinned at the top.
-    const ordered = [...rooms.filter((r) => r.type === "self"), ...rooms.filter((r) => r.type !== "self")];
+    const ordered = [...liveRooms.filter((r) => r.type === "self"), ...liveRooms.filter((r) => r.type !== "self")];
     if (!q) return ordered;
     return ordered.filter((r) => r.displayName.toLowerCase().includes(q));
-  }, [rooms, query]);
+  }, [liveRooms, query]);
 
   return (
     <div className={styles.shell}>

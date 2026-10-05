@@ -10,6 +10,7 @@ import { cache } from "react";
 import { departments as seedDepartments, roles as seedRoles } from "@/lib/data/seed";
 import { hasPermission } from "@/lib/permissions";
 import { authOptions } from "@/lib/server/next-auth-options";
+import { sessionPredatesPasswordChange } from "@/lib/server/passwords";
 import { listResourceByFieldUnscoped } from "@/lib/server/store";
 import type { CurrentUser, Permission, RoleKey, User } from "@/lib/types";
 
@@ -19,6 +20,8 @@ interface SessionPayload {
   userId: string;
   email: string;
   roleId: RoleKey;
+  /** JWT `iat` (seconds); compared with users.password_changed_at. */
+  issuedAt?: number;
 }
 
 function getSessionSecret() {
@@ -29,13 +32,22 @@ function getSessionSecret() {
   return new TextEncoder().encode(secret);
 }
 
-export async function createSessionToken(payload: SessionPayload) {
+export async function createSessionToken(payload: Omit<SessionPayload, "issuedAt">) {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(getSessionSecret());
 }
+
+/** Cookie options for the session (shared by login and password change). */
+export const sessionCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7,
+});
 
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
@@ -46,6 +58,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       userId: String(payload.userId),
       email: String(payload.email),
       roleId: payload.roleId as RoleKey,
+      issuedAt: typeof payload.iat === "number" ? payload.iat : undefined,
     };
   } catch {
     return null;
@@ -95,6 +108,8 @@ export const getCurrentUser = cache(async function getCurrentUser(): Promise<Cur
   const users = await listResourceByFieldUnscoped("Users", "user_id", session.userId, { limit: 1 });
   const user = users.find((candidate) => candidate.user_id === session.userId && candidate.is_active);
   if (!user) return null;
+  // A password reset/change logs out sessions issued before it.
+  if (sessionPredatesPasswordChange(session.issuedAt, user.password_changed_at)) return null;
 
   const [roles, departments] = await Promise.all([
     listResourceByFieldUnscoped("Roles", "role_id", user.role_id, { limit: 1 }),

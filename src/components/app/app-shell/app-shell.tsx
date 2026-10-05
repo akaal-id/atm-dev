@@ -32,6 +32,8 @@ export async function AppShell({
   modal?: React.ReactNode;
 }) {
   const user = await requireUser();
+  // After an admin reset the temporary password must be replaced before using ATM.
+  if (user.must_change_password) redirect("/account/password?required=1");
 
   const gate = await assertTenantAccess(user);
   if (gate.status === "not_found") notFound();

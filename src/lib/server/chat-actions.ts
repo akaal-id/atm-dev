@@ -412,13 +412,6 @@ export async function sendMessage(input: SendMessageInput): Promise<ChatMessageV
 
   const type = input.type ?? "text";
 
-  // Scrape a link preview for plain text messages that contain a URL.
-  let linkPreview: LinkPreview | null = null;
-  if (type === "text" && input.content) {
-    const url = firstUrl(input.content);
-    if (url) linkPreview = await fetchLinkPreview(url);
-  }
-
   const record = {
     message_id: input.message_id || makeId("msg"),
     room_id: input.room_id,
@@ -429,7 +422,7 @@ export async function sendMessage(input: SendMessageInput): Promise<ChatMessageV
     file_name: input.file_name ?? null,
     file_mime: input.file_mime ?? null,
     task_id: input.task_id ?? null,
-    link_preview: linkPreview,
+    link_preview: null,
     reply_to: input.reply_to ?? null,
   };
 
@@ -445,9 +438,22 @@ export async function sendMessage(input: SendMessageInput): Promise<ChatMessageV
     message.task_id ? tasksByIds([message.task_id]) : Promise.resolve(new Map<string, ChatTaskCard>()),
   ]);
 
-  revalidatePath(`/chat/${input.room_id}`);
-  // After the response: the sender never waits on push delivery.
-  after(() => notifyRoomMembers(input.room_id, me, message));
+  // After the response: the sender never waits on link previews or push delivery. The preview is
+  // patched onto the row and reaches every open chat through the realtime UPDATE event.
+  // (No revalidatePath: the sender already shows the message, and re-rendering the whole room
+  // page inside the action response was the main source of send lag.)
+  after(async () => {
+    await notifyRoomMembers(input.room_id, me, message);
+    const url = type === "text" && message.content ? firstUrl(message.content) : null;
+    const preview = url ? await fetchLinkPreview(url).catch(() => null) : null;
+    if (preview) {
+      await rest(`/messages?message_id=eq.${encodeURIComponent(message.message_id)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ link_preview: preview }),
+      }).catch(() => null);
+    }
+  });
   return {
     ...message,
     author: authors.get(message.sender_id) ?? null,

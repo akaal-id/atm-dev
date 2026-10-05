@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { authenticateUser, createSessionToken, sessionCookieName } from "@/lib/server/auth";
+import { authenticateUser, createSessionToken, sessionCookieName, sessionCookieOptions } from "@/lib/server/auth";
 import {
   activeCompanyCookieName,
   activeCompanyCookieOptions,
@@ -65,13 +65,7 @@ export async function POST(request: NextRequest) {
     ? NextResponse.json({ ok: true, next })
     : NextResponse.redirect(new URL(next, request.url));
 
-  response.cookies.set(sessionCookieName, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  response.cookies.set(sessionCookieName, token, sessionCookieOptions());
 
   response.cookies.set(activeCompanyCookieName, tenant.companyId, activeCompanyCookieOptions());
   response.cookies.set(activeOrganizationCookieName, tenant.orgId, activeCompanyCookieOptions());

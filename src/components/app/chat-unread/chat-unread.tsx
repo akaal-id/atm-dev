@@ -9,9 +9,18 @@ import { createClient } from "@/lib/supabase/client";
 import { appPathname } from "@/lib/tenant-path";
 import { cn } from "@/lib/utils";
 
-type ChatUnread = { total: number; pops: number };
+/** The newest message seen live in a room (drives the conversation list without a reload). */
+export type LiveMessage = { room_id: string; sender_id: string; type: string; content: string; file_name: string | null; created_at: string };
 
-const ChatUnreadContext = createContext<ChatUnread>({ total: 0, pops: 0 });
+type ChatUnread = {
+  total: number;
+  pops: number;
+  /** Unread per room, from the server and then bumped live. */
+  unreadByRoom: Record<string, number>;
+  latestByRoom: Record<string, LiveMessage>;
+};
+
+const ChatUnreadContext = createContext<ChatUnread>({ total: 0, pops: 0, unreadByRoom: {}, latestByRoom: {} });
 
 export const useChatUnread = () => useContext(ChatUnreadContext);
 
@@ -21,8 +30,10 @@ export const useChatUnread = () => useContext(ChatUnreadContext);
  */
 export function ChatUnreadProvider({ userId, children }: { userId: string; children: React.ReactNode }) {
   const pathname = usePathname();
-  const [total, setTotal] = useState(0);
+  const [unreadByRoom, setUnreadByRoom] = useState<Record<string, number>>({});
+  const [latestByRoom, setLatestByRoom] = useState<Record<string, LiveMessage>>({});
   const [pops, setPops] = useState(0);
+  const total = Object.values(unreadByRoom).reduce((sum, count) => sum + count, 0);
   const [roomIds, setRoomIds] = useState<string[]>([]);
   const pathRef = useRef(pathname);
   useEffect(() => {
@@ -32,8 +43,8 @@ export function ChatUnreadProvider({ userId, children }: { userId: string; child
   const refresh = useCallback(async () => {
     const response = await fetch("/api/chat/unread", { cache: "no-store" }).catch(() => null);
     if (!response?.ok) return;
-    const body = (await response.json()) as { data?: { total?: number; roomIds?: string[] } };
-    setTotal(body.data?.total ?? 0);
+    const body = (await response.json()) as { data?: { total?: number; roomIds?: string[]; unread?: Record<string, number> } };
+    setUnreadByRoom(body.data?.unread ?? {});
     setRoomIds((current) => {
       const next = body.data?.roomIds ?? [];
       return current.length === next.length && current.every((id, index) => id === next[index]) ? current : next;
@@ -62,10 +73,12 @@ export function ChatUnreadProvider({ userId, children }: { userId: string; child
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `room_id=in.(${roomIds.slice(0, 100).join(",")})` },
         (payload) => {
-          const row = payload.new as { room_id?: string; sender_id?: string; type?: string };
-          if (!row.room_id || row.sender_id === userId || row.type === "system") return;
+          const row = payload.new as LiveMessage;
+          if (!row.room_id) return;
+          setLatestByRoom((current) => ({ ...current, [row.room_id]: row }));
+          if (row.sender_id === userId || row.type === "system") return;
           if (appPathname(pathRef.current) === `/chat/${row.room_id}`) return;
-          setTotal((current) => current + 1);
+          setUnreadByRoom((current) => ({ ...current, [row.room_id]: (current[row.room_id] ?? 0) + 1 }));
           setPops((current) => current + 1);
         },
       )
@@ -75,7 +88,7 @@ export function ChatUnreadProvider({ userId, children }: { userId: string; child
     };
   }, [roomIds, userId]);
 
-  return <ChatUnreadContext.Provider value={{ total, pops }}>{children}</ChatUnreadContext.Provider>;
+  return <ChatUnreadContext.Provider value={{ total, pops, unreadByRoom, latestByRoom }}>{children}</ChatUnreadContext.Provider>;
 }
 
 /** Red bubble with the unread count; pops each time a new message arrives. */
