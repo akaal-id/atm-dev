@@ -567,16 +567,6 @@
 }
 
 /* ProjectsView — unique names so Calendar overrides can't smash the card stack */
-.projectGrid {
-  display: grid;
-  gap: 1rem;
-}
-@media (min-width: 1024px) {
-  .projectGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 .projectCardHeader {
   display: flex;
   align-items: flex-start;

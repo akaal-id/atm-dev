@@ -49,6 +49,12 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
     - The request endpoint answers identically for unknown emails.
     - Links use `NEXT_PUBLIC_APP_URL`, never the request Host.
 
+- 2026-10-05: **Projects page filters** (`components/app/project-browser`):
+  - Status tabs with counts, search, Owner, Member (incl. "Me"), Priority, Deadline range, and sort.
+  - Filtering runs client-side over the server-rendered cards.
+  - State lives in the URL (`?status=&q=&owner=&member=&priority=&from=&to=&sort=`), updated with `history.replaceState` so there's no server refetch per keystroke.
+- 2026-10-05: **Data cleanup.** Only 4 test tasks were deleted (AKL-L-001, AKL-002, AKL-L-013, AKL-014), with their checklists, comments, and activity logs. All 8 projects hold real work and were kept. Their XP point rows were kept. Backup: `~/atm-backups/2026-10-05-test-tasks.json`.
+
 ## Gotchas
 
 - **Env file must be `.env.local`.** On 2026-10-01 it was saved as `env.local` (no dot). Next.js ignored it, the store fell back to seed data, and real accounts got "Invalid email or password". If login fails for a valid user, check this first.

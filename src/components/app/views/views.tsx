@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BaseLocationCard } from "@/components/app/base-location-card";
 import { LeaveRequestButton } from "@/components/app/leave-request-modal";
 import { PageHero } from "@/components/app/page-header";
+import { ProjectBrowser, type ProjectBrowserItem } from "@/components/app/project-browser";
 import { PasswordResetButton } from "@/components/app/password-reset-button";
 import type { MonthScore } from "@/lib/server/scoring";
 import { TaskScoringPanel } from "@/components/app/task-scoring-panel";
@@ -585,109 +586,123 @@ export function ProjectsView(data: AppData) {
   const projectModalUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }));
   const createProjectAction = canManageProjects ? <CreateProjectModal currentUser={data.currentUser} users={projectModalUsers} /> : null;
 
+  const items: ProjectBrowserItem[] = data.projects.map((project) => ({
+    project_id: project.project_id,
+    project_name: project.project_name ?? "",
+    ticket_id_prefix: project.ticket_id_prefix ?? "",
+    description: project.description ?? "",
+    status: project.status ?? "",
+    priority: project.priority ?? "",
+    owner_user_id: project.owner_user_id ?? "",
+    members: project.members ?? [],
+    deadline: project.deadline ?? "",
+    card: (
+      <Card>
+        <CardHeader>
+          <div className={styles.projectCardHeader}>
+            <div className={styles.projectCardTitle}>
+              <TicketId id={project.ticket_id_prefix || project.project_id} />
+              <Link href={`/projects/${project.project_id}`} className={styles.itemMeta}>{project.project_name}</Link>
+              <p className={styles.text}>Owner: {userName(data.users, project.owner_user_id)}</p>
+            </div>
+            <StatusPill status={project.status} />
+          </div>
+        </CardHeader>
+        <CardBody className={styles.projectCardBody}>
+          <p className={styles.projectDescription}>{project.description}</p>
+          <Progress value={clampProgress(project.progress)} label={`Deadline ${formatShortDate(project.deadline)}`} />
+          <div className={styles.projectCardMeta}>
+            <div className={styles.projectAvatars}>
+              {project.members.slice(0, 4).map((id) => (
+                <Avatar key={id} name={userName(data.users, id)} size="sm" />
+              ))}
+            </div>
+            <Badge tone={project.priority === "Urgent" ? "red" : project.priority === "High" ? "yellow" : "neutral"}>{project.priority}</Badge>
+          </div>
+          <Link
+            href={`/projects/${project.project_id}`}
+            className={cn(buttonVariants({ variant: "default", size: "lg" }), styles.projectFilesLink)}
+          >
+            <LayoutDashboard className={styles.icon} />
+            Project Dashboard
+          </Link>
+          <Link
+            href={`/project-files?project=${project.project_id}`}
+            className={cn(buttonVariants({ variant: "outline", size: "lg" }), styles.projectFilesLink)}
+          >
+            <FolderOpen className={styles.icon} />
+            Project Files
+          </Link>
+          {canManageProjects ? (
+            <details className={styles.surfaceDetails}>
+              <summary className={styles.surfaceSummary}>Edit project</summary>
+              <form action={`/api/resources/Projects/${project.project_id}`} method="post" className={styles.formForm}>
+                <Field label="Project name"><input name="project_name" required className="input" defaultValue={project.project_name} /></Field>
+                <Field label="Ticket ID code"><input name="ticket_id_prefix" required className="input" defaultValue={project.ticket_id_prefix} maxLength={5} /></Field>
+                <Field label="Owner">
+                  <FormSelect
+                    name="owner_user_id"
+                    defaultValue={project.owner_user_id}
+                    options={activeProjectUsers.map((user) => ({ value: user.user_id, label: user.full_name }))}
+                  />
+                </Field>
+                <Field label="Status">
+                  <FormSelect
+                    name="status"
+                    defaultValue={project.status}
+                    options={projectStatuses.map((status) => ({ value: status, label: status }))}
+                  />
+                </Field>
+                <div className={styles.layout}>
+                  <Field label="Priority">
+                    <FormSelect
+                      name="priority"
+                      defaultValue={project.priority}
+                      options={["Low", "Medium", "High", "Urgent"].map((priority) => ({ value: priority, label: priority }))}
+                    />
+                  </Field>
+                  <Field label="Progress"><input name="progress" type="number" min="0" max="100" className="input" defaultValue={project.progress} /></Field>
+                </div>
+                <Field label="Deadline"><DatePickerField name="deadline" required defaultValue={project.deadline} variant="form" /></Field>
+                <Field label="Members">
+                  <div className={styles.surfaceDeadline}>
+                    {activeProjectUsers.map((user) => (
+                      <label key={user.user_id} className={styles.label}>
+                        <input name="members" type="checkbox" value={user.user_id} defaultChecked={project.members.includes(user.user_id)} className={styles.membersinput} />
+                        <span className={styles.captionMembers}>{user.full_name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+                <Field label="Links"><input name="links" className="input" defaultValue={project.links.join(", ")} /></Field>
+                <Field label="Description"><textarea name="description" required className={cn("input", styles.input)} defaultValue={project.description} /></Field>
+                <Field label="Notes"><textarea name="notes" className={cn("input", styles.input)} defaultValue={project.notes} /></Field>
+                <div className={styles.statuscatalog}>
+                  <Button type="submit" variant="default" size="xl">Save project</Button>
+                </div>
+              </form>
+              <form action={`/api/resources/Projects/${project.project_id}`} method="post" className={styles.formPrimary}>
+                <input type="hidden" name="_method" value="delete" />
+                <Button type="submit" variant="destructiveOutline" size="xl">
+                  <Trash2 className={styles.icon} />
+                  Remove project
+                </Button>
+              </form>
+            </details>
+          ) : null}
+        </CardBody>
+      </Card>
+    ),
+  }));
+
   return (
     <Page>
-      <DataToolbar tabs={["All", "Active", "Review", "Completed"]} action={createProjectAction} />
-
-      <div className={styles.projectGrid}>
-        {data.projects.map((project) => (
-          <Card key={project.project_id}>
-            <CardHeader>
-              <div className={styles.projectCardHeader}>
-                <div className={styles.projectCardTitle}>
-                  <TicketId id={project.ticket_id_prefix || project.project_id} />
-                  <Link href={`/projects/${project.project_id}`} className={styles.itemMeta}>{project.project_name}</Link>
-                  <p className={styles.text}>Owner: {userName(data.users, project.owner_user_id)}</p>
-                </div>
-                <StatusPill status={project.status} />
-              </div>
-            </CardHeader>
-            <CardBody className={styles.projectCardBody}>
-              <p className={styles.projectDescription}>{project.description}</p>
-              <Progress value={clampProgress(project.progress)} label={`Deadline ${formatShortDate(project.deadline)}`} />
-              <div className={styles.projectCardMeta}>
-                <div className={styles.projectAvatars}>
-                  {project.members.slice(0, 4).map((id) => (
-                    <Avatar key={id} name={userName(data.users, id)} size="sm" />
-                  ))}
-                </div>
-                <Badge tone={project.priority === "Urgent" ? "red" : project.priority === "High" ? "yellow" : "neutral"}>{project.priority}</Badge>
-              </div>
-              <Link
-                href={`/projects/${project.project_id}`}
-                className={cn(buttonVariants({ variant: "default", size: "lg" }), styles.projectFilesLink)}
-              >
-                <LayoutDashboard className={styles.icon} />
-                Project Dashboard
-              </Link>
-              <Link
-                href={`/project-files?project=${project.project_id}`}
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }), styles.projectFilesLink)}
-              >
-                <FolderOpen className={styles.icon} />
-                Project Files
-              </Link>
-              {canManageProjects ? (
-                <details className={styles.surfaceDetails}>
-                  <summary className={styles.surfaceSummary}>Edit project</summary>
-                  <form action={`/api/resources/Projects/${project.project_id}`} method="post" className={styles.formForm}>
-                    <Field label="Project name"><input name="project_name" required className="input" defaultValue={project.project_name} /></Field>
-                    <Field label="Ticket ID code"><input name="ticket_id_prefix" required className="input" defaultValue={project.ticket_id_prefix} maxLength={5} /></Field>
-                    <Field label="Owner">
-                      <FormSelect
-                        name="owner_user_id"
-                        defaultValue={project.owner_user_id}
-                        options={activeProjectUsers.map((user) => ({ value: user.user_id, label: user.full_name }))}
-                      />
-                    </Field>
-                    <Field label="Status">
-                      <FormSelect
-                        name="status"
-                        defaultValue={project.status}
-                        options={projectStatuses.map((status) => ({ value: status, label: status }))}
-                      />
-                    </Field>
-                    <div className={styles.layout}>
-                      <Field label="Priority">
-                        <FormSelect
-                          name="priority"
-                          defaultValue={project.priority}
-                          options={["Low", "Medium", "High", "Urgent"].map((priority) => ({ value: priority, label: priority }))}
-                        />
-                      </Field>
-                      <Field label="Progress"><input name="progress" type="number" min="0" max="100" className="input" defaultValue={project.progress} /></Field>
-                    </div>
-                    <Field label="Deadline"><DatePickerField name="deadline" required defaultValue={project.deadline} variant="form" /></Field>
-                    <Field label="Members">
-                      <div className={styles.surfaceDeadline}>
-                        {activeProjectUsers.map((user) => (
-                          <label key={user.user_id} className={styles.label}>
-                            <input name="members" type="checkbox" value={user.user_id} defaultChecked={project.members.includes(user.user_id)} className={styles.membersinput} />
-                            <span className={styles.captionMembers}>{user.full_name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </Field>
-                    <Field label="Links"><input name="links" className="input" defaultValue={project.links.join(", ")} /></Field>
-                    <Field label="Description"><textarea name="description" required className={cn("input", styles.input)} defaultValue={project.description} /></Field>
-                    <Field label="Notes"><textarea name="notes" className={cn("input", styles.input)} defaultValue={project.notes} /></Field>
-                    <div className={styles.statuscatalog}>
-                      <Button type="submit" variant="default" size="xl">Save project</Button>
-                    </div>
-                  </form>
-                  <form action={`/api/resources/Projects/${project.project_id}`} method="post" className={styles.formPrimary}>
-                    <input type="hidden" name="_method" value="delete" />
-                    <Button type="submit" variant="destructiveOutline" size="xl">
-                      <Trash2 className={styles.icon} />
-                      Remove project
-                    </Button>
-                  </form>
-                </details>
-              ) : null}
-            </CardBody>
-          </Card>
-        ))}
-      </div>
+      <ProjectBrowser
+        items={items}
+        users={activeProjectUsers.map((user) => ({ user_id: user.user_id, full_name: user.full_name }))}
+        currentUserId={data.currentUser.user_id}
+        action={createProjectAction}
+      />
     </Page>
   );
 }
