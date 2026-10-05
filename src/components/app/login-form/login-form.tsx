@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import styles from "./login-form.module.css";
 
 import { useState } from "react";
@@ -54,7 +55,12 @@ export function LoginForm({ nextPath }: LoginFormProps) {
         />
       </label>
       <label className={styles.field}>
-        <span className={styles.label}>Password</span>
+        <span className={styles.labelRow}>
+          <span className={styles.label}>Password</span>
+          <Link href="/forgot-password" className={styles.forgot}>
+            Forgot password?
+          </Link>
+        </span>
         <input
           name="password"
           type="password"

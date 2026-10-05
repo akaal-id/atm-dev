@@ -24,8 +24,11 @@ function PasswordInput({ label, value, onChange, autoComplete, autoFocus }: { la
   );
 }
 
-/** Change-password form. `requireCurrent` is false right after an admin reset. */
-export function PasswordForm({ requireCurrent }: { requireCurrent: boolean }) {
+/**
+ * Change-password form. `requireCurrent` is false right after an admin reset.
+ * With `resetToken` it completes an emailed "forgot password" link instead (signed out).
+ */
+export function PasswordForm({ requireCurrent, resetToken }: { requireCurrent: boolean; resetToken?: string }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -43,15 +46,15 @@ export function PasswordForm({ requireCurrent }: { requireCurrent: boolean }) {
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/api/auth/password", {
+      const response = await fetch(resetToken ? "/api/auth/reset-password" : "/api/auth/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword: current, newPassword: next }),
+        body: JSON.stringify(resetToken ? { token: resetToken, newPassword: next } : { currentPassword: current, newPassword: next }),
       });
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Could not change the password.");
       setDone(true);
-      window.setTimeout(() => window.location.assign("/dashboard"), 1200);
+      window.setTimeout(() => window.location.assign(resetToken ? "/login?reset=1" : "/dashboard"), 1200);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not change the password.");
     } finally {
@@ -62,7 +65,7 @@ export function PasswordForm({ requireCurrent }: { requireCurrent: boolean }) {
   if (done) {
     return (
       <p className={styles.success} role="status">
-        <Check aria-hidden /> Password updated. Taking you to ATM…
+        <Check aria-hidden /> Password updated. {resetToken ? "Taking you to sign in…" : "Taking you to ATM…"}
       </p>
     );
   }

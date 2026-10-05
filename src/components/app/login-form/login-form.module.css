@@ -317,3 +317,21 @@
 .slotPrimary {
   display: none;
 }
+
+/* "Password" label with the "Forgot password?" link on the right. */
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.forgot {
+  font-size: 0.8125rem;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+}

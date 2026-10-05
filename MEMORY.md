@@ -40,7 +40,10 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - **Admin reset:** Employee profile → Reset password calls `POST /api/users/[id]/reset-password`. It returns a one-time temporary password and sets `must_change_password`. AppShell then redirects the user to `/account/password` until they change it.
   - **Self change:** avatar menu → Change password calls `POST /api/auth/password`.
   - **Sessions:** both bump `password_changed_at`. Session JWTs with an earlier `iat` are rejected in `getCurrentUser`, so everyone else is logged out.
-  - **Not built yet:** "forgot password" by email.
+  - **Forgot password:** login → "Forgot password?" → `/forgot-password` → emailed link (Resend) → `/reset-password?token=`.
+    - Tokens are stored as SHA-256 in `password_reset_tokens`. They expire after 1 h, work once, and are limited to 3 per account per hour.
+    - The request endpoint answers identically for unknown emails.
+    - Links use `NEXT_PUBLIC_APP_URL`, never the request Host.
 
 ## Gotchas
 

@@ -9,7 +9,7 @@ import { getActiveCompanyContext } from "@/lib/server/company-context";
 import { buildTenantPath, DEFAULT_COMPANY_ID, DEFAULT_ORG_ID, isTenantPath } from "@/lib/tenant-path";
 import styles from "./login.module.css";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; verified?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; verified?: string; reset?: string }> }) {
   const user = await getCurrentUser();
   const params = await searchParams;
   const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
@@ -92,6 +92,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
 
           {params.verified ? <div className={styles.success}>Account verified. You can sign in now.</div> : null}
+          {params.reset ? <div className={styles.success}>Password updated. Sign in with your new password.</div> : null}
           {params.error ? <div className={styles.error}>Invalid email or password, or your account is not verified yet.</div> : null}
 
           {googleEnabled || appleEnabled ? (
