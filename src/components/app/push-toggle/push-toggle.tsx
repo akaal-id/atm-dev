@@ -2,18 +2,52 @@
 
 import styles from "./push-toggle.module.css";
 
-import { BellOff, BellRing, Check, Copy, Loader2, MonitorSmartphone, Send, Smartphone, X } from "lucide-react";
+import { BellOff, BellRing, Check, Copy, Loader2, MonitorSmartphone, RotateCw, Send, Smartphone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { disablePush, enablePush, type PushEnv, pushEnv, pushState, type PushState, sendTestPush } from "@/lib/push-client";
+import { disablePush, enablePush, type PushEnv, pushEnv, PushServiceError, pushState, type PushState, sendTestPush } from "@/lib/push-client";
 import { cn } from "@/lib/utils";
 
 const APP_URL = "https://team.akaal.id";
 const DISMISS_KEY = "atm:push-prompt-dismissed-at";
 const DISMISS_DAYS = 7;
 
-const browserName: Record<PushEnv["browser"], string> = { chrome: "Chrome", edge: "Edge", firefox: "Firefox", safari: "Safari", samsung: "Samsung Internet", other: "your browser" };
+const browserName: Record<PushEnv["browser"], string> = {
+  chrome: "Chrome",
+  edge: "Edge",
+  brave: "Brave",
+  opera: "Opera",
+  arc: "Arc",
+  firefox: "Firefox",
+  safari: "Safari",
+  samsung: "Samsung Internet",
+  other: "your browser",
+};
+
+const BRAVE_PUSH_SETTING = "brave://settings/privacy";
+
+/**
+ * "Registration failed - push service error": the browser couldn't reach its push service.
+ * Brave ships with Google push off; elsewhere it's usually a VPN/firewall or a stuck browser session.
+ */
+function serviceFixSteps(env: PushEnv): string[] {
+  const fallback = env.os === "macos" ? "Still failing? Use Safari instead: open team.akaal.id → File → Add to Dock → Turn on." : "Still failing? Open ATM in Chrome or Edge instead.";
+  if (env.browser === "brave")
+    return env.mobile
+      ? ["Brave → Settings → Privacy and security.", "Turn on “Use Google services for push messaging”.", "Close Brave completely, reopen ATM, and tap Try again."]
+      : [
+          `Copy the settings link, paste it into Brave's address bar, and press Enter.`,
+          "Turn on “Use Google services for push messaging”.",
+          "Quit Brave completely (Brave → Quit), reopen ATM, and click Try again.",
+          fallback,
+        ];
+  return [
+    `Quit ${browserName[env.browser]} completely${env.os === "macos" ? " (⌘Q)" : ""}, reopen ATM, and click Try again.`,
+    "Turn off any VPN, firewall, or ad-blocker that may block Google's push service, then try again.",
+    env.browser === "chrome" || env.browser === "edge" ? fallback : `${browserName[env.browser]} may not support web push. ${fallback}`,
+  ];
+}
 
 /** How to un-block notifications for team.akaal.id on this exact browser/OS. */
 function unblockSteps(env: PushEnv): string[] {
@@ -83,6 +117,7 @@ export function PushToggle({ mode = "card" }: { mode?: "card" | "banner" }) {
   const [justEnabled, setJustEnabled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [serviceError, setServiceError] = useState(false);
 
   useEffect(() => {
     // Browser-only facts (permission, subscription, user agent) are read after mount.
@@ -100,12 +135,14 @@ export function PushToggle({ mode = "card" }: { mode?: "card" | "banner" }) {
   async function turnOn() {
     setBusy("toggle");
     setError("");
+    setServiceError(false);
     try {
       const next = await enablePush();
       setState(next);
       if (next === "on") setJustEnabled(true);
     } catch (enableError) {
-      setError(enableError instanceof Error ? enableError.message : "Couldn't turn on notifications.");
+      if (enableError instanceof PushServiceError) setServiceError(true);
+      else setError(enableError instanceof Error ? enableError.message : "Couldn't turn on notifications.");
     } finally {
       setBusy("");
     }
@@ -138,8 +175,8 @@ export function PushToggle({ mode = "card" }: { mode?: "card" | "banner" }) {
     setHidden(true);
   }
 
-  async function copyLink() {
-    await navigator.clipboard.writeText(APP_URL).catch(() => null);
+  async function copyLink(text: string) {
+    await navigator.clipboard.writeText(text).catch(() => null);
     setCopied(true);
   }
 
@@ -171,6 +208,11 @@ export function PushToggle({ mode = "card" }: { mode?: "card" | "banner" }) {
     title = "Notifications are blocked on this device";
     text = "Allow them for team.akaal.id, then reload ATM:";
     steps = unblockSteps(env);
+  } else if (state === "off" && serviceError) {
+    tone = styles.warn;
+    title = `${browserName[env.browser]} couldn't connect to its push service`;
+    text = "This is a browser setting, not your ATM account. To fix it:";
+    steps = serviceFixSteps(env);
   } else if (state === "off") {
     title = env.mobile ? "Get notified on this phone" : "Get notified on this computer";
     text = "Turn on notifications so tasks, approvals, and chat messages reach you even when ATM is closed.";
@@ -223,15 +265,29 @@ export function PushToggle({ mode = "card" }: { mode?: "card" | "banner" }) {
 
       <div className={styles.actions}>
         {env.desktopApp ? (
-          <Button type="button" size="sm" variant="outline" onClick={() => void copyLink()}>
+          <Button type="button" size="sm" variant="outline" onClick={() => void copyLink(APP_URL)}>
             {copied ? <Check className={styles.btnIcon} aria-hidden /> : <Copy className={styles.btnIcon} aria-hidden />}
             {copied ? "Copied" : "Copy link"}
           </Button>
         ) : state === "off" ? (
-          <Button type="button" size="sm" onClick={() => void turnOn()} disabled={busy !== ""}>
-            {busy === "toggle" ? <Loader2 className={styles.spin} aria-hidden /> : <BellRing className={styles.btnIcon} aria-hidden />}
-            Turn on
-          </Button>
+          <>
+            {serviceError && env.browser === "brave" && !env.mobile ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => void copyLink(BRAVE_PUSH_SETTING)}>
+                {copied ? <Check className={styles.btnIcon} aria-hidden /> : <Copy className={styles.btnIcon} aria-hidden />}
+                {copied ? "Copied" : "Copy settings link"}
+              </Button>
+            ) : null}
+            <Button type="button" size="sm" onClick={() => void turnOn()} disabled={busy !== ""}>
+              {busy === "toggle" ? (
+                <Loader2 className={styles.spin} aria-hidden />
+              ) : serviceError ? (
+                <RotateCw className={styles.btnIcon} aria-hidden />
+              ) : (
+                <BellRing className={styles.btnIcon} aria-hidden />
+              )}
+              {serviceError ? "Try again" : "Turn on"}
+            </Button>
+          </>
         ) : state === "on" && mode === "card" ? (
           <Button type="button" size="sm" variant="outline" onClick={() => void turnOff()} disabled={busy !== ""}>
             {busy === "toggle" ? <Loader2 className={styles.spin} aria-hidden /> : null}

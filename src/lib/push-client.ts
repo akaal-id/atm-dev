@@ -11,6 +11,43 @@ function urlBase64ToUint8Array(base64: string) {
 const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
+/** The browser couldn't register with its push service (FCM etc.). Not an ATM server problem. */
+export class PushServiceError extends Error {
+  constructor() {
+    super("Your browser couldn't register with its push service.");
+    this.name = "PushServiceError";
+  }
+}
+
+const sameKey = (a: ArrayBuffer | null | undefined, b: Uint8Array) => {
+  if (!a) return false;
+  const view = new Uint8Array(a);
+  return view.length === b.length && view.every((byte, index) => byte === b[index]);
+};
+
+const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+/**
+ * Subscribe, replacing a subscription made with an old VAPID key, and retry once:
+ * Chromium's "Registration failed - push service error" is often transient.
+ */
+async function subscribe(reg: ServiceWorkerRegistration, key: Uint8Array) {
+  const existing = await reg.pushManager.getSubscription();
+  if (existing && sameKey(existing.options.applicationServerKey, key)) return existing;
+  if (existing) await existing.unsubscribe().catch(() => false);
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key as BufferSource });
+    } catch (error) {
+      const name = (error as DOMException)?.name;
+      const serviceError = name === "AbortError" || /push service/i.test((error as Error)?.message ?? "");
+      if (!serviceError) throw error;
+      if (attempt >= 1) throw new PushServiceError();
+      await wait(1500);
+    }
+  }
+}
+
 export function pushSupported() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
@@ -28,8 +65,21 @@ export async function pushState(): Promise<PushState> {
   return subscription && Notification.permission === "granted" ? "on" : "off";
 }
 
-/** Ask permission if needed, subscribe, and save the subscription for the signed-in user. */
-export async function enablePush(): Promise<PushState> {
+let enabling: Promise<PushState> | null = null;
+
+/**
+ * Ask permission if needed, subscribe, and save the subscription for the signed-in user.
+ * Single-flight: the background sync and the Turn on button often fire together, and parallel
+ * subscribe() calls race (and could unsubscribe each other's fresh subscription).
+ */
+export function enablePush(): Promise<PushState> {
+  enabling ??= enablePushOnce().finally(() => {
+    enabling = null;
+  });
+  return enabling;
+}
+
+async function enablePushOnce(): Promise<PushState> {
   if (!pushSupported()) return pushState();
   const permission = Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
   if (permission !== "granted") return permission === "denied" ? "denied" : "off";
@@ -40,7 +90,7 @@ export async function enablePush(): Promise<PushState> {
 
   const reg = await registration();
   if (!reg) throw new Error("The app's service worker isn't ready. Reload and try again.");
-  const subscription = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) }));
+  const subscription = await subscribe(reg, urlBase64ToUint8Array(key));
 
   const saved = await fetch("/api/push/subscription", {
     method: "POST",
@@ -70,7 +120,7 @@ export async function disablePush(): Promise<PushState> {
 
 export type PushEnv = {
   os: "macos" | "windows" | "android" | "ios" | "linux" | "other";
-  browser: "chrome" | "edge" | "firefox" | "safari" | "samsung" | "other";
+  browser: "chrome" | "edge" | "brave" | "opera" | "arc" | "firefox" | "safari" | "samsung" | "other";
   /** Inside the Tauri desktop app (system webview: no Web Push). */
   desktopApp: boolean;
   /** Installed PWA / home-screen / Dock app window. */
@@ -78,21 +128,24 @@ export type PushEnv = {
   mobile: boolean;
 };
 
+function detectBrowser(ua: string): PushEnv["browser"] {
+  if (/SamsungBrowser/.test(ua)) return "samsung";
+  // Brave and Arc send a plain Chrome user agent; they give themselves away elsewhere.
+  if ("brave" in navigator) return "brave";
+  if (/OPR\//.test(ua)) return "opera";
+  if (getComputedStyle(document.documentElement).getPropertyValue("--arc-palette-title") !== "") return "arc";
+  if (/Edg\//.test(ua)) return "edge";
+  if (/Firefox\//.test(ua)) return "firefox";
+  if (/Chrome\//.test(ua) || /CriOS\//.test(ua)) return "chrome";
+  if (/Safari\//.test(ua)) return "safari";
+  return "other";
+}
+
 /** Where ATM is running, so the push prompt can give exact, device-specific steps. */
 export function pushEnv(): PushEnv {
   const ua = navigator.userAgent;
   const os: PushEnv["os"] = isIos() ? "ios" : /Android/.test(ua) ? "android" : /Mac OS X/.test(ua) ? "macos" : /Windows/.test(ua) ? "windows" : /Linux/.test(ua) ? "linux" : "other";
-  const browser: PushEnv["browser"] = /SamsungBrowser/.test(ua)
-    ? "samsung"
-    : /Edg\//.test(ua)
-      ? "edge"
-      : /Firefox\//.test(ua)
-        ? "firefox"
-        : /Chrome\//.test(ua) || /CriOS\//.test(ua)
-          ? "chrome"
-          : /Safari\//.test(ua)
-            ? "safari"
-            : "other";
+  const browser = detectBrowser(ua);
   const tauri = typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
   // Desktop system webviews (WKWebView / WebView2 shells) lack the Push API and the usual browser tokens.
   const embeddedWebview = (os === "macos" || os === "windows") && !("PushManager" in window) && !/(Safari|Firefox)\//.test(ua);
