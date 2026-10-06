@@ -61,6 +61,8 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - The existing "Create task" button goes the other way.
 - 2026-10-06: **Workflow wizard step 3 assigns people per ticket** with `components/app/assignee-picker`, a reusable multi-select. "Assign all tickets to" sets every row. New and pasted rows inherit the previous row's people. Empty means the creator.
 
+- 2026-10-06: **Add subtask takes many lines** (`components/app/subtask-quick-add`). The server (`POST /api/resources/Task_Checklists`) splits `title` by line, strips list markers, caps it at 50, creates one subtask per line, and logs each. Ctrl/⌘+Enter submits.
+
 ## Gotchas
 
 - **Env file must be `.env.local`.** On 2026-10-01 it was saved as `env.local` (no dot). Next.js ignored it, the store fell back to seed data, and real accounts got "Invalid email or password". If login fails for a valid user, check this first.
@@ -106,7 +108,7 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
 - **`/tasks` has no page.** It redirects to `/tasks/my`, and the "Tasks" breadcrumb links straight to `/tasks/my`.
 - **Production logs:** `vercel logs --project atm-dev --scope akaals-projects --environment production --since 7d --status-code 4xx --json`. Use the npx-cached CLI at `~/.npm/_npx/*/node_modules/.bin/vercel`, v62. `--query` matches message text, not the HTTP method.
 - **Unknown columns no longer 500.** `supabase-store` writes go through `writeDroppingUnknownColumns`. On PostgREST `PGRST204` ("Could not find the 'x' column") it retries without that field and logs `[supabase-store] … is not a column of …`. Grep production logs for that line, then add the column or remove the field. Origin: Create project sent the mock `workflow_template_id`, and every project creation returned 500 (2026-10-06).
-- **Regression sweep scripts (local production build, live DB):** `.perf/all-pages.mjs` covers every route, including dynamic ones. `.perf/task-flows.mjs`, `.perf/sweep.mjs`, `.perf/project-flows.mjs`, `.perf/write-flows*.mjs` cover create/edit/delete. Name test rows "ZZ …" and delete them afterwards, then purge `sb:<table>` on Vercel. Don't run flows that notify others: announcements, leave requests, email blast, clock-in.
+- **Regression sweep scripts (local production build, live DB):** `.perf/all-pages.mjs` covers every route, including dynamic ones. `.perf/task-flows.mjs`, `.perf/sweep.mjs`, `.perf/project-flows.mjs`, `.perf/write-flows*.mjs` cover create/edit/delete. Name test rows "ZZ …" and delete them afterwards, then purge `sb:<table>` on Vercel. Don't run flows that notify others: announcements, leave requests, email blast, clock-in. **Never create assigned data while logged in as the owner (Asad).** On 2026-10-06, test tasks "[ZZ TEST] …" defaulted to the creator as assignee and pushed "New task assigned" to his real devices; the push stays on the device after the rows are deleted. Use a dedicated test login instead: a temporary user with an org membership, removed afterwards.
 - **No Tailwind utility classes** in migrated components. Use the co-located `*.module.css`.
 
 ## Tooling

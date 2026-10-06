@@ -105,6 +105,15 @@ function parseChecklistTitles(value: unknown) {
     .filter(Boolean);
 }
 
+/** One subtask per line; list markers from pasted lists ("- ", "• ", "1. ", "[ ] ") are dropped. */
+function splitSubtaskLines(value: unknown) {
+  return String(value ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*(?:[-*•▪◦]|\d+[.)]|\[[ xX]?\])\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 50);
+}
+
 function usersForAnnouncement(payload: Record<string, unknown>, users: User[]) {
   const targetUsers = Array.isArray(payload.target_users) ? payload.target_users.map(String).filter(Boolean) : [];
   const targetDepartment = String(payload.target_department ?? "all");
@@ -227,7 +236,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     payload.inherit_project_tasks = Boolean(payload.inherit_project_tasks);
   }
 
+  // Several lines in "Add subtask" create several subtasks: the first goes through the normal path below.
+  const extraSubtaskTitles: string[] = [];
   if (resource === "Task_Checklists") {
+    const titles = splitSubtaskLines(payload.title);
+    if (titles.length > 0) {
+      payload.title = titles[0];
+      extraSubtaskTitles.push(...titles.slice(1));
+    }
     payload.assignee_completed ??= payload.is_completed ?? false;
     payload.assignee_completed_by ??= payload.assignee_completed ? access.user.user_id : "";
     payload.pm_approved ??= false;
@@ -355,6 +371,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
         action: "created",
         title: checklistTitle,
       });
+      for (const title of extraSubtaskTitles) {
+        await createResource("Task_Checklists", { ...payload, title } as never);
+        await logTaskChecklistActivity({ userId: access.user.user_id, userName: access.user.full_name, taskId, action: "created", title });
+      }
       await syncTaskWorkflowStatus(taskId);
     }
   }

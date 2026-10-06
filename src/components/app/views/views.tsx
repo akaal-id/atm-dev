@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BaseLocationCard } from "@/components/app/base-location-card";
 import { LeaveRequestButton } from "@/components/app/leave-request-modal";
 import { PageHero } from "@/components/app/page-header";
+import { SubtaskQuickAdd } from "@/components/app/subtask-quick-add";
 import { ProjectBrowser, type ProjectBrowserItem } from "@/components/app/project-browser";
 import { PasswordResetButton } from "@/components/app/password-reset-button";
 import type { MonthScore } from "@/lib/server/scoring";
@@ -373,14 +374,7 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
             {checklist.map((item) => (
               <WorkflowChecklistItem key={item.checklist_id} item={item} task={task} currentUser={data.currentUser} />
             ))}
-            <form action="/api/resources/Task_Checklists" method="post" className={styles.formForm}>
-              <input type="hidden" name="task_id" value={task.task_id} />
-              <input name="title" required className="input" placeholder="Add subtask" />
-              <Button type="submit" variant="default" size="xl">
-                <Plus className={styles.icon} />
-                Add
-              </Button>
-            </form>
+            <SubtaskQuickAdd taskId={task.task_id} />
           </CardBody>
         </Card>
 
