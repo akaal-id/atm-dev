@@ -97,6 +97,41 @@ function canRetryWithoutOptionalFields(resource: SupabaseResourceName, error: un
   return optionalFields.some((field) => field in record && error.preview?.includes(field));
 }
 
+const UNKNOWN_COLUMN = /Could not find the '([^']+)' column/;
+
+/** The column PostgREST rejected as unknown (PGRST204), if that's what this error is. */
+function unknownColumn(error: unknown) {
+  if (!(error instanceof SupabaseStoreError) || error.status !== 400) return null;
+  return UNKNOWN_COLUMN.exec(error.message)?.[1] ?? null;
+}
+
+/**
+ * Sends a write and, when Supabase rejects a field the table doesn't have, retries without it
+ * (known optional fields first, then any column named in a PGRST204 error, up to 5) instead of
+ * failing the whole request with a 500. Dropped columns are logged so the schema can catch up.
+ */
+async function writeDroppingUnknownColumns<T>(resource: SupabaseResourceName, records: Array<Record<string, unknown>>, send: (body: Array<Record<string, unknown>>) => Promise<T>): Promise<T> {
+  let current = records;
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await send(current);
+    } catch (error) {
+      if (current.some((record) => canRetryWithoutOptionalFields(resource, error, record))) {
+        current = current.map((record) => stripOptionalFields(resource, record));
+        continue;
+      }
+      const column = unknownColumn(error);
+      if (!column || attempt >= 5 || !current.some((record) => column in record)) throw error;
+      console.warn(`[supabase-store] ${resource}: "${column}" is not a column of ${tableFor(resource)}; saved without it.`);
+      current = current.map((record) => {
+        const next = { ...record };
+        delete next[column];
+        return next;
+      });
+    }
+  }
+}
+
 export function isSupabaseConfigured() {
   return isSupabaseRestConfigured();
 }
@@ -243,22 +278,13 @@ export async function readSupabaseResourceWhere(resource: SupabaseResourceName, 
 
 export async function insertSupabaseResource(resource: SupabaseResourceName, record: Record<string, unknown>) {
   const table = tableFor(resource);
-  let rows: Record<string, unknown>[];
-
-  try {
-    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}`, {
+  const rows = await writeDroppingUnknownColumns(resource, [record], ([body]) =>
+    requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}`, {
       method: "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify(record),
-    });
-  } catch (error) {
-    if (!canRetryWithoutOptionalFields(resource, error, record)) throw error;
-    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}`, {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(stripOptionalFields(resource, record)),
-    });
-  }
+      body: JSON.stringify(body),
+    }),
+  );
 
   return rows[0];
 }
@@ -272,21 +298,13 @@ export async function upsertSupabaseResources(resource: SupabaseResourceName, id
 
   for (let index = 0; index < records.length; index += batchSize) {
     const batch = records.slice(index, index + batchSize);
-    try {
-      await requestSupabase<undefined>(`/rest/v1/${table}?on_conflict=${encodeURIComponent(idField)}`, {
+    await writeDroppingUnknownColumns(resource, batch, (body) =>
+      requestSupabase<undefined>(`/rest/v1/${table}?on_conflict=${encodeURIComponent(idField)}`, {
         method: "POST",
         headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify(batch),
-      });
-    } catch (error) {
-      const sampleRecord = batch.find((record) => canRetryWithoutOptionalFields(resource, error, record));
-      if (!sampleRecord) throw error;
-      await requestSupabase<undefined>(`/rest/v1/${table}?on_conflict=${encodeURIComponent(idField)}`, {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify(batch.map((record) => stripOptionalFields(resource, record))),
-      });
-    }
+        body: JSON.stringify(body),
+      }),
+    );
     total += batch.length;
   }
 
@@ -295,22 +313,13 @@ export async function upsertSupabaseResources(resource: SupabaseResourceName, id
 
 export async function updateSupabaseResource(resource: SupabaseResourceName, idField: string, id: string, patch: Record<string, unknown>) {
   const table = tableFor(resource);
-  let rows: Record<string, unknown>[];
-
-  try {
-    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${filterById(idField, id)}`, {
+  const rows = await writeDroppingUnknownColumns(resource, [patch], ([body]) =>
+    requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${filterById(idField, id)}`, {
       method: "PATCH",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify(patch),
-    });
-  } catch (error) {
-    if (!canRetryWithoutOptionalFields(resource, error, patch)) throw error;
-    rows = await requestSupabase<Record<string, unknown>[]>(`/rest/v1/${table}?${filterById(idField, id)}`, {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(stripOptionalFields(resource, patch)),
-    });
-  }
+      body: JSON.stringify(body),
+    }),
+  );
 
   return rows[0];
 }

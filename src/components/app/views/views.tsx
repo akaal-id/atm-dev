@@ -1516,6 +1516,8 @@ export function DepartmentsManagerView(data: AppData) {
           ) : (
             data.departments.map((department) => {
               const memberCount = usersByDepartment[department.department_id]?.length ?? 0;
+              // A leader id that matches no user (e.g. left over from seed data) counts as no leader.
+              const leader = data.users.find((user) => user.user_id === department.leader_user_id);
 
               return (
                 <div key={department.department_id} className={styles.infotile}>
@@ -1531,7 +1533,7 @@ export function DepartmentsManagerView(data: AppData) {
                         </p>
                       </div>
                     </div>
-                    <Badge tone={memberCount > 0 ? "blue" : "neutral"}>{userName(data.users, department.leader_user_id)}</Badge>
+                    <Badge tone={memberCount > 0 ? "blue" : "neutral"}>{leader ? leader.full_name : "No leader"}</Badge>
                   </div>
 
                   <div className={styles.surfaceAlt}>
@@ -1542,7 +1544,7 @@ export function DepartmentsManagerView(data: AppData) {
                       <Field label="Leader">
                         <FormSelect
                           name="leader_user_id"
-                          defaultValue={department.leader_user_id}
+                          defaultValue={leader ? leader.user_id : ""}
                           placeholder="No leader assigned"
                           options={[
                             { value: "", label: "No leader assigned" },

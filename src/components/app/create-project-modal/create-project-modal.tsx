@@ -17,7 +17,6 @@ import { FormSelect } from "@/components/ui/form-select";
 
 import { ModalPortal } from "@/components/ui/modal-portal";
 
-import { mockWorkflowTemplates } from "@/lib/data/workflow-templates-mock";
 import type { CurrentUser, Priority, ProjectStatus } from "@/lib/types";
 
 import { cn } from "@/lib/utils";
@@ -151,23 +150,6 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
                 </Field>
               </div>
 
-              <Field label="Workflow template">
-                <FormSelect
-                  name="workflow_template_id"
-                  defaultValue={
-                    mockWorkflowTemplates.find((template) => template.is_default)?.id ||
-                    mockWorkflowTemplates[0]?.id ||
-                    ""
-                  }
-                  options={mockWorkflowTemplates.map((template) => ({
-                    value: template.id,
-                    label: `${template.name}${template.is_default ? " (default)" : ""} · ${template.columns.length} columns`,
-                  }))}
-                />
-                <p className={styles.hint}>
-                  Kolom Kanban proyek mengikuti template ini (data tiruan sampai API backend siap).
-                </p>
-              </Field>
 
               <div className={styles.fieldsGrid}>
 
