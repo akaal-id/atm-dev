@@ -53,7 +53,7 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - Status tabs with counts, search, Owner, Member (incl. "Me"), Priority, Deadline range, and sort.
   - Filtering runs client-side over the server-rendered cards.
   - State lives in the URL (`?status=&q=&owner=&member=&priority=&from=&to=&sort=`), updated with `history.replaceState` so there's no server refetch per keystroke.
-- 2026-10-05: **Data cleanup.** Only 4 test tasks were deleted (AKL-L-001, AKL-002, AKL-L-013, AKL-014), with their checklists, comments, and activity logs. All 8 projects hold real work and were kept. Their XP point rows were kept. Backup: `~/atm-backups/2026-10-05-test-tasks.json`.
+- 2026-10-05: **Data cleanup.** Only 4 test tasks were deleted (AKL-L-001, AKL-002, AKL-L-013, AKL-014), with their checklists, comments, and activity logs. All 8 projects hold real work and were kept. Their XP point rows were kept. Backup: `~/atm-backups/2026-10-05-test-tasks.json`. Later the same day, all 26 overdue To Do / In Progress tasks were set to **Cancelled** rather than deleted, at the user's choice. Their prior status is in `~/atm-backups/2026-10-05-cancelled-overdue-tasks.json`.
 
 ## Gotchas
 
@@ -94,7 +94,11 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - `sendMessage` inserts first. The link preview and push run in `after()`, and the preview arrives as a realtime UPDATE.
   - No `revalidatePath` on send: re-rendering the room page in the action response was the lag.
 - **Test inserts into `messages` need a real `sender_id`** (it's a foreign key to users). Always check the insert response.
-- **Rows inserted straight into the DB stay invisible to the app for up to 5 min.** `supabaseFetch` caches table reads under tag `sb:<table>`, and only writes through the app invalidate the tag. In tests, make one app write to that table after a direct insert.
+- **Rows inserted straight into the DB stay invisible to the app for up to 5 min.** `supabaseFetch` caches table reads under tag `sb:<table>`, and only writes through the app invalidate the tag. In tests, make one app write to that table after a direct insert. **After a direct SQL edit on production**, purge the tag right away. Run `vercel cache dangerously-delete --tag sb:<table> --project atm-dev --scope akaals-projects --yes` (Vercel CLI ≥ 62). Otherwise pages show stale rows: the 300 s TTL is stale-while-revalidate, so the first hit after it expires still gets the old data. Verified 2026-10-05.
+- **Form POST handlers must redirect with 303, not the default 307.** `NextResponse.redirect(url)` defaults to 307, which makes the browser re-POST the form body to the target *page*. Next then treats it as a Server Action request, and the page renders oddly or crashes. That broke Create task, Edit task, and the post-login dashboard. All API redirects now pass `303`, and `redirectBack` does too. Fixed 2026-10-06.
+- **Never use `= []` / `= {}` as a default for a prop that ends up in `useEffect` deps.** A new array on every render re-runs the effect. If that effect calls `setState`, React aborts with error #185 "Maximum update depth exceeded" and shows "This page couldn't load". The Edit task modal (opened without `workflows`) did exactly this; use a module-level constant instead. Fixed 2026-10-06.
+- **`/tasks` has no page.** It redirects to `/tasks/my`, and the "Tasks" breadcrumb links straight to `/tasks/my`.
+- **Production logs:** `vercel logs --project atm-dev --scope akaals-projects --environment production --since 7d --status-code 4xx --json`. Use the npx-cached CLI at `~/.npm/_npx/*/node_modules/.bin/vercel`, v62. `--query` matches message text, not the HTTP method.
 - **No Tailwind utility classes** in migrated components. Use the co-located `*.module.css`.
 
 ## Tooling

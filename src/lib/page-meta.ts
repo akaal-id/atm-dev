@@ -102,7 +102,9 @@ export function getBreadcrumbs(pathname: string, tenant?: TenantRef | null): Bre
     if (part === "employees" && !isLast) label = "Employees";
     if (part === "chat" && !isLast) label = "Messages";
 
-    crumbs.push(isLast ? { label } : { label, href: withTenant(href, tenant) });
+    // "/tasks" has no page of its own; its crumb opens the user's tasks.
+    const crumbHref = part === "tasks" && href === "/tasks" ? "/tasks/my" : href;
+    crumbs.push(isLast ? { label } : { label, href: withTenant(crumbHref, tenant) });
   }
 
   return crumbs.length > 0 ? crumbs : [{ label: "Dashboard", href: withTenant("/dashboard", tenant) }];

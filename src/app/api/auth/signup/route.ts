@@ -9,13 +9,13 @@ export async function POST(request: NextRequest) {
     const input = await parseSignupFormData(await request.formData());
     errorBase = input.account_type === "org_owner" ? "/signup/organization" : "/signup";
     const redirectPath = await resolveSignupRedirectPath(input);
-    return NextResponse.redirect(new URL(redirectPath, request.url));
+    return NextResponse.redirect(new URL(redirectPath, request.url), 303);
   } catch (error) {
     if (error instanceof UploadError) {
-      return NextResponse.redirect(new URL(`${errorBase}?error=upload`, request.url));
+      return NextResponse.redirect(new URL(`${errorBase}?error=upload`, request.url), 303);
     }
 
     console.error("Signup request failed", error);
-    return NextResponse.redirect(new URL(`${errorBase}?error=server`, request.url));
+    return NextResponse.redirect(new URL(`${errorBase}?error=server`, request.url), 303);
   }
 }

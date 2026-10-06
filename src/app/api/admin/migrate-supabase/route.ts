@@ -79,6 +79,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Supabase migration failed. Check the server logs for the exact table and database message." }, { status: 502 });
     }
 
-    return NextResponse.redirect(new URL("/admin/settings?supabase_migration=error", request.url));
+    return NextResponse.redirect(new URL("/admin/settings?supabase_migration=error", request.url), 303);
   }
 }

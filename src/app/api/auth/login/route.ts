@@ -57,13 +57,13 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     if (contentType.includes("application/json")) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-    return NextResponse.redirect(new URL(`/login?error=credentials&next=${encodeURIComponent(next)}`, request.url));
+    return NextResponse.redirect(new URL(`/login?error=credentials&next=${encodeURIComponent(next)}`, request.url), 303);
   }
 
   const token = await createSessionToken({ userId: user.user_id, email: user.email, roleId: user.role_id });
   const response = contentType.includes("application/json")
     ? NextResponse.json({ ok: true, next })
-    : NextResponse.redirect(new URL(next, request.url));
+    : NextResponse.redirect(new URL(next, request.url), 303);
 
   response.cookies.set(sessionCookieName, token, sessionCookieOptions());
 

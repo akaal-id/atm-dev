@@ -362,11 +362,11 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   }
 
   if (resource === "Users" && !wantsJson(request)) {
-    return NextResponse.redirect(new URL("/employees", request.url));
+    return NextResponse.redirect(new URL("/employees", request.url), 303);
   }
 
   if (resource === "Tasks" && !wantsJson(request)) {
-    return NextResponse.redirect(new URL("/tasks/my", request.url));
+    return NextResponse.redirect(new URL("/tasks/my", request.url), 303);
   }
 
   return wantsJson(request) ? NextResponse.json({ ok: true }) : redirectBack(request);

@@ -61,12 +61,16 @@ function toWorkflowOptions(workflows: TaskModalWorkflow[]): TaskModalWorkflow[] 
   return next.sort((left, right) => left.name.localeCompare(right.name));
 }
 
+// Stable default: a fresh `[]` per render would retrigger the open-effect below on every render
+// (it calls setState), looping until React aborts with "Maximum update depth exceeded".
+const NO_WORKFLOWS: TaskModalWorkflow[] = [];
+
 export function TaskFormModal({
   mode,
   currentUser,
   users,
   projects,
-  workflows: workflowsProp = [],
+  workflows: workflowsProp = NO_WORKFLOWS,
   defaultWorkflowId = "",
   task,
   open: controlledOpen,

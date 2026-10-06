@@ -224,7 +224,7 @@ export function cleanEmptyStrings(payload: Record<string, unknown>) {
 
 export function redirectBack(request: NextRequest, fallback = "/dashboard") {
   const referer = request.headers.get("referer");
-  return NextResponse.redirect(referer || new URL(fallback, request.url));
+  return NextResponse.redirect(referer || new URL(fallback, request.url), 303);
 }
 
 export function wantsJson(request: NextRequest) {

@@ -384,6 +384,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   }
 
   if (wantsJson(request)) return NextResponse.json({ data: record }, { status: 201 });
-  if (resource === "Tasks") return NextResponse.redirect(new URL(`/tasks/${entityId}`, request.url));
+  if (resource === "Tasks") return NextResponse.redirect(new URL(`/tasks/${entityId}`, request.url), 303);
   return redirectBack(request);
 }
