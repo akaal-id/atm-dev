@@ -55,6 +55,12 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - State lives in the URL (`?status=&q=&owner=&member=&priority=&from=&to=&sort=`), updated with `history.replaceState` so there's no server refetch per keystroke.
 - 2026-10-05: **Data cleanup.** Only 4 test tasks were deleted (AKL-L-001, AKL-002, AKL-L-013, AKL-014), with their checklists, comments, and activity logs. All 8 projects hold real work and were kept. Their XP point rows were kept. Backup: `~/atm-backups/2026-10-05-test-tasks.json`. Later the same day, all 26 overdue To Do / In Progress tasks were set to **Cancelled** rather than deleted, at the user's choice. Their prior status is in `~/atm-backups/2026-10-05-cancelled-overdue-tasks.json`.
 
+- 2026-10-06: **Content matrix ↔ tasks.**
+  - "Import from tasks" (`POST /api/projects/[id]/content/import`) turns project tasks into content rows linked by `task_id`. Title, publication date, and month come from the task. Tasks already in the matrix are skipped.
+  - Linked rows show the task's live status.
+  - The existing "Create task" button goes the other way.
+- 2026-10-06: **Workflow wizard step 3 assigns people per ticket** with `components/app/assignee-picker`, a reusable multi-select. "Assign all tickets to" sets every row. New and pasted rows inherit the previous row's people. Empty means the creator.
+
 ## Gotchas
 
 - **Env file must be `.env.local`.** On 2026-10-01 it was saved as `env.local` (no dot). Next.js ignored it, the store fell back to seed data, and real accounts got "Invalid email or password". If login fails for a valid user, check this first.

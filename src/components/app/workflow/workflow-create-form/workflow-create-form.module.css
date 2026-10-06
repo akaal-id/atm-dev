@@ -273,7 +273,31 @@
 }
 
 .backlogRow {
-  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.5rem minmax(0, 1fr) minmax(8rem, 11rem) auto;
+}
+
+/* Bulk assign above the ticket list. */
+.assignAll {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.assignAll > :last-child {
+  width: min(100%, 16rem);
+}
+
+@media (max-width: 640px) {
+  .backlogRow {
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  }
+
+  .backlogRow > :nth-child(3) {
+    grid-column: 2 / 3;
+  }
 }
 
 .backlogRow :global(.input) {

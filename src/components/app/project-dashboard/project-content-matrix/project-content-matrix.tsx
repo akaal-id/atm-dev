@@ -2,16 +2,18 @@
 
 import styles from "./project-content-matrix.module.css";
 
-import { Download, ExternalLink, Loader2, MessageSquareText, Pencil, Plus, Search, SquarePlus } from "lucide-react";
+import { Download, ExternalLink, ListPlus, Loader2, MessageSquareText, Pencil, Plus, Search, SquarePlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { ContentCaptionModal } from "@/components/app/project-dashboard/content-caption-modal";
+import { ContentImportModal } from "@/components/app/project-dashboard/content-import-modal";
 import { ContentItemModal } from "@/components/app/project-dashboard/content-item-modal";
 import { useTenant } from "@/components/app/tenant-provider";
 import { Button } from "@/components/ui/button";
 import { FormSelect } from "@/components/ui/form-select";
+import { StatusPill } from "@/components/ui/status-pill";
 import { useToast } from "@/components/ui/toast";
 import { brandLabel, formatMonth, sortContent } from "@/lib/content-matrix";
 import { requestJson } from "@/lib/request-json";
@@ -34,10 +36,13 @@ function LinkCell({ href, label }: { href: string; label: string }) {
 export function ProjectContentMatrix({
   project,
   hub,
+  tasks,
   canContribute,
 }: {
   project: Project;
   hub: ProjectHubData;
+  /** This project's tasks: their live status shows on linked rows, and unlinked ones can be imported. */
+  tasks: Task[];
   canContribute: boolean;
 }) {
   const router = useRouter();
@@ -48,6 +53,12 @@ export function ProjectContentMatrix({
   const [captionFor, setCaptionFor] = useState<ContentItem | null>(null);
   const [creatingTask, setCreatingTask] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const taskById = useMemo(() => new Map(tasks.map((task) => [task.task_id, task])), [tasks]);
+  const unlinkedTasks = useMemo(() => {
+    const linked = new Set(hub.content.map((item) => item.task_id).filter(Boolean));
+    return tasks.filter((task) => !linked.has(task.task_id));
+  }, [hub.content, tasks]);
 
   const rows = useMemo(() => sortContent(hub.content), [hub.content]);
   const months = [...new Set(rows.map((row) => row.month).filter(Boolean))].sort();
@@ -127,6 +138,17 @@ export function ProjectContentMatrix({
 
   return (
     <section className={styles.root} aria-label="Content matrix">
+      <ContentImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        projectId={project.project_id}
+        tasks={unlinkedTasks}
+        onImported={(created) => {
+          setImportOpen(false);
+          pushToast({ tone: "success", title: created ? `Imported ${created} task${created === 1 ? "" : "s"} into the matrix` : "Those tasks were already in the matrix" });
+          router.refresh();
+        }}
+      />
       <div className={styles.toolbar}>
         <label className={styles.search}>
           <Search className={styles.searchIcon} aria-hidden />
@@ -163,6 +185,12 @@ export function ProjectContentMatrix({
             {exporting ? <Loader2 className={styles.spinner} aria-hidden /> : <Download className={styles.icon} aria-hidden />}
             Export Excel
           </Button>
+          {canContribute ? (
+            <Button type="button" variant="outline" onClick={() => setImportOpen(true)}>
+              <ListPlus className={styles.icon} aria-hidden />
+              Import from tasks
+            </Button>
+          ) : null}
           {canContribute ? (
             <Button type="button" onClick={() => setEditing("new")}>
               <Plus className={styles.icon} aria-hidden />
@@ -212,9 +240,12 @@ export function ProjectContentMatrix({
                   <td className={styles.num}>{index + 1}</td>
                   <td>
                     {row.task_id ? (
-                      <Link href={tenant.href(`/tasks/${row.task_id}`)} className={styles.ticket}>
-                        {row.task_id}
-                      </Link>
+                      <span className={styles.taskCell}>
+                        <Link href={tenant.href(`/tasks/${row.task_id}`)} className={styles.ticket}>
+                          {row.task_id}
+                        </Link>
+                        {taskById.get(row.task_id) ? <StatusPill status={taskById.get(row.task_id)!.status} /> : null}
+                      </span>
                     ) : canContribute ? (
                       <button type="button" className={styles.createTask} onClick={() => void createTask(row)} disabled={creatingTask !== null}>
                         {creatingTask === row.item_id ? <Loader2 className={styles.spinnerSm} aria-hidden /> : <SquarePlus className={styles.linkIcon} aria-hidden />}

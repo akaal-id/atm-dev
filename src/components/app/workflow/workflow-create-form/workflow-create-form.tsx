@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
+import { AssigneePicker, type AssigneeOption } from "@/components/app/assignee-picker";
 import { useTenant } from "@/components/app/tenant-provider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DateRangePickerField } from "@/components/ui/date-range-picker-field";
@@ -27,12 +28,15 @@ type ProjectOption = {
 
 type WorkflowCreateFormProps = {
   projects: ProjectOption[];
+  /** Active people who can be assigned to the quick-backlog tickets. */
+  users: AssigneeOption[];
 };
 
 type WizardStep = 1 | 2 | 3;
 type KanbanMode = "preset" | "custom";
 
-type BacklogRow = { id: string; title: string };
+/** Empty assignees = the creator (server default). */
+type BacklogRow = { id: string; title: string; assignees: string[] };
 
 const STEPS: Array<{ id: WizardStep; label: string; title: string }> = [
   { id: 1, label: "Details", title: "General information" },
@@ -48,7 +52,7 @@ function cloneColumns(columns: MockWorkflowColumn[]): MockWorkflowColumn[] {
   return columns.map((column) => ({ ...column }));
 }
 
-export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
+export function WorkflowCreateForm({ projects, users }: WorkflowCreateFormProps) {
   const router = useRouter();
   const tenant = useTenant();
   const { pushToast } = useToast();
@@ -72,7 +76,7 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
   );
 
   // Step 3
-  const [backlogRows, setBacklogRows] = useState<BacklogRow[]>([{ id: nextLocalId("bl"), title: "" }]);
+  const [backlogRows, setBacklogRows] = useState<BacklogRow[]>([{ id: nextLocalId("bl"), title: "", assignees: [] }]);
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.project_id === projectId) ?? null,
@@ -147,7 +151,16 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
   }
 
   function addBacklogRow() {
-    setBacklogRows((current) => [...current, { id: nextLocalId("bl"), title: "" }]);
+    // New rows start with the previous row's people, so a run of tickets for one person is quick.
+    setBacklogRows((current) => [...current, { id: nextLocalId("bl"), title: "", assignees: [...(current.at(-1)?.assignees ?? [])] }]);
+  }
+
+  function setRowAssignees(rowId: string, assignees: string[]) {
+    setBacklogRows((current) => current.map((row) => (row.id === rowId ? { ...row, assignees } : row)));
+  }
+
+  function assignAll(assignees: string[]) {
+    setBacklogRows((current) => current.map((row) => ({ ...row, assignees: [...assignees] })));
   }
 
   function removeBacklogRow(rowId: string) {
@@ -168,7 +181,7 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
       if (index < 0) return current;
       const next = [...current];
       next[index] = { ...next[index], title: lines[0] };
-      const extras = lines.slice(1).map((title) => ({ id: nextLocalId("bl"), title }));
+      const extras = lines.slice(1).map((title) => ({ id: nextLocalId("bl"), title, assignees: [...next[index].assignees] }));
       next.splice(index + 1, 0, ...extras);
       return next;
     });
@@ -178,8 +191,8 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
     if (saving || !canGoNextFromStep1() || !canGoNextFromStep2()) return;
     setSaving(true);
 
-    const titles = includeBacklog
-      ? backlogRows.map((row) => row.title.trim()).filter(Boolean)
+    const tickets = includeBacklog
+      ? backlogRows.map((row) => ({ title: row.title.trim(), assignees: row.assignees })).filter((row) => row.title)
       : [];
 
     const template = kanbanMode === "preset" ? getMockWorkflowTemplate(presetId) : null;
@@ -228,7 +241,7 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
       if (!createdId) throw new Error("Workflow created without an id");
 
       const dueDate = sprintRange.to || new Date().toISOString().slice(0, 10);
-      for (const title of titles) {
+      for (const { title, assignees } of tickets) {
         await fetch("/api/resources/Tasks", {
           method: "POST",
           headers: {
@@ -242,7 +255,7 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
             workflow_id: createdId,
             priority: "Medium",
             due_date: dueDate,
-            assigned_to: [],
+            assigned_to: assignees,
             labels: [],
             need_leader_approval: false,
             checklist_titles: [],
@@ -254,8 +267,8 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
         tone: "success",
         title: "Workflow created",
         description:
-          titles.length > 0
-            ? `"${name.trim()}" · ${templateLabel} · ${titles.length} backlog ticket(s).`
+          tickets.length > 0
+            ? `"${name.trim()}" · ${templateLabel} · ${tickets.length} backlog ticket(s).`
             : `"${name.trim()}" · ${templateLabel}${resolvedPrefix ? ` · prefix ${resolvedPrefix}` : ""}.`,
       });
 
@@ -553,6 +566,19 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
               <strong>{boardColumns[0]?.name || "first column"}</strong> · Medium priority.
             </p>
 
+            {users.length ? (
+              <div className={styles.assignAll}>
+                <span>Assign all tickets to</span>
+                <AssigneePicker
+                  users={users}
+                  value={backlogRows.every((row) => row.assignees.join() === backlogRows[0].assignees.join()) ? backlogRows[0].assignees : []}
+                  onChange={assignAll}
+                  emptyLabel="Pick people…"
+                  label="Assign all tickets to"
+                />
+              </div>
+            ) : null}
+
             <div className={styles.backlogList}>
               {backlogRows.map((row, index) => (
                 <div key={row.id} className={styles.backlogRow}>
@@ -570,6 +596,7 @@ export function WorkflowCreateForm({ projects }: WorkflowCreateFormProps) {
                     }}
                     placeholder="Ticket title"
                   />
+                  <AssigneePicker users={users} value={row.assignees} onChange={(ids) => setRowAssignees(row.id, ids)} label={`Assignees for ticket ${index + 1}`} />
                   <Button
                     type="button"
                     variant="ghost"

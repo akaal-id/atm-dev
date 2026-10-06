@@ -221,3 +221,11 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Task # with the linked task's live status. */
+.taskCell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+}

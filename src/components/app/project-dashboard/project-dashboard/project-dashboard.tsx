@@ -107,7 +107,7 @@ export function ProjectDashboard(props: ProjectDashboardProps) {
 
       {tab === "overview" ? <ProjectOverview {...props} /> : null}
       {tab === "social" ? <ProjectSocialDashboard project={project} hub={hub} canEdit={canEdit} /> : null}
-      {tab === "content" ? <ProjectContentMatrix project={project} hub={hub} canContribute={props.canContribute} /> : null}
+      {tab === "content" ? <ProjectContentMatrix project={project} hub={hub} tasks={props.tasks} canContribute={props.canContribute} /> : null}
       {tab === "files" ? <ProjectFilesPanel {...props} /> : null}
 
       {canEdit && settingsOpen ? (
