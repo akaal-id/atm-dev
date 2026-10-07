@@ -344,6 +344,14 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
     .filter((log) => log.entity_type === "Tasks" && log.entity_id === task.task_id)
     .sort((left, right) => right.created_at.localeCompare(left.created_at));
 
+  const updatePanelProps = {
+    task,
+    checklist,
+    currentUser: data.currentUser,
+    users: data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active })),
+    projects: data.projects.map((project) => ({ project_id: project.project_id, project_name: project.project_name, ticket_id_prefix: project.ticket_id_prefix })),
+  };
+
   return (
     <div className={styles.taskDetail}>
       <div className={styles.listBody}>
@@ -353,6 +361,8 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
               <TicketId id={task.task_id} />
               <h2 className={styles.breakwords}>{task.title}</h2>
               <LinkifiedText text={task.description} className={styles.taskDescription} />
+              {/* Phones: Edit/Delete here and a pinned Submit Done bar; the side "Update task" card is hidden. */}
+              <TaskUpdatePanel {...updatePanelProps} placement="mobile" />
             </div>
           </CardHeader>
           <CardBody className={styles.emptyText}>
@@ -430,22 +440,12 @@ export function TaskDetailView({ data, task }: { data: AppData; task: Task }) {
       </div>
 
       <div className={styles.listBody}>
-        <Card>
+        <Card className={styles.updateCardDesktop}>
           <CardHeader>
             <SectionTitle title="Update task" />
           </CardHeader>
           <CardBody className={styles.bodyPrimary}>
-            <TaskUpdatePanel
-              task={task}
-              checklist={checklist}
-              currentUser={data.currentUser}
-              users={data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }))}
-              projects={data.projects.map((project) => ({
-                project_id: project.project_id,
-                project_name: project.project_name,
-                ticket_id_prefix: project.ticket_id_prefix,
-              }))}
-            />
+            <TaskUpdatePanel {...updatePanelProps} />
           </CardBody>
         </Card>
         <Card>

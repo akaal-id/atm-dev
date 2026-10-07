@@ -258,6 +258,8 @@ export interface Project {
   links: string[];
   /** Project hub header (see docs/project-hub-plan.md). Optional for seed/Sheets data. */
   project_type?: ProjectType;
+  /** Drive top folder for uploads (Main Akaal 2026 / <Category> / <Project> / …). */
+  drive_category?: "client" | "company" | "event" | "internal_brand" | null;
   period_start?: string;
   period_end?: string;
   objective?: string;

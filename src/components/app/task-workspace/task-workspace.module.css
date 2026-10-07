@@ -647,13 +647,13 @@
 }
 
 @media (min-width: 1280px) {
+  /* Search on its own row; the six filters sit 3 × 2 below it. */
   .filterPanel {
-    grid-template-columns: minmax(18rem, 1fr) minmax(0, 2.4fr);
-    align-items: end;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .filterGrid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .listHeaderBar {
@@ -814,5 +814,42 @@
 
   .filterWrapOpen {
     display: block;
+  }
+}
+
+/* Active / Completed / Cancelled tabs above the list. */
+.scopeTabs {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* "11–20 of 48 tasks" + numbered pager under the list. */
+.listFooter {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.listRange {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+/* Phones: the view and status tabs share the full width instead of overflowing. */
+@media (max-width: 639px) {
+  .scopeTabs,
+  .viewTabs {
+    width: 100%;
+  }
+
+  .scopeTabs > button,
+  .viewTabs > button {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding-inline: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 }

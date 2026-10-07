@@ -21,12 +21,15 @@ export function TaskUpdatePanel({
   currentUser,
   users,
   projects,
+  placement = "panel",
 }: {
   task: Task;
   checklist: TaskChecklist[];
   currentUser: CurrentUser;
   users: TaskModalUser[];
   projects: TaskModalProject[];
+  /** "mobile": Edit/Delete row for under the title + a Submit Done bar pinned above the bottom nav (phones only). */
+  placement?: "panel" | "mobile";
 }) {
   const router = useRouter();
   const { href: tenantHref } = useTenant();
@@ -75,12 +78,14 @@ export function TaskUpdatePanel({
     router.refresh();
   };
 
+  const mobile = placement === "mobile";
+
   return (
-    <>
+    <div className={mobile ? styles.mobileOnly : styles.panel}>
       {canEdit || canDelete ? (
-        <div className={styles.icon}>
+        <div className={cn(styles.icon, mobile && styles.mobileActions)}>
           {canEdit ? (
-            <Button type="button" variant="outline" size="xl" onClick={() => setEditOpen(true)}>
+            <Button type="button" variant="outline" size={mobile ? "lg" : "xl"} onClick={() => setEditOpen(true)}>
               <Pencil className={styles.iconPencil} />
               Edit task
             </Button>
@@ -88,7 +93,7 @@ export function TaskUpdatePanel({
             <span />
           )}
           {canDelete ? (
-            <Button type="button" variant="destructiveOutline" size="xl" onClick={() => setDeleteConfirmOpen(true)} disabled={deleting}>
+            <Button type="button" variant="destructiveOutline" size={mobile ? "lg" : "xl"} onClick={() => setDeleteConfirmOpen(true)} disabled={deleting}>
               <Trash2 className={styles.iconPencil} />
               {deleting ? "Deleting..." : "Delete task"}
             </Button>
@@ -99,7 +104,7 @@ export function TaskUpdatePanel({
       {error ? <p className={styles.errortext}>{error}</p> : null}
 
       {canSubmitDone && task.status !== "Finished" ? (
-        <form action={`/api/tasks/${task.task_id}/done`} method="post">
+        <form action={`/api/tasks/${task.task_id}/done`} method="post" className={mobile ? styles.doneBar : undefined}>
           <Button type="submit" variant="success" size="xl" className={styles.button} disabled={doneDisabled}>
             <CheckCircle2 className={styles.iconPencil} />
             Submit Done
@@ -131,6 +136,6 @@ export function TaskUpdatePanel({
         confirming={deleting}
         tone="danger"
       />
-    </>
+    </div>
   );
 }

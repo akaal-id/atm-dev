@@ -204,7 +204,8 @@ export function workflowTools(ctx: AiToolContext) {
           inherit_project_tasks: false,
         });
 
-        if (draft.backlogTitles.length > 0) {
+        // Backlog tasks need a project (every task belongs to one).
+        if (draft.backlogTitles.length > 0 && draft.projectId) {
           const ids = await nextTicketIds(draft.projectId, draft.name, draft.backlogTitles.length);
           const dueDate = draft.sprintEnd || "";
           await Promise.all(

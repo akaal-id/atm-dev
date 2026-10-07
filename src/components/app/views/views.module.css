@@ -1893,3 +1893,10 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Task detail: the side "Update task" card is desktop-only (phones get the actions under the title). */
+@media (max-width: 1023px) {
+  .updateCardDesktop {
+    display: none;
+  }
+}

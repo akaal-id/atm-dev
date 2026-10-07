@@ -24,7 +24,7 @@ export function AiChatFab() {
   if (appPath === "/ai-chat" || isChatPath(pathname)) return null;
 
   return (
-    <div className={styles.fabWrap}>
+    <div className={styles.fabWrap} data-ai-fab>
       <Link
         href={tenantHref(`/ai-chat?from=${encodeURIComponent(appPath)}`)}
         className={styles.fab}

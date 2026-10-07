@@ -1,5 +1,6 @@
 import { failure, readJsonBody, requireProjectAccess } from "@/lib/server/project-hub";
 import { updateResource } from "@/lib/server/store";
+import { isDriveCategory } from "@/lib/drive-categories";
 import { projectStatuses } from "@/lib/permissions";
 import type { Project, ProjectStatus } from "@/lib/types";
 
@@ -24,6 +25,13 @@ export async function PATCH(request: Request, context: { params: Promise<{ proje
     patch.status = status as ProjectStatus;
     // A finished project is 100% done.
     if (status === "Completed") patch.progress = 100;
+  }
+  if (body.drive_category !== undefined) {
+    const value = body.drive_category === "" || body.drive_category === null ? null : body.drive_category;
+    if (value !== null && !isDriveCategory(value)) {
+      return Response.json({ error: "drive_category must be client, company, event or internal_brand." }, { status: 400 });
+    }
+    patch.drive_category = value;
   }
   if (body.project_type !== undefined) {
     if (body.project_type !== "general" && body.project_type !== "social_media") {

@@ -83,6 +83,7 @@ export function TaskFormModal({
   const [needLeaderApproval, setNeedLeaderApproval] = useState(false);
   const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [projectId, setProjectId] = useState("");
+  const [projectMissing, setProjectMissing] = useState(false);
   const [workflowId, setWorkflowId] = useState("");
   const [localWorkflows, setLocalWorkflows] = useState<TaskModalWorkflow[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
@@ -174,7 +175,14 @@ export function TaskFormModal({
     : "No project";
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    if (!isEdit) return;
+    if (!isEdit) {
+      // Every task needs a project (the select's hidden input isn't browser-validated).
+      if (!projectId) {
+        event.preventDefault();
+        setProjectMissing(true);
+      }
+      return;
+    }
     event.preventDefault();
     setConfirmSaveOpen(true);
   };
@@ -254,15 +262,15 @@ export function TaskFormModal({
                       name="project_id"
                       value={projectId}
                       onValueChange={setProjectId}
-                      placeholder="No project"
+                      placeholder="Choose a project"
                       options={[
-                        { value: "", label: "No project" },
                         ...projects.map((project) => ({
                           value: project.project_id,
                           label: `${project.ticket_id_prefix ? `${project.ticket_id_prefix} - ` : ""}${project.project_name}`,
                         })),
                       ]}
                     />
+                    {projectMissing && !projectId ? <p className={styles.fieldError}>Choose the project this task belongs to.</p> : null}
                   </Field>
                 )}
                 <Field label="Workflow">

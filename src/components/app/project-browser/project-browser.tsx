@@ -2,13 +2,14 @@
 
 import styles from "./project-browser.module.css";
 
-import { ChevronLeft, ChevronRight, Filter, Search, X } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { DateRangePickerField } from "@/components/ui/date-range-picker-field";
 import { FilterSelect } from "@/components/ui/filter-select";
+import { NumberedPager } from "@/components/ui/numbered-pager";
 import { Tabs } from "@/components/ui/tabs";
 
 export type ProjectBrowserItem = {
@@ -226,32 +227,7 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
         </div>
       ) : null}
 
-      {visible.length > 0 && pageCount > 1 ? (
-        <nav className={styles.pager} aria-label="Projects pages">
-          <Button type="button" variant="outline" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-            <ChevronLeft className={styles.icon} aria-hidden />
-            Prev
-          </Button>
-          <div className={styles.pages}>
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={page === currentPage ? styles.pageOn : styles.page}
-                onClick={() => goToPage(page)}
-                aria-current={page === currentPage ? "page" : undefined}
-                aria-label={`Page ${page}`}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === pageCount}>
-            Next
-            <ChevronRight className={styles.icon} aria-hidden />
-          </Button>
-        </nav>
-      ) : null}
+      {visible.length > 0 ? <NumberedPager page={currentPage} pageCount={pageCount} onPageChange={goToPage} label="Projects pages" /> : null}
 
       {visible.length === 0 ? (
         <div className={styles.empty}>

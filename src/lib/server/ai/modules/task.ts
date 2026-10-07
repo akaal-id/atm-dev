@@ -341,6 +341,16 @@ export function taskTools(ctx: AiToolContext) {
           };
         }
 
+        // Every task belongs to a project (Drive uploads are filed by project).
+        if (!workflow.project_id) {
+          return {
+            kind: "needsWorkflow",
+            message: `Workflow "${workflow.name}" belum terhubung ke project. Setiap task wajib punya project — pilih workflow lain atau hubungkan workflow ini ke project dulu.`,
+            title: title.trim(),
+            workflows,
+          };
+        }
+
         const project = (projects as Project[]).find((row) => row.project_id === (workflow.project_id || ""));
         const draft: TaskCreateDraft = {
           title: title.trim(),

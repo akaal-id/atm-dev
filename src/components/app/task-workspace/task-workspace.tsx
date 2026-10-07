@@ -9,13 +9,14 @@ import { buttonVariants } from "@/components/ui/button";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { NumberedPager } from "@/components/ui/numbered-pager";
 import { DateRangePickerField } from "@/components/ui/date-range-picker-field";
 import { FilterSelect } from "@/components/ui/filter-select";
 import { LinkifiedText } from "@/components/ui/linkified-text";
 import { StatusPill, TaskStatusPill, statusTone } from "@/components/ui/status-pill";
 import { deriveWorkflowStatus } from "@/lib/data/workflow-templates-mock";
 import type { Workflow } from "@/lib/types";
-import { activeTasks, completedTasks, jakartaToday } from "@/lib/metrics";
+import { activeTasks, completedTasks, effectiveTaskStatus, jakartaToday } from "@/lib/metrics";
 import { visibleTaskLabels } from "@/lib/task-approval";
 import type { CurrentUser, Project, Task, TaskChecklist, User } from "@/lib/types";
 import { cn, formatShortDate, groupBy } from "@/lib/utils";
@@ -31,7 +32,16 @@ type TaskFilters = {
   dueDateTo: string;
   assigneeId: string;
   assignedById: string;
+  status: string;
+  priority: string;
 };
+
+/** My / Team Task keep finished and cancelled work out of the main list: each has its own tab. */
+type StatusScope = "active" | "completed" | "cancelled";
+const DONE_STATUSES = new Set(["Finished", "Done", "Approved", "Completed"]);
+const statusScopeOf = (task: Task): StatusScope => (task.status === "Cancelled" ? "cancelled" : DONE_STATUSES.has(task.status) ? "completed" : "active");
+const statusScopeLabels: Record<StatusScope, string> = { active: "Active", completed: "Completed", cancelled: "Cancelled" };
+const LIST_PAGE_SIZE = 10;
 
 const NO_PROJECT = "__no_project";
 const ALL = "all";
@@ -122,6 +132,8 @@ function filterTasks(tasks: Task[], users: User[], projects: Project[], filters:
     }
     if (filters.assigneeId !== ALL && !task.assigned_to.includes(filters.assigneeId)) return false;
     if (filters.assignedById !== ALL && task.assigned_by !== filters.assignedById) return false;
+    if (filters.status !== ALL && effectiveTaskStatus(task) !== filters.status) return false;
+    if (filters.priority !== ALL && task.priority !== filters.priority) return false;
 
     if (!query) return true;
 
@@ -313,6 +325,7 @@ function TaskFiltersPanel({
   users,
   scope,
   currentUser,
+  statusOptions,
 }: {
   filters: TaskFilters;
   setFilters: React.Dispatch<React.SetStateAction<TaskFilters>>;
@@ -320,6 +333,8 @@ function TaskFiltersPanel({
   users: User[];
   scope: TaskScope;
   currentUser: CurrentUser;
+  /** Statuses present in the current tab (Active / Completed / Cancelled). */
+  statusOptions: string[];
 }) {
   const activeUsers = users.filter((user) => user.is_active);
   const projectOptions = [
@@ -376,6 +391,20 @@ function TaskFiltersPanel({
           options={userOptions}
           onValueChange={(assignedById) => setFilters((current) => ({ ...current, assignedById }))}
         />
+
+        <FilterSelect
+          label="Status"
+          value={filters.status}
+          options={[{ value: ALL, label: "Any status" }, ...statusOptions.map((status) => ({ value: status, label: status }))]}
+          onValueChange={(status) => setFilters((current) => ({ ...current, status }))}
+        />
+
+        <FilterSelect
+          label="Priority"
+          value={filters.priority}
+          options={[{ value: ALL, label: "Any priority" }, ...["Urgent", "High", "Medium", "Low"].map((priority) => ({ value: priority, label: priority }))]}
+          onValueChange={(priority) => setFilters((current) => ({ ...current, priority }))}
+        />
       </div>
     </div>
   );
@@ -385,14 +414,20 @@ function ListView({
   filteredTasks,
   users,
   projects,
+  page,
+  onPageChange,
 }: {
   filteredTasks: Task[];
   users: User[];
   projects: Project[];
+  page: number;
+  onPageChange: (page: number) => void;
 }) {
   const [sort, setSort] = useState<ListSort | null>(null);
 
   const sortedTasks = useMemo(() => sortListTasks(filteredTasks, users, projects, sort), [filteredTasks, projects, sort, users]);
+  const pageCount = Math.max(1, Math.ceil(sortedTasks.length / LIST_PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, page), pageCount);
 
   const cycleSort = (key: ListSortKey) => {
     setSort((current) => {
@@ -407,10 +442,21 @@ function ListView({
       <TaskListHeader sort={sort} onSort={cycleSort} />
 
       {sortedTasks.length > 0 ? (
-        sortedTasks.map((task) => <TaskListRow key={task.task_id} task={task} users={users} projects={projects} />)
+        sortedTasks
+          .slice((currentPage - 1) * LIST_PAGE_SIZE, currentPage * LIST_PAGE_SIZE)
+          .map((task) => <TaskListRow key={task.task_id} task={task} users={users} projects={projects} />)
       ) : (
         <div className={styles.empty}>No tasks match this list filter.</div>
       )}
+
+      {sortedTasks.length > LIST_PAGE_SIZE ? (
+        <div className={styles.listFooter}>
+          <p className={styles.listRange}>
+            {(currentPage - 1) * LIST_PAGE_SIZE + 1}–{Math.min(currentPage * LIST_PAGE_SIZE, sortedTasks.length)} of {sortedTasks.length} tasks
+          </p>
+          <NumberedPager page={currentPage} pageCount={pageCount} onPageChange={onPageChange} label="Task list pages" />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -639,12 +685,37 @@ export function TaskWorkspace({
     dueDateTo: "",
     assigneeId: ALL,
     assignedById: ALL,
+    status: ALL,
+    priority: ALL,
   });
+  const [statusScope, setStatusScope] = useState<StatusScope>("active");
+  const [page, setPage] = useState(1);
+  // Any filter or tab change starts the list again at page 1.
+  const updateFilters: React.Dispatch<React.SetStateAction<TaskFilters>> = (next) => {
+    setFilters(next);
+    setPage(1);
+  };
+  const changeStatusScope = (next: StatusScope) => {
+    setStatusScope(next);
+    setFilters((current) => ({ ...current, status: ALL }));
+    setPage(1);
+  };
   // Phones keep the filter panel folded behind a "Filter" button; wider screens always show it.
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const activeFilterCount = [filters.query.trim(), filters.projectId !== ALL, filters.dueDateFrom || filters.dueDateTo, scope !== "my" && filters.assigneeId !== ALL, filters.assignedById !== ALL].filter(Boolean).length;
+  const activeFilterCount = [filters.query.trim(), filters.projectId !== ALL, filters.dueDateFrom || filters.dueDateTo, scope !== "my" && filters.assigneeId !== ALL, filters.assignedById !== ALL, filters.status !== ALL, filters.priority !== ALL].filter(Boolean).length;
   const taskBoardUsers = useMemo(() => users.map((user) => ({ user_id: user.user_id, full_name: user.full_name })), [users]);
   const filteredTasks = useMemo(() => filterTasks(tasks, users, projects, filters), [filters, projects, tasks, users]);
+  // My / Team Task: Active by default; Completed and Cancelled live in their own tabs. Workflow boards show everything.
+  const scopedTasks = useMemo(() => (workflow ? filteredTasks : filteredTasks.filter((task) => statusScopeOf(task) === statusScope)), [filteredTasks, statusScope, workflow]);
+  const scopeCounts = useMemo(() => {
+    // Counted before the Status filter, so switching tabs never shows "0" just because of it.
+    const base = filterTasks(tasks, users, projects, { ...filters, status: ALL });
+    return base.reduce<Record<StatusScope, number>>((counts, task) => ({ ...counts, [statusScopeOf(task)]: counts[statusScopeOf(task)] + 1 }), { active: 0, completed: 0, cancelled: 0 });
+  }, [filters, projects, tasks, users]);
+  const statusOptions = useMemo(
+    () => [...new Set(tasks.filter((task) => workflow || statusScopeOf(task) === statusScope).map((task) => effectiveTaskStatus(task)))].sort(),
+    [statusScope, tasks, workflow],
+  );
   const activeCount = activeTasks(tasks).length;
   const doneCount = completedTasks(tasks).length;
   const showFilters = activeView === "board" || activeView === "list" || activeView === "calendar";
@@ -658,6 +729,7 @@ export function TaskWorkspace({
         {!workflow ? (
           <div className={styles.toolbar}>
             <Tabs
+              className={styles.viewTabs}
               items={taskViewTabs}
               value={activeView}
               onValueChange={(value) => setActiveView(value as TaskViewMode)}
@@ -668,22 +740,36 @@ export function TaskWorkspace({
         ) : null}
       </div>
 
+      {!workflow && showFilters ? (
+        <Tabs
+          className={styles.scopeTabs}
+          items={(Object.keys(statusScopeLabels) as StatusScope[]).map((key) => ({ id: key, label: `${statusScopeLabels[key]} · ${scopeCounts[key]}` }))}
+          value={statusScope}
+          onValueChange={(value) => changeStatusScope(value as StatusScope)}
+          aria-label="Task status"
+        />
+      ) : null}
+
       <div className={styles.summary}>
         {workflowStatus ? <StatusPill status={workflowStatus} /> : null}
         {showFilters ? (
           <Badge tone="blue">
-            <span suppressHydrationWarning>{filteredTasks.length}</span> shown
+            <span suppressHydrationWarning>{scopedTasks.length}</span> shown
           </Badge>
         ) : null}
-        <Badge tone="blue">
-          <span suppressHydrationWarning>{tasks.length}</span> {showFilters ? "total" : "tasks"}
-        </Badge>
-        <Badge>
-          <span suppressHydrationWarning>{activeCount}</span> active
-        </Badge>
-        <Badge tone="green">
-          <span suppressHydrationWarning>{doneCount}</span> done
-        </Badge>
+        {workflow || !showFilters ? (
+          <>
+            <Badge tone="blue">
+              <span suppressHydrationWarning>{tasks.length}</span> {showFilters ? "total" : "tasks"}
+            </Badge>
+            <Badge>
+              <span suppressHydrationWarning>{activeCount}</span> active
+            </Badge>
+            <Badge tone="green">
+              <span suppressHydrationWarning>{doneCount}</span> done
+            </Badge>
+          </>
+        ) : null}
         {workflow ? (
           <Badge tone="purple">{workflow.name}</Badge>
         ) : scope === "my" ? (
@@ -703,11 +789,12 @@ export function TaskWorkspace({
           <div className={cn(styles.filterWrap, filtersOpen && styles.filterWrapOpen)}>
             <TaskFiltersPanel
               filters={filters}
-              setFilters={setFilters}
+              setFilters={updateFilters}
               projects={projects}
               users={users}
               scope={scope}
               currentUser={currentUser}
+              statusOptions={statusOptions}
             />
           </div>
         </>
@@ -724,8 +811,8 @@ export function TaskWorkspace({
           boardColumns={workflow.columns}
         />
       ) : null}
-      {!workflow && activeView === "list" ? <ListView filteredTasks={filteredTasks} users={users} projects={projects} /> : null}
-      {!workflow && activeView === "calendar" ? <CalendarTaskView tasks={filteredTasks} users={users} /> : null}
+      {!workflow && activeView === "list" ? <ListView filteredTasks={scopedTasks} users={users} projects={projects} page={page} onPageChange={setPage} /> : null}
+      {!workflow && activeView === "calendar" ? <CalendarTaskView tasks={scopedTasks} users={users} /> : null}
       {!workflow && activeView === "project" ? <ProjectTaskView tasks={tasks} users={users} projects={projects} /> : null}
     </div>
   );

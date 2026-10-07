@@ -76,6 +76,23 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - Projects "All" excludes Completed.
   - Projects list paginates 6 per page (`?page=`).
 
+- 2026-10-07: **My/Team Task lists.**
+  - **Status tabs:** Active (default) · Completed (Finished/Done/Approved/Completed) · Cancelled, with counts that respect the filters.
+  - **Filters:** Status options follow the current tab; Priority was added.
+  - **Pagination:** 10 rows per page via the shared `components/ui/numbered-pager`, which Projects also uses. Any filter or tab change resets to page 1, done in the setters rather than an effect.
+  - Workflow boards are unchanged and show every status.
+- 2026-10-07: **Task detail on phones (<1024 px).** `TaskUpdatePanel placement="mobile"` puts Edit/Delete under the title, and Submit Done in a fixed bar above the bottom nav. The side "Update task" card is hidden. `main:has(.doneBar)` adds bottom padding, and the AI FAB (`[data-ai-fab]`) lifts above the bar.
+
+- 2026-10-07: **Drive uploads.**
+  - **Account and client:** files are owned by asiakaryalumina@gmail.com via the OAuth client "Akaal Team Management" in Google Cloud project **atm-storage**. The same client powers "Continue with Google".
+  - **Layout:** `GOOGLE_DRIVE_FOLDER_ID` = **Main Akaal 2026** (`1iO2FrteopUffl9nsJeQ-oC4KfT7pA0Ni`) / {Client | Company | Event | Internal Brand} / {Project name} / {Subfolder} / `DDMMYY_<file or folder>`, with the date in Jakarta time.
+  - **Category:** comes from `projects.drive_category`, set in Create/Edit project or by the picker in the upload form.
+  - **Subfolder:** defaults to the task's workflow name, or Base Files / SOP / General for project files. Uploaders can pick or type another.
+  - **Code:** `getUploadContext` / `resolveTargetFolder` in `src/lib/server/drive-upload.ts` find-or-create folders and cache their ids.
+  - **Every task needs a project:** enforced in Create task, the workflow wizard, `POST /api/resources/Tasks`, and the AI task/workflow tools.
+  - **Token:** renew with `scripts/google-drive-token.mjs [--vercel] [--no-open]`. Keep the OAuth app "In production", or tokens expire every 7 days.
+  - **History:** the old setup broke because Vercel held a client ID from a deleted client and a wrong 11-character folder id.
+
 ## Gotchas
 
 - **Env file must be `.env.local`.** On 2026-10-01 it was saved as `env.local` (no dot). Next.js ignored it, the store fell back to seed data, and real accounts got "Invalid email or password". If login fails for a valid user, check this first.
@@ -102,7 +119,7 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
   - On 2026-10-05, 22k `node_modules` files and 217 source files were evicted when free disk fell to 3.8 GB.
   - The `atm-dev` folder is now set to **Keep Downloaded**.
   - Check with `find . -flags -dataless`. The `-` matters, because the flags are `compressed,dataless`.
-  - Restore with `npm ci`, or by reading the files.
+  - Restore with `npm ci`, or by reading the files. On 2026-10-07, thousands of `node_modules` files and `.env.local` were evicted again, and `brctl download` stalled. `npm ci --prefer-offline` (about 3 min, from the npm cache) fixed it; restart any dev server afterwards.
   - A single evicted file can still break `next build`. Tailwind 4 scans every non-ignored file (including `docs/*.sql`), the read blocks, and Turbopack panics with "timeout while receiving message from process" on `globals.css`. To restore an unchanged tracked file without reading it, `git show HEAD:<path> > tmp`, then `mv` the copy over it.
 - **Testing server modules with tsx:** `server-only` isn't installed, so use `.perf/tsconfig.test.json`, which maps it to a stub. Name scripts `.mts` so top-level await works.
 - **Headless Chromium always reports `Notification.permission === "denied"`**, even after `grantPermissions` (`navigator.permissions.query` says "granted"). To test push UI states, override `Notification.permission` with `addInitScript`.

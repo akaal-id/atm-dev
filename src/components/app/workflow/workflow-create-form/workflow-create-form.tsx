@@ -63,7 +63,7 @@ export function WorkflowCreateForm({ projects, users }: WorkflowCreateFormProps)
   // Step 1
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("__none__");
+  const [projectId, setProjectId] = useState("");
   const [sprintRange, setSprintRange] = useState({ from: "", to: "" });
   const [ticketPrefix, setTicketPrefix] = useState("");
 
@@ -91,7 +91,8 @@ export function WorkflowCreateForm({ projects, users }: WorkflowCreateFormProps)
   }, [customColumns, kanbanMode, presetId]);
 
   function canGoNextFromStep1() {
-    return Boolean(name.trim());
+    // Every task belongs to a project, so a workflow (which creates tasks) needs one too.
+    return Boolean(name.trim()) && Boolean(projectId);
   }
 
   function canGoNextFromStep2() {
@@ -208,7 +209,7 @@ export function WorkflowCreateForm({ projects, users }: WorkflowCreateFormProps)
               order_index,
             }))
         : boardColumns;
-    const projectResolved = projectId === "__none__" ? "" : projectId;
+    const projectResolved = projectId;
 
     try {
       const response = await fetch("/api/resources/Workflows", {
@@ -376,9 +377,8 @@ export function WorkflowCreateForm({ projects, users }: WorkflowCreateFormProps)
                       if (project?.ticket_id_prefix) setTicketPrefix(project.ticket_id_prefix);
                     }
                   }}
-                  placeholder="No project"
+                  placeholder="Choose a project"
                   options={[
-                    { value: "__none__", label: "No project" },
                     ...projects.map((project) => ({
                       value: project.project_id,
                       label: project.ticket_id_prefix

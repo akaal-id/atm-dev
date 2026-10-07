@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { demoPassword } from "@/lib/data/seed";
 import { cleanEmptyStrings, getRecordId, normalizePayload, parseResource, readPayload, redirectBack, requireApiAccess, wantsJson } from "@/lib/server/api";
+import { isDriveCategory } from "@/lib/drive-categories";
 import { notifyApproversAboutLeaveRequest } from "@/lib/server/leave-requests";
 import { getScoringConfig } from "@/lib/server/scoring";
 import { canManageTaskScoring, sanitizeTaskScoring } from "@/lib/server/task-scoring";
@@ -189,6 +190,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   }
 
   if (resource === "Tasks") {
+    // Every task belongs to a project (its Drive files are filed under it).
+    if (!String(payload.project_id ?? "").trim()) {
+      return wantsJson(request) ? NextResponse.json({ error: "Choose a project for this task." }, { status: 400 }) : redirectBack(request);
+    }
     const needLeaderApproval = Boolean(payload.need_leader_approval);
     payload.task_id ||= await nextTicketId(String(payload.project_id ?? ""), String(payload.title ?? ""));
     payload.assigned_by ??= access.user.user_id;
@@ -211,6 +216,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
   }
 
   if (resource === "Projects") {
+    if (payload.drive_category !== undefined && !isDriveCategory(payload.drive_category)) delete payload.drive_category;
     payload.owner_user_id ??= access.user.user_id;
     payload.members = Array.isArray(payload.members) && payload.members.length > 0 ? payload.members : [String(payload.owner_user_id)];
     payload.ticket_id_prefix = String(payload.ticket_id_prefix || makeTicketPrefix(String(payload.project_name ?? ""))).toUpperCase();

@@ -13,11 +13,13 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { requestJson } from "@/lib/request-json";
 import type { Brand, ProjectHubData, ProjectUserSummary } from "@/lib/types/project-hub";
+import { DRIVE_CATEGORIES } from "@/lib/drive-categories";
 import { projectStatuses } from "@/lib/permissions";
 import type { Project, ProjectStatus, ProjectType } from "@/lib/types";
 
 type Draft = {
   status: ProjectStatus;
+  drive_category: string;
   project_type: ProjectType;
   period_start: string;
   period_end: string;
@@ -28,6 +30,7 @@ type Draft = {
 function draftFrom(project: Project): Draft {
   return {
     status: project.status,
+    drive_category: project.drive_category ?? "",
     project_type: project.project_type ?? "general",
     period_start: project.period_start ?? "",
     period_end: project.period_end ?? "",
@@ -144,6 +147,17 @@ export function ProjectSettingsModal({
             options={projectStatuses.map((status) => ({ value: status, label: status }))}
           />
           <span className={styles.hint}>Completed projects move to the Completed tab on Projects.</span>
+        </div>
+        <div className={styles.field}>
+          <span className={styles.label}>Drive folder</span>
+          <FormSelect
+            name="drive_category"
+            value={draft.drive_category}
+            onValueChange={(value) => setDraft({ ...draft, drive_category: value })}
+            placeholder="Choose a folder"
+            options={DRIVE_CATEGORIES.map((item) => ({ value: item.value, label: item.label }))}
+          />
+          <span className={styles.hint}>Uploads go to Main Akaal 2026 / {DRIVE_CATEGORIES.find((item) => item.value === draft.drive_category)?.folder ?? "…"} / {project.project_name}.</span>
         </div>
         <div className={styles.row}>
           <div className={styles.field}>

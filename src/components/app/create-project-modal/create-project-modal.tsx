@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { FormSelect } from "@/components/ui/form-select";
+import { DRIVE_CATEGORIES } from "@/lib/drive-categories";
 
 import { ModalPortal } from "@/components/ui/modal-portal";
 
@@ -44,6 +45,7 @@ const statuses: ProjectStatus[] = ["Not Started", "In Progress", "Waiting for Re
 export function CreateProjectModal({ currentUser, users }: { currentUser: CurrentUser; users: ProjectModalUser[] }) {
 
   const [open, setOpen] = useState(false);
+  const [driveFolderMissing, setDriveFolderMissing] = useState(false);
 
   const activeUsers = users.filter((user) => user.is_active);
 
@@ -91,7 +93,18 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
 
 
 
-            <form action="/api/resources/Projects" method="post" className={styles.form}>
+            <form
+              action="/api/resources/Projects"
+              method="post"
+              className={styles.form}
+              onSubmit={(event) => {
+                // FormSelect keeps its value in a hidden input, which the browser doesn't validate.
+                if (!new FormData(event.currentTarget).get("drive_category")) {
+                  event.preventDefault();
+                  setDriveFolderMissing(true);
+                }
+              }}
+            >
 
               <div className={styles.fieldsGrid}>
 
@@ -140,6 +153,17 @@ export function CreateProjectModal({ currentUser, users }: { currentUser: Curren
                   />
                 </Field>
               </div>
+
+              <Field label="Drive folder">
+                <FormSelect
+                  name="drive_category"
+                  required
+                  placeholder="Client, Company, Event or Internal Brand"
+                  options={DRIVE_CATEGORIES.map((item) => ({ value: item.value, label: item.label }))}
+                  onValueChange={() => setDriveFolderMissing(false)}
+                />
+                {driveFolderMissing ? <p className={styles.fieldError}>Choose where this project&apos;s files go in Drive.</p> : null}
+              </Field>
 
               <div className={styles.fieldsGrid}>
                 <Field label="Period start">

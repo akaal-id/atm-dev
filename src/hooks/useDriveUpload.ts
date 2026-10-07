@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 // Hapus MAX_CLIENT_UPLOAD_BYTES dari import ini
-import { createDriveFolder, finalizeFilePermission, generateResumableUrl } from "@/lib/server/drive-upload";
+import { createDriveFolder, finalizeFilePermission, generateResumableUrl, type UploadTarget } from "@/lib/server/drive-upload";
 
 // Deklarasikan variabelnya secara lokal di sini untuk Frontend
 const MAX_CLIENT_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
@@ -105,7 +105,7 @@ export function useDriveUpload() {
     abortRef.current = null;
   }, []);
 
-  const upload = useCallback(async (file: File): Promise<DriveUploadResult> => {
+  const upload = useCallback(async (file: File, target?: UploadTarget): Promise<DriveUploadResult> => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -135,6 +135,7 @@ export function useDriveUpload() {
         fileName: file.name,
         mimeType: fileMime,
         size: file.size,
+        target,
       });
       if (!prepare.ok) throw new Error(prepare.error);
 
@@ -168,7 +169,7 @@ export function useDriveUpload() {
     }
   }, []);
 
-  const uploadFolder = useCallback(async (files: File[], folderName: string): Promise<DriveFolderUploadResult> => {
+  const uploadFolder = useCallback(async (files: File[], folderName: string, target?: UploadTarget): Promise<DriveFolderUploadResult> => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -196,7 +197,7 @@ export function useDriveUpload() {
 
     try {
       setStatus("preparing");
-      const folder = await createDriveFolder(folderName);
+      const folder = await createDriveFolder(folderName, target);
       if (!folder.ok) throw new Error(folder.error);
       const { folderId } = folder.data;
 
