@@ -1,0 +1,90 @@
+/* Public privacy policy — plain readable document. */
+.page {
+  min-height: 100dvh;
+  background: var(--background, #fafafa);
+  padding: 2rem 1rem 3rem;
+}
+
+.doc {
+  max-width: 44rem;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 1.75rem 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--foreground);
+}
+
+.doc h2 {
+  margin: 1.5rem 0 0.375rem;
+  font-size: 1.0625rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.doc p,
+.doc ul {
+  margin: 0.5rem 0;
+}
+
+.doc ul {
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.doc li + li {
+  margin-top: 0.375rem;
+}
+
+.doc a {
+  color: var(--primary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
+}
+
+.header img {
+  border-radius: 0.5rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.title {
+  margin: 0.125rem 0 0;
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-medium);
+}
+
+.meta {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.footer {
+  margin-top: 2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 639px) {
+  .page {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .doc {
+    padding: 1.25rem 1rem;
+  }
+}
