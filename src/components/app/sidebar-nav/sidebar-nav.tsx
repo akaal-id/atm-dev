@@ -9,7 +9,7 @@ import { ChatUnreadBadge } from "@/components/app/chat-unread";
 import { AppIcon } from "@/components/app/icons";
 import { useTenant } from "@/components/app/tenant-provider";
 import { Button } from "@/components/ui/button";
-import type { NavigationItem } from "@/lib/navigation";
+import { navItemMatches, type NavigationItem } from "@/lib/navigation";
 import { appPathname } from "@/lib/tenant-path";
 import { cn } from "@/lib/utils";
 import styles from "./sidebar-nav.module.css";
@@ -21,19 +21,10 @@ interface SidebarNavProps {
   adminItems: NavigationItem[];
 }
 
-function isItemActive(pathname: string, item: NavigationItem) {
-  if (item.children?.length) {
-    return item.children.some((child) => isChildActive(pathname, child.href));
-  }
-  return pathname === item.href || pathname.startsWith(`${item.href}/`);
-}
+type LinkedItem = Omit<NavigationItem, "children"> & { linkHref: string; children?: LinkedItem[] };
 
-function isChildActive(pathname: string, href: string) {
-  if (href === "/email-blast") return pathname === "/email-blast";
-  if (href === "/tasks/my") return pathname === "/tasks/my" || pathname.startsWith("/tasks/my/");
-  if (href === "/tasks/team") return pathname === "/tasks/team" || pathname.startsWith("/tasks/team/");
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+const withLinks = (items: NavigationItem[], tenantHref: (href: string) => string): LinkedItem[] =>
+  items.map((item) => ({ ...item, linkHref: tenantHref(item.href), children: item.children ? withLinks(item.children, tenantHref) : undefined }));
 
 export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   const pathname = usePathname();
@@ -43,15 +34,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   const [hydrated, setHydrated] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  const navItems = useMemo(
-    () =>
-      items.map((item) => ({
-        ...item,
-        linkHref: tenantHref(item.href),
-        children: item.children?.map((child) => ({ ...child, linkHref: tenantHref(child.href) })),
-      })),
-    [items, tenantHref],
-  );
+  const navItems = useMemo(() => withLinks(items, tenantHref), [items, tenantHref]);
 
   const adminNavItems = useMemo(
     () => adminItems.map((item) => ({ ...item, linkHref: tenantHref(item.href) })),
@@ -74,7 +57,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
   useEffect(() => {
     const next: Record<string, boolean> = {};
     for (const item of items) {
-      if (item.children?.length && isItemActive(path, item)) {
+      if (item.children?.length && navItemMatches(path, item)) {
         next[item.href] = true;
       }
     }
@@ -113,7 +96,7 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
       <nav className={styles.nav}>
         <div className={styles.navGroup}>
           {navItems.map((item) => {
-            const active = isItemActive(path, item);
+            const active = navItemMatches(path, item);
             const hasChildren = Boolean(item.children?.length);
             const expanded = hasChildren && (openGroups[item.href] || active) && !collapsed;
 
@@ -140,20 +123,35 @@ export function SidebarNav({ items, adminItems }: SidebarNavProps) {
                   </button>
                   {expanded ? (
                     <div className={styles.subLinks}>
-                      {item.children.map((child) => {
-                        const childActive = isChildActive(path, child.href);
-                        return (
+                      {item.children.map((child) =>
+                        child.children?.length ? (
+                          // A group inside a group (Productivity › Email Blast): heading + indented links.
+                          <div key={child.href} className={styles.subGroup}>
+                            <p className={cn(styles.subGroupLabel, navItemMatches(path, child) && styles.subGroupActive)}>{child.label}</p>
+                            {child.children.map((grandchild) => (
+                              <Link
+                                key={grandchild.href}
+                                href={grandchild.linkHref}
+                                prefetch
+                                title={`${child.label} · ${grandchild.label}`}
+                                className={cn(styles.subLink, styles.subLinkNested, navItemMatches(path, grandchild) && styles.activePrimary)}
+                              >
+                                <span className={styles.subLinkLabel}>{grandchild.label}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        ) : (
                           <Link
                             key={child.href}
                             href={child.linkHref}
                             prefetch
                             title={child.label}
-                            className={cn(styles.subLink, childActive && styles.activePrimary)}
+                            className={cn(styles.subLink, navItemMatches(path, child) && styles.activePrimary)}
                           >
                             <span className={styles.subLinkLabel}>{child.label}</span>
                           </Link>
-                        );
-                      })}
+                        ),
+                      )}
                     </div>
                   ) : null}
                 </div>

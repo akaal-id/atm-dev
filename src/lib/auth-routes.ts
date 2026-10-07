@@ -26,6 +26,7 @@ export const protectedRoutePrefixes = [
   "/invite",
   "/project-files",
   "/office",
+  "/productivity",
   "/org",
   "/tenant-access-denied",
   "/account",

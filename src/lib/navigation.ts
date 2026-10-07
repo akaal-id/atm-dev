@@ -1,8 +1,10 @@
-import type { EmployeeStatus, Permission, RoleKey } from "@/lib/types";
+import type { Permission } from "@/lib/types";
 import { appPathname } from "@/lib/tenant-path";
 
 export type IconName =
   | "LayoutDashboard"
+  | "House"
+  | "Briefcase"
   | "CheckSquare"
   | "Users"
   | "FolderKanban"
@@ -40,23 +42,17 @@ export const taskNavigation: NavigationItem[] = [
   { label: "Workflow", href: "/workflows", icon: "GitBranch", permission: "dashboard:view" },
   { label: "My Task", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" },
   { label: "Team Task", href: "/tasks/team", icon: "Users", permission: "dashboard:view" },
+  { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "dashboard:view" },
   { label: "Approvals", href: "/admin/approval", icon: "CheckSquare", permission: "admin:view" },
 ];
 
-export const primaryNavigation: NavigationItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
-  {
-    label: "Task",
-    href: "/tasks",
-    icon: "CheckSquare",
-    permission: "dashboard:view",
-    children: taskNavigation,
-  },
-  { label: "Projects", href: "/projects", icon: "FolderKanban", permission: "dashboard:view" },
+/** Everything that isn't day-to-day task work, grouped under one "Productivity" menu (and hub page). */
+export const productivityNavigation: NavigationItem[] = [
   { label: "Office", href: "/office", icon: "FileSpreadsheet", permission: "dashboard:view" },
   { label: "Calendar", href: "/calendar", icon: "CalendarDays", permission: "dashboard:view" },
-  { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
   { label: "Announcements", href: "/announcements", icon: "Megaphone", permission: "announcements:view" },
+  { label: "Employees", href: "/employees", icon: "Users", permission: "employees:view" },
+  { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
   {
     label: "Email Blast",
     href: "/email-blast",
@@ -64,8 +60,27 @@ export const primaryNavigation: NavigationItem[] = [
     permission: "dashboard:view",
     children: emailBlastNavigation,
   },
-  { label: "Employees", href: "/employees", icon: "Users", permission: "employees:view" },
-  { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
+];
+
+/** Groups link to a hub page (/tasks, /productivity) that lists their sub-menus — what phones open. */
+export const primaryNavigation: NavigationItem[] = [
+  // "Home" is the /dashboard page (URL kept so existing links and notifications still work).
+  { label: "Home", href: "/dashboard", icon: "House", permission: "dashboard:view" },
+  { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
+  {
+    label: "Task",
+    href: "/tasks",
+    icon: "CheckSquare",
+    permission: "dashboard:view",
+    children: taskNavigation,
+  },
+  {
+    label: "Productivity",
+    href: "/productivity",
+    icon: "Briefcase",
+    permission: "dashboard:view",
+    children: productivityNavigation,
+  },
   { label: "Messages", href: "/chat", icon: "MessageCircle", permission: "dashboard:view" },
 ];
 
@@ -95,32 +110,48 @@ export function isChatRoomPath(pathname: string) {
   return /^\/chat\/[^/]+$/.test(appPathname(pathname));
 }
 
-export function usesTeamTaskNav(roleId: RoleKey, employmentStatus: EmployeeStatus | string) {
-  return (
-    roleId === "super_admin" ||
-    roleId === "org_owner" ||
-    roleId === "admin" ||
-    employmentStatus === "Manager"
-  );
-}
-
-export function getBottomNavigation(roleId: RoleKey, employmentStatus: EmployeeStatus | string): NavigationItem[] {
-  const taskItem: NavigationItem = usesTeamTaskNav(roleId, employmentStatus)
-    ? { label: "Team Task", href: "/tasks/team", icon: "Users", permission: "dashboard:view" }
-    : { label: "My Task", href: "/tasks/my", icon: "CheckSquare", permission: "tasks:own" };
-
+/** Phones: Home, Task, Attendance, Productivity, Messages. Task and Productivity open their hub pages. */
+export function getBottomNavigation(): NavigationItem[] {
   return [
-    { label: "Dashboard", href: "/dashboard", icon: "LayoutDashboard", permission: "dashboard:view" },
-    taskItem,
+    { label: "Home", href: "/dashboard", icon: "House", permission: "dashboard:view" },
+    { label: "Task", href: "/tasks", icon: "CheckSquare", permission: "dashboard:view", children: taskNavigation },
     { label: "Attendance", href: "/attendance", icon: "Clock3", permission: "attendance:own" },
+    { label: "Productivity", href: "/productivity", icon: "Briefcase", permission: "dashboard:view", children: productivityNavigation },
     { label: "Messages", href: "/chat", icon: "MessageCircle", permission: "dashboard:view" },
-    { label: "Leaderboard", href: "/leaderboard", icon: "Trophy", permission: "leaderboard:view" },
   ];
 }
 
+/** Keep only the entries `can` allows, at every level; groups left without children disappear. */
+export function filterNavigation(items: NavigationItem[], can: (permission: Permission) => boolean): NavigationItem[] {
+  return items
+    .filter((item) => can(item.permission))
+    .map((item) => (item.children ? { ...item, children: filterNavigation(item.children, can) } : item))
+    .filter((item) => !item.children || item.children.length > 0);
+}
+
+/** Is this menu entry (or anything under it) the current page? Groups also own their hub page and its sub-paths. */
+export function navItemMatches(pathname: string, item: NavigationItem): boolean {
+  if (item.children?.length) {
+    return pathname === item.href || pathname.startsWith(`${item.href}/`) || item.children.some((child) => navItemMatches(pathname, child));
+  }
+  // "Compose" is the Email Blast root; its siblings (/email-blast/history…) are separate entries.
+  if (item.href === "/email-blast") return pathname === "/email-blast";
+  return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
 export const pageCopy: Record<string, { title: string; eyebrow: string; description: string }> = {
+  "/tasks": {
+    title: "Task",
+    eyebrow: "Menu",
+    description: "Workflows, your tasks, the team board, projects, and approvals.",
+  },
+  "/productivity": {
+    title: "Productivity",
+    eyebrow: "Menu",
+    description: "Documents, calendar, announcements, people, rankings, and email blasts.",
+  },
   "/dashboard": {
-    title: "Command center",
+    title: "Home",
     eyebrow: "Today at Akaal",
     description: "Tasks, approvals, attendance, celebrations, and updates in one focused view.",
   },
@@ -260,3 +291,27 @@ export const pageCopy: Record<string, { title: string; eyebrow: string; descript
     description: "Register employees, choose role defaults, and prepare secure access.",
   },
 };
+
+/** Top-level destinations (the phone bottom bar): no Back button there. */
+const ROOT_PATHS = new Set(["/dashboard", "/tasks", "/attendance", "/productivity", "/chat"]);
+
+export function isRootPath(pathname: string) {
+  return ROOT_PATHS.has(pathname);
+}
+
+/**
+ * Where "Back" goes when there's no in-app history (e.g. opened from a notification):
+ * a menu entry → its group's hub (/projects → /tasks, /calendar → /productivity),
+ * an admin page → /productivity (its phone entry), anything deeper → one level up.
+ */
+export function parentHref(pathname: string): string {
+  if (ROOT_PATHS.has(pathname)) return "/dashboard";
+  for (const group of primaryNavigation) {
+    for (const child of group.children ?? []) {
+      if (child.href === pathname || child.children?.some((grandchild) => grandchild.href === pathname)) return group.href;
+    }
+  }
+  const adminHrefs = adminNavigation.flatMap((item) => [item.href, ...(item.children ?? []).map((child) => child.href)]);
+  if (adminHrefs.includes(pathname)) return "/productivity";
+  return pathname.replace(/\/[^/]+$/, "") || "/dashboard";
+}

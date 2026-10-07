@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  Briefcase,
   CalendarCheck,
   CalendarDays,
   CheckSquare,
@@ -11,6 +12,7 @@ import {
   FileSpreadsheet,
   FolderKanban,
   GitBranch,
+  House,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -33,6 +35,8 @@ import type { IconName } from "@/lib/navigation";
 
 export const iconMap = {
   LayoutDashboard,
+  House,
+  Briefcase,
   CheckSquare,
   Users,
   FolderKanban,

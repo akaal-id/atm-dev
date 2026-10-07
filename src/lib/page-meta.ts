@@ -1,4 +1,4 @@
-import { adminNavigation, emailBlastNavigation, pageCopy, primaryNavigation, taskNavigation } from "@/lib/navigation";
+import { adminNavigation, emailBlastNavigation, pageCopy, primaryNavigation, productivityNavigation, taskNavigation } from "@/lib/navigation";
 import { appPathname, withTenant, type TenantRef } from "@/lib/tenant-path";
 
 export type PageCopy = { title: string; eyebrow: string; description: string };
@@ -51,7 +51,7 @@ export function getPageCopy(pathname: string): PageCopy {
 export type BreadcrumbItem = { label: string; href?: string };
 
 const labelByHref = new Map<string, string>();
-for (const item of [...primaryNavigation, ...adminNavigation, ...emailBlastNavigation, ...taskNavigation]) {
+for (const item of [...primaryNavigation, ...adminNavigation, ...emailBlastNavigation, ...taskNavigation, ...productivityNavigation]) {
   labelByHref.set(item.href, item.label);
   for (const child of item.children || []) {
     labelByHref.set(child.href, child.label);
@@ -69,7 +69,7 @@ function segmentLabel(segment: string) {
 export function getBreadcrumbs(pathname: string, tenant?: TenantRef | null): BreadcrumbItem[] {
   const path = appPathname(pathname);
   if (!path || path === "/") {
-    return [{ label: "Dashboard", href: withTenant("/dashboard", tenant) }];
+    return [{ label: "Home", href: withTenant("/dashboard", tenant) }];
   }
 
   const parts = path.split("/").filter(Boolean);
@@ -102,10 +102,8 @@ export function getBreadcrumbs(pathname: string, tenant?: TenantRef | null): Bre
     if (part === "employees" && !isLast) label = "Employees";
     if (part === "chat" && !isLast) label = "Messages";
 
-    // "/tasks" has no page of its own; its crumb opens the user's tasks.
-    const crumbHref = part === "tasks" && href === "/tasks" ? "/tasks/my" : href;
-    crumbs.push(isLast ? { label } : { label, href: withTenant(crumbHref, tenant) });
+    crumbs.push(isLast ? { label } : { label, href: withTenant(href, tenant) });
   }
 
-  return crumbs.length > 0 ? crumbs : [{ label: "Dashboard", href: withTenant("/dashboard", tenant) }];
+  return crumbs.length > 0 ? crumbs : [{ label: "Home", href: withTenant("/dashboard", tenant) }];
 }

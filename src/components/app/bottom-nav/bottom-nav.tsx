@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChatUnreadBadge } from "@/components/app/chat-unread";
 import { AppIcon } from "@/components/app/icons";
 import { useTenant } from "@/components/app/tenant-provider";
-import { isChatRoomPath, type NavigationItem } from "@/lib/navigation";
+import { isChatRoomPath, navItemMatches, type NavigationItem } from "@/lib/navigation";
 import { appPathname } from "@/lib/tenant-path";
 import { cn } from "@/lib/utils";
 import styles from "./bottom-nav.module.css";
@@ -22,13 +22,9 @@ export function BottomNav({ items }: { items: NavigationItem[] }) {
     <nav className={styles.nav}>
       <div className={styles.bottomnav}>
         {items.map((item) => {
-          const isTaskNav = item.href.startsWith("/tasks/");
           const isMessagesNav = item.href === "/chat";
-          const active =
-            path === item.href ||
-            path.startsWith(`${item.href}/`) ||
-            (isTaskNav && /^\/tasks\/(?!my|team)[^/]+$/.test(path)) ||
-            (isMessagesNav && path === "/chat");
+          // Task and Productivity also light up on any page inside them (e.g. /projects, /calendar).
+          const active = navItemMatches(path, item);
           return (
             <Link
               key={item.href}

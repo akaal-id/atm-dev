@@ -9,8 +9,9 @@ import { Topbar } from "@/components/app/topbar";
 import { WorkspaceProviders } from "@/components/app/workspace-providers";
 import { ContentArea } from "@/components/app/content-area";
 import { MainContent } from "@/components/app/main-content";
-import { adminNavigation, getBottomNavigation, primaryNavigation } from "@/lib/navigation";
+import { adminNavigation, filterNavigation, getBottomNavigation, primaryNavigation } from "@/lib/navigation";
 import { hasPermission } from "@/lib/permissions";
+import type { Permission } from "@/lib/types";
 import { requireUser } from "@/lib/server/auth";
 import {
   ALL_COMPANIES_ID,
@@ -68,21 +69,10 @@ export async function AppShell({
     orderBy: "created_at",
     select: "notification_id,user_id,title,description,related_link,is_read,created_at,company_id",
   });
-  const visiblePrimary = primaryNavigation
-    .filter((item) => hasPermission(user.role_id, item.permission))
-    .map((item) =>
-      item.children
-        ? {
-            ...item,
-            children: item.children.filter((child) => hasPermission(user.role_id, child.permission)),
-          }
-        : item,
-    )
-    .filter((item) => !item.children || item.children.length > 0);
+  const can = (permission: Permission) => hasPermission(user.role_id, permission);
+  const visiblePrimary = filterNavigation(primaryNavigation, can);
   const visibleAdmin = adminNavigation.filter((item) => hasPermission(user.role_id, item.permission));
-  const visibleBottom = getBottomNavigation(user.role_id, user.employment_status).filter((item) =>
-    hasPermission(user.role_id, item.permission),
-  );
+  const visibleBottom = filterNavigation(getBottomNavigation(), can);
   const canCreateTasks =
     hasPermission(user.role_id, "tasks:own") ||
     hasPermission(user.role_id, "tasks:team") ||
