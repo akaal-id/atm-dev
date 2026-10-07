@@ -22,7 +22,7 @@ export function SubtaskQuickAdd({ taskId }: { taskId: string }) {
         name="title"
         required
         className={styles.input}
-        rows={Math.min(8, Math.max(1, value.split("\n").length))}
+        rows={Math.min(8, Math.max(2, value.split("\n").length))}
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {

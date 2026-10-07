@@ -4,6 +4,8 @@ import { Check, ChevronDown, Layers, Loader2, Network } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { useExclusiveMenu } from "@/lib/exclusive-menu";
+
 import { useTenant } from "@/components/app/tenant-provider";
 import { useToast } from "@/components/ui/toast";
 import type { Company, Organization } from "@/lib/types";
@@ -28,6 +30,7 @@ export function OrganizationSwitcher() {
   const tenant = useTenant();
   const { pushToast } = useToast();
   const [open, setOpen] = useState(false);
+  useExclusiveMenu("organization", open, setOpen);
   const [loading, setLoading] = useState(true);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);

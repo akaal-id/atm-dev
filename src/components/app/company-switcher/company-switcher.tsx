@@ -4,6 +4,8 @@ import { Building2, Check, ChevronDown, Layers, Loader2, Plus, X } from "lucide-
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { useExclusiveMenu } from "@/lib/exclusive-menu";
+
 import { useTenant } from "@/components/app/tenant-provider";
 import { Button } from "@/components/ui/button";
 import { ModalPortal } from "@/components/ui/modal-portal";
@@ -36,6 +38,7 @@ export function CompanySwitcher() {
   const tenant = useTenant();
   const { pushToast } = useToast();
   const [open, setOpen] = useState(false);
+  useExclusiveMenu("company", open, setOpen);
   const [loading, setLoading] = useState(true);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);

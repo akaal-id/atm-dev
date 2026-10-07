@@ -2,7 +2,7 @@
 
 import styles from "./project-browser.module.css";
 
-import { Filter, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Search, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -31,6 +31,7 @@ const ANY = "any";
 const ME = "me";
 
 const statusGroups = {
+  // "All" means everything still open: completed projects live only in their own tab.
   all: { label: "All", statuses: null },
   active: { label: "Active", statuses: ["Not Started", "In Progress", "Revision"] },
   review: { label: "In review", statuses: ["Waiting for Review", "Approved"] },
@@ -38,6 +39,8 @@ const statusGroups = {
   hold: { label: "On hold", statuses: ["On Hold", "Cancelled"] },
 } as const;
 type StatusGroup = keyof typeof statusGroups;
+
+const PAGE_SIZE = 6;
 
 const priorityRank: Record<string, number> = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
 const sorts = {
@@ -70,8 +73,10 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
   // history.replaceState keeps useSearchParams in sync without a server round-trip (no refetch per keystroke).
   function update(changes: Record<string, string>) {
     const next = new URLSearchParams(params.toString());
+    // Any filter/tab/sort change starts again at page 1.
+    if (!("page" in changes)) next.delete("page");
     for (const [key, value] of Object.entries(changes)) {
-      const isDefault = !value || value === ANY || (key === "status" && value === "all") || (key === "sort" && value === "deadline");
+      const isDefault = !value || value === ANY || (key === "status" && value === "all") || (key === "sort" && value === "deadline") || (key === "page" && value === "1");
       if (isDefault) next.delete(key);
       else next.set(key, value);
     }
@@ -106,7 +111,8 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
 
   const inGroup = (project: ProjectBrowserItem, group: StatusGroup) => {
     const statuses = statusGroups[group].statuses as readonly string[] | null;
-    return !statuses || statuses.includes(project.status);
+    if (!statuses) return project.status !== "Completed";
+    return statuses.includes(project.status);
   };
 
   const visible = useMemo(() => {
@@ -118,6 +124,14 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
       return (a.deadline || "9999").localeCompare(b.deadline || "9999") || a.project_name.localeCompare(b.project_name);
     });
   }, [filtered, status, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(pageCount, Math.max(1, Number(read("page", "1")) || 1));
+  const pageItems = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const goToPage = (page: number) => {
+    update({ page: String(page) });
+    document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const tabs = (Object.keys(statusGroups) as StatusGroup[]).map((group) => ({
     id: group,
@@ -184,7 +198,15 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
 
       <div className={styles.summary}>
         <span>
-          Showing <strong>{visible.length}</strong> of {items.length} projects
+          {visible.length > PAGE_SIZE ? (
+            <>
+              Showing <strong>{(currentPage - 1) * PAGE_SIZE + 1}–{(currentPage - 1) * PAGE_SIZE + pageItems.length}</strong> of {visible.length} projects
+            </>
+          ) : (
+            <>
+              Showing <strong>{visible.length}</strong> of {items.length} projects
+            </>
+          )}
         </span>
         {activeFilterCount ? (
           <button type="button" className={styles.clear} onClick={clearFilters}>
@@ -196,13 +218,42 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
 
       {visible.length ? (
         <div className={styles.cards}>
-          {visible.map((project) => (
+          {pageItems.map((project) => (
             <div key={project.project_id} className={styles.cardSlot}>
               {project.card}
             </div>
           ))}
         </div>
-      ) : (
+      ) : null}
+
+      {visible.length > 0 && pageCount > 1 ? (
+        <nav className={styles.pager} aria-label="Projects pages">
+          <Button type="button" variant="outline" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+            <ChevronLeft className={styles.icon} aria-hidden />
+            Prev
+          </Button>
+          <div className={styles.pages}>
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                className={page === currentPage ? styles.pageOn : styles.page}
+                onClick={() => goToPage(page)}
+                aria-current={page === currentPage ? "page" : undefined}
+                aria-label={`Page ${page}`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === pageCount}>
+            Next
+            <ChevronRight className={styles.icon} aria-hidden />
+          </Button>
+        </nav>
+      ) : null}
+
+      {visible.length === 0 ? (
         <div className={styles.empty}>
           <p>No projects match {activeFilterCount ? "these filters" : "this tab"}.</p>
           {activeFilterCount ? (
@@ -211,7 +262,7 @@ export function ProjectBrowser({ items, users, currentUserId, action }: { items:
             </Button>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

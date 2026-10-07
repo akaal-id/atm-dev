@@ -13,6 +13,7 @@ import { AppIcon } from "@/components/app/icons";
 import { NOTIFICATIONS_POLL_EVENT, type NotificationsPollDetail } from "@/components/app/live-refresh";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useExclusiveMenu } from "@/lib/exclusive-menu";
 import { isChatRoomPath } from "@/lib/navigation";
 import { getBreadcrumbs } from "@/lib/page-meta";
 import type { AppNotification, CurrentUser } from "@/lib/types";
@@ -37,6 +38,8 @@ export function Topbar({
   const tenant = useTenant();
   const [liveUnreadCount, setLiveUnreadCount] = useState(unreadCount);
   const [liveRecent, setLiveRecent] = useState(recentNotifications);
+  const [accountOpen, setAccountOpen] = useState(false);
+  useExclusiveMenu("account", accountOpen, setAccountOpen);
 
   useEffect(() => {
     setLiveUnreadCount(unreadCount);
@@ -116,7 +119,7 @@ export function Topbar({
             {liveUnreadCount > 0 ? <span className={styles.count}>{liveUnreadCount}</span> : null}
           </Link>
 
-          <details className={styles.details}>
+          <details className={styles.details} open={accountOpen} onToggle={(event) => setAccountOpen(event.currentTarget.open)}>
             <summary className={styles.summary}>
               <Avatar name={user.full_name} image={user.profile_photo} size="sm" />
               <AppIcon name="ChevronDown" className={styles.chevron} />

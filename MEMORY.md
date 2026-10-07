@@ -63,6 +63,19 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
 
 - 2026-10-06: **Add subtask takes many lines** (`components/app/subtask-quick-add`). The server (`POST /api/resources/Task_Checklists`) splits `title` by line, strips list markers, caps it at 50, creates one subtask per line, and logs each. Ctrl/⌘+Enter submits.
 
+- 2026-10-07: **Mobile pass at 360/390 px.**
+  - **Task rows:** compact on phones (status beside the ticket id, 2×2 details grid). The task filters fold behind a "Filter" button below 640 px.
+  - **Long lists:** use `ShowMoreList` (Notifications, profile task history).
+  - **PageHero:** slimmer on phones.
+  - **Month calendar:** fits as 7 narrow columns with event dots.
+  - **Email-blast history:** the table turns into cards.
+  - **Project Files and Departments:** use their own classes.
+  - **Top-bar dropdowns:** Organization/Company menus are pinned full-width under the bar on phones, and only one top-bar menu can be open (`src/lib/exclusive-menu.ts`). The emoji picker is pinned above the composer.
+- 2026-10-07: **Project status.**
+  - Edit project (dashboard) has a Status field. `PATCH /api/projects/[id]` accepts `status`, and Completed sets progress to 100.
+  - Projects "All" excludes Completed.
+  - Projects list paginates 6 per page (`?page=`).
+
 ## Gotchas
 
 - **Env file must be `.env.local`.** On 2026-10-01 it was saved as `env.local` (no dot). Next.js ignored it, the store fell back to seed data, and real accounts got "Invalid email or password". If login fails for a valid user, check this first.
@@ -109,6 +122,9 @@ Durable context for AI agents working on ATM. Keep entries short and dated. Upda
 - **Production logs:** `vercel logs --project atm-dev --scope akaals-projects --environment production --since 7d --status-code 4xx --json`. Use the npx-cached CLI at `~/.npm/_npx/*/node_modules/.bin/vercel`, v62. `--query` matches message text, not the HTTP method.
 - **Unknown columns no longer 500.** `supabase-store` writes go through `writeDroppingUnknownColumns`. On PostgREST `PGRST204` ("Could not find the 'x' column") it retries without that field and logs `[supabase-store] … is not a column of …`. Grep production logs for that line, then add the column or remove the field. Origin: Create project sent the mock `workflow_template_id`, and every project creation returned 500 (2026-10-06).
 - **Regression sweep scripts (local production build, live DB):** `.perf/all-pages.mjs` covers every route, including dynamic ones. `.perf/task-flows.mjs`, `.perf/sweep.mjs`, `.perf/project-flows.mjs`, `.perf/write-flows*.mjs` cover create/edit/delete. Name test rows "ZZ …" and delete them afterwards, then purge `sb:<table>` on Vercel. Don't run flows that notify others: announcements, leave requests, email blast, clock-in. **Never create assigned data while logged in as the owner (Asad).** On 2026-10-06, test tasks "[ZZ TEST] …" defaulted to the creator as assignee and pushed "New task assigned" to his real devices; the push stays on the device after the rows are deleted. Use a dedicated test login instead: a temporary user with an org membership, removed afterwards.
+- **Wide content inside a CSS grid needs `grid-template-columns: minmax(0, 1fr)`.** Otherwise the implicit column grows to the content (the Kanban board made the whole workflow page 850 px wide on phones).
+- **Server-made elements rendered beside a client component's own children need a `key`**, e.g. an `action` prop placed next to a button. Otherwise React dev warns "Each child in a list should have a unique key… passed a child from ProjectsView".
+- **Mobile audit scripts** (local only, `.perf/`): `mobile-audit.mjs` (overflow and clipping per route), `mobile-shots.mjs` (chunked full-page screenshots; it unrolls the shell's scroll container), `topbar-popovers.mjs`, and `exclusive-test.mjs`.
 - **No Tailwind utility classes** in migrated components. Use the co-located `*.module.css`.
 
 ## Tooling

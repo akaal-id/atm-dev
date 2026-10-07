@@ -101,3 +101,15 @@
   background: var(--primary-subtle);
   opacity: 1;
 }
+
+/* Phones: the emoji button isn't at the far right, so a right-aligned panel spilled off the left edge.
+   Pin it across the screen just above the composer instead. */
+@media (max-width: 639px) {
+  .panel {
+    position: fixed;
+    right: 0.75rem;
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    left: 0.75rem;
+    width: auto;
+  }
+}

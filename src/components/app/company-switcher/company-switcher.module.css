@@ -78,7 +78,8 @@
 
 .backdrop {
   position: fixed;
-  inset: 0;
+  /* Starts below the top bar so its other buttons stay tappable (one opens, the rest close). */
+  inset: var(--shell-header-block-size, 3.5rem) 0 0;
   z-index: 25;
   border: 0;
   background: transparent;
@@ -370,5 +371,17 @@
 
   .chevron {
     display: none;
+  }
+
+  /* The triggers sit mid-bar on phones, so a right-aligned panel spilled off the left edge.
+     Pin the panel to the screen instead: full width under the top bar, scrolling if long. */
+  .menu {
+    position: fixed;
+    top: calc(var(--shell-header-block-size, 3.5rem) + 0.375rem);
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-height: calc(100dvh - var(--shell-header-block-size, 3.5rem) - 6rem);
+    overflow-y: auto;
   }
 }

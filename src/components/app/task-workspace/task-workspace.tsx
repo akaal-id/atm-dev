@@ -259,12 +259,18 @@ function TaskListRow({ task, users, projects }: { task: Task; users: User[]; pro
   return (
     <article className={styles.listRow}>
       <div className={styles.taskMain}>
-        <TicketId id={task.task_id} />
+        <div className={styles.taskHead}>
+          <TicketId id={task.task_id} />
+          {/* Phones show the status up here; wider screens use the Status column. */}
+          <span className={styles.headStatus}>
+            <TaskStatusPill status={task.status} dueDate={task.due_date} handedOffAt={task.handed_off_at} />
+          </span>
+        </div>
         <Link href={`/tasks/${task.task_id}`} className={styles.taskTitle}>
           {task.title}
         </Link>
         <LinkifiedText text={task.description} className={styles.taskDescription} />
-        <div className={cn(styles.metaRow, "mt-3")}>
+        <div className={cn(styles.metaRow, styles.metaRowGap)}>
           <Badge tone={task.priority === "Urgent" ? "red" : task.priority === "High" ? "yellow" : "neutral"}>{task.priority}</Badge>
           {visibleTaskLabels(task.labels).slice(0, 2).map((label) => (
             <Badge key={label}>{label}</Badge>
@@ -634,6 +640,9 @@ export function TaskWorkspace({
     assigneeId: ALL,
     assignedById: ALL,
   });
+  // Phones keep the filter panel folded behind a "Filter" button; wider screens always show it.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = [filters.query.trim(), filters.projectId !== ALL, filters.dueDateFrom || filters.dueDateTo, scope !== "my" && filters.assigneeId !== ALL, filters.assignedById !== ALL].filter(Boolean).length;
   const taskBoardUsers = useMemo(() => users.map((user) => ({ user_id: user.user_id, full_name: user.full_name })), [users]);
   const filteredTasks = useMemo(() => filterTasks(tasks, users, projects, filters), [filters, projects, tasks, users]);
   const activeCount = activeTasks(tasks).length;
@@ -685,14 +694,23 @@ export function TaskWorkspace({
       </div>
 
       {showFilters ? (
-        <TaskFiltersPanel
-          filters={filters}
-          setFilters={setFilters}
-          projects={projects}
-          users={users}
-          scope={scope}
-          currentUser={currentUser}
-        />
+        <>
+          <button type="button" className={styles.filterToggle} onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen}>
+            <ListFilter aria-hidden />
+            {filtersOpen ? "Hide filters" : "Filter"}
+            {activeFilterCount ? <span className={styles.filterCount}>{activeFilterCount}</span> : null}
+          </button>
+          <div className={cn(styles.filterWrap, filtersOpen && styles.filterWrapOpen)}>
+            <TaskFiltersPanel
+              filters={filters}
+              setFilters={setFilters}
+              projects={projects}
+              users={users}
+              scope={scope}
+              currentUser={currentUser}
+            />
+          </div>
+        </>
       ) : null}
 
       {workflow && activeView === "board" ? (

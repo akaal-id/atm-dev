@@ -61,7 +61,9 @@
 
 .content {
   min-width: 0;
-  flex: 1 1 0%;
+  /* At least ~10rem for the title; narrower than that, the actions wrap below instead of squeezing it. */
+  flex: 1 1 10rem;
+  overflow-wrap: anywhere;
 }
 
 .input {

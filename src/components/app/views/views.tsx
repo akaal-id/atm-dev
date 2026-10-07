@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BaseLocationCard } from "@/components/app/base-location-card";
 import { LeaveRequestButton } from "@/components/app/leave-request-modal";
 import { PageHero } from "@/components/app/page-header";
+import { ShowMoreList } from "@/components/app/show-more-list";
 import { SubtaskQuickAdd } from "@/components/app/subtask-quick-add";
 import { ProjectBrowser, type ProjectBrowserItem } from "@/components/app/project-browser";
 import { PasswordResetButton } from "@/components/app/password-reset-button";
@@ -553,19 +554,15 @@ export function ProjectFilesView({ data, projectId }: { data: AppData; projectId
               href={file.file_url}
               target="_blank"
               rel="noreferrer"
-              className={styles.linkLinkifiedtext}
+              className={styles.fileRow}
             >
-              {file.file_mime === DRIVE_FOLDER_MIME ? (
-                <FolderOpen className={styles.surfacePrimary} />
-              ) : (
-                <Paperclip className={styles.surfaceSecondary} />
-              )}
-              <div className={styles.content}>
-                <TicketId id={file.task_id} />
-                <p className={styles.textAlt}>{file.title || file.file_name}</p>
-                <p className={styles.textAside}>Owner: {userName(data.users, file.owner_user_id)}</p>
+              <span className={styles.fileIcon}>{file.file_mime === DRIVE_FOLDER_MIME ? <FolderOpen aria-hidden /> : <Paperclip aria-hidden />}</span>
+              <div className={styles.fileBody}>
+                {file.task_id ? <TicketId id={file.task_id} /> : null}
+                <p className={styles.fileTitle}>{file.title || file.file_name}</p>
+                <p className={styles.fileMeta}>Owner: {userName(data.users, file.owner_user_id)}</p>
               </div>
-              <ExternalLink className={styles.surfacePaperclip} />
+              <ExternalLink className={styles.fileOpen} aria-hidden />
             </a>
           ))}
         </div>
@@ -578,7 +575,8 @@ export function ProjectsView(data: AppData) {
   const canManageProjects = hasPermission(data.currentUser.role_id, "projects:manage");
   const activeProjectUsers = data.users.filter((user) => user.is_active);
   const projectModalUsers = data.users.map((user) => ({ user_id: user.user_id, full_name: user.full_name, is_active: user.is_active }));
-  const createProjectAction = canManageProjects ? <CreateProjectModal currentUser={data.currentUser} users={projectModalUsers} /> : null;
+  // Keyed: ProjectBrowser renders it next to its own buttons (React asks for keys on server-made elements there).
+  const createProjectAction = canManageProjects ? <CreateProjectModal key="create-project" currentUser={data.currentUser} users={projectModalUsers} /> : null;
 
   const items: ProjectBrowserItem[] = data.projects.map((project) => ({
     project_id: project.project_id,
@@ -591,7 +589,7 @@ export function ProjectsView(data: AppData) {
     members: project.members ?? [],
     deadline: project.deadline ?? "",
     card: (
-      <Card>
+      <Card key={project.project_id}>
         <CardHeader>
           <div className={styles.projectCardHeader}>
             <div className={styles.projectCardTitle}>
@@ -1221,9 +1219,11 @@ export function EmployeeProfileView({ data, employee, office, monthScore }: { da
             <SectionTitle title="Task history" />
           </CardHeader>
           <CardBody className={styles.bodyCardbody}>
-            {employeeTasks.map((task) => (
-              <TaskCard key={task.task_id} task={task} users={data.users} compact />
-            ))}
+            <ShowMoreList initial={10} step={20} noun="tasks">
+              {employeeTasks.map((task) => (
+                <TaskCard key={task.task_id} task={task} users={data.users} compact />
+              ))}
+            </ShowMoreList>
           </CardBody>
         </Card>
         {canManageEmployees ? (
@@ -1302,7 +1302,8 @@ export function NotificationsView(data: AppData) {
         {myNotifications.length === 0 ? (
           <EmptyState label="No notifications yet." />
         ) : (
-          myNotifications.map((notification) => (
+          <ShowMoreList noun="notifications">
+          {myNotifications.map((notification) => (
             <NotificationLink
               key={notification.notification_id}
               notification={notification}
@@ -1322,7 +1323,8 @@ export function NotificationsView(data: AppData) {
                 <p className={styles.textSub}>{formatDate(notification.created_at, { hour: "2-digit", minute: "2-digit" })}</p>
               </div>
             </NotificationLink>
-          ))
+          ))}
+          </ShowMoreList>
         )}
       </CardBody>
     </Card>
@@ -1514,24 +1516,22 @@ export function DepartmentsManagerView(data: AppData) {
               const leader = data.users.find((user) => user.user_id === department.leader_user_id);
 
               return (
-                <div key={department.department_id} className={styles.infotile}>
-                  <div className={styles.emptystateLead}>
-                    <div className={styles.emptystateTrail}>
-                      <div className={styles.emptystateLead}>
-                        <Building2 className={styles.emptystateMain} />
-                      </div>
-                      <div className={styles.card}>
-                        <p className={styles.ellipsis}>{department.department_name}</p>
-                        <p className={styles.header}>
-                          {memberCount} member{memberCount === 1 ? "" : "s"} · ID <code className={styles.breakall}>{department.department_id}</code>
-                        </p>
-                      </div>
+                <div key={department.department_id} className={styles.deptCard}>
+                  <div className={styles.deptHead}>
+                    <span className={styles.deptIcon}>
+                      <Building2 aria-hidden />
+                    </span>
+                    <div className={styles.deptInfo}>
+                      <p className={styles.deptName}>{department.department_name}</p>
+                      <p className={styles.deptMeta}>
+                        {memberCount} member{memberCount === 1 ? "" : "s"} · <code>{department.department_id}</code>
+                      </p>
                     </div>
                     <Badge tone={memberCount > 0 ? "blue" : "neutral"}>{leader ? leader.full_name : "No leader"}</Badge>
                   </div>
 
-                  <div className={styles.surfaceAlt}>
-                    <form action={`/api/resources/Departments/${department.department_id}`} method="post" className="contents">
+                  <div className={styles.deptActions}>
+                    <form action={`/api/resources/Departments/${department.department_id}`} method="post" className={styles.deptForm}>
                       <Field label="Name">
                         <input name="department_name" required className="input" defaultValue={department.department_name} />
                       </Field>
@@ -1548,16 +1548,14 @@ export function DepartmentsManagerView(data: AppData) {
                           ]}
                         />
                       </Field>
-                      <div className={styles.filterbarSecondary}>
-                        <Button type="submit" variant="default" size="xl">
-                          Save
-                        </Button>
-                      </div>
+                      <Button type="submit" variant="default" size="xl">
+                        Save
+                      </Button>
                     </form>
 
-                    <form action={`/api/resources/Departments/${department.department_id}`} method="post" className="lg:col-start-3">
+                    <form action={`/api/resources/Departments/${department.department_id}`} method="post">
                       <input type="hidden" name="_method" value="delete" />
-                      <Button type="submit" variant="destructiveOutline" size="xl" className={styles.buttonAlt}>
+                      <Button type="submit" variant="destructiveOutline" size="xl" className={styles.deptRemove}>
                         <Trash2 className={styles.icon} />
                         Remove
                       </Button>

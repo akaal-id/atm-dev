@@ -1,5 +1,7 @@
 .workspace {
   display: grid;
+  /* One column that never grows past the viewport: wide boards scroll inside their own lane. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   min-width: 0;
 }
@@ -699,5 +701,118 @@
 @media (min-width: 1024px) {
   .projectGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.taskHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.headStatus {
+  display: none;
+}
+
+.metaRowGap {
+  margin-top: 0.75rem;
+}
+
+/* Phones: compact task rows — status beside the ticket id, details in a tight 2×2 grid. */
+@media (max-width: 639px) {
+  .listRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .taskMain {
+    grid-column: 1 / -1;
+  }
+
+  .headStatus {
+    display: inline-flex;
+  }
+
+  .statusCell {
+    display: none;
+  }
+
+  .taskTitle {
+    margin-top: 0.375rem;
+  }
+
+  .taskDescription {
+    -webkit-line-clamp: 1;
+  }
+
+  .metaRowGap {
+    margin-top: 0.5rem;
+  }
+
+  .cell {
+    gap: 0;
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .cellLabel {
+    margin-bottom: 0.125rem;
+    font-size: 0.625rem;
+  }
+
+  .cellText {
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+}
+
+.filterToggle {
+  display: none;
+}
+
+.filterWrap {
+  min-width: 0;
+}
+
+@media (max-width: 639px) {
+  .filterToggle {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.375rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .filterToggle svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .filterCount {
+    display: inline-grid;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--primary);
+    padding: 0 0.25rem;
+    font-size: 0.6875rem;
+    color: #fff;
+  }
+
+  .filterWrap {
+    display: none;
+  }
+
+  .filterWrapOpen {
+    display: block;
   }
 }

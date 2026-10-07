@@ -102,3 +102,8 @@
     align-items: center;
   }
 }
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}

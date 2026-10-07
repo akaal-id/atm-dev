@@ -13,9 +13,11 @@ import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { requestJson } from "@/lib/request-json";
 import type { Brand, ProjectHubData, ProjectUserSummary } from "@/lib/types/project-hub";
-import type { Project, ProjectType } from "@/lib/types";
+import { projectStatuses } from "@/lib/permissions";
+import type { Project, ProjectStatus, ProjectType } from "@/lib/types";
 
 type Draft = {
+  status: ProjectStatus;
   project_type: ProjectType;
   period_start: string;
   period_end: string;
@@ -25,6 +27,7 @@ type Draft = {
 
 function draftFrom(project: Project): Draft {
   return {
+    status: project.status,
     project_type: project.project_type ?? "general",
     period_start: project.period_start ?? "",
     period_end: project.period_end ?? "",
@@ -132,6 +135,16 @@ export function ProjectSettingsModal({
           />
         </label>
 
+        <div className={styles.field}>
+          <span className={styles.label}>Status</span>
+          <FormSelect
+            name="status"
+            value={draft.status}
+            onValueChange={(value) => setDraft({ ...draft, status: value as ProjectStatus })}
+            options={projectStatuses.map((status) => ({ value: status, label: status }))}
+          />
+          <span className={styles.hint}>Completed projects move to the Completed tab on Projects.</span>
+        </div>
         <div className={styles.row}>
           <div className={styles.field}>
             <span className={styles.label}>Project type</span>
